@@ -53,7 +53,8 @@ import { OvertourismComponent } from './pages/overtourism/overtourism/overtouris
 import { ProposalDetailPageComponent } from './pages/problems/proposal-detail-page/proposal-detail-page.component';
 import { ProposalListPageComponent } from './pages/problems/proposal-list-page/proposal-list-page.component';
 import { EmptyFieldPipe } from './pipes/empty-field.pipe';
-
+import { ChatbotDialogComponent } from './components/chatbot-dialog/chatbot-dialog.component';
+import { MatDialogModule } from '@angular/material/dialog';
 
 // Funzione per caricare i file delle traduzioni
 export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
@@ -84,6 +85,8 @@ export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
     ReactiveFormsModule,
     NgxSliderModule,
     HttpClientModule,
+    ChatbotDialogComponent,
+    MatDialogModule,
     TranslateModule.forRoot({
       loader: {
         provide: TranslateLoader,

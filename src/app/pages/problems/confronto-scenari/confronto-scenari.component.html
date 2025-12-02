@@ -56,6 +56,9 @@
       </div>
     </div>
     <div class="col-md-2 d-flex align-items-center">
+        <button itButton="secondary" (click)="openChatbot()">
+          Apri Chatbot
+        </button>
       <button itButton="primary" (click)="downloadPdf()" [disabled]="isDownloading">
         <ng-container *ngIf="!isDownloading; else loading">
           Scarica PDF

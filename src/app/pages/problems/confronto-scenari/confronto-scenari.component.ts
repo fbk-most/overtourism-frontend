@@ -9,6 +9,8 @@ import {
 } from '../../../components/plot/plot.config';
 import { PdfService } from '../../../services/pdf.service';
 import { TranslateService } from '@ngx-translate/core';
+import { MatDialog } from '@angular/material/dialog';
+import { ChatbotDialogComponent } from '../../../components/chatbot-dialog/chatbot-dialog.component';
 
 @Component({
   selector: 'app-confronto-scenari',
@@ -46,8 +48,8 @@ export class ConfrontoScenariComponent {
     private plotService: PlotService,
     private route: ActivatedRoute,
     private pdfService: PdfService,
-    private translate: TranslateService
-    
+    private translate: TranslateService,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit() {
@@ -253,6 +255,14 @@ export class ConfrontoScenariComponent {
   }, 0);
 
   }
+
+  openChatbot(): void {
+  this.dialog.open(ChatbotDialogComponent, {
+    width: '450px',
+    height: '600px',
+    disableClose: false
+  });
+}
 }
 // const KPI_TRANSLATIONS: Record<string, string> = {
 //   constraint_level_alberghi: 'constraint_level_alberghi',
