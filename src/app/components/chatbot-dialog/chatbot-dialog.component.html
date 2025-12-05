@@ -1,1 +1,21 @@
-<p>chatbot-dialog works!</p>
+<div class="chat-container">
+
+  <div class="chat-messages">
+    <div
+      *ngFor="let msg of conversation"
+      class="message-bubble"
+      [ngClass]="{
+        'message-user': msg.role === 'user',
+        'message-assistant': msg.role === 'assistant'
+      }"
+    >
+      {{ msg.content }}
+    </div>
+  </div>
+
+  <div class="chat-input-row">
+    <input [(ngModel)]="userMessage" placeholder="Type a message..." />
+    <button (click)="sendMessage()">Send</button>
+  </div>
+
+</div>

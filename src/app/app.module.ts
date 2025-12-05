@@ -85,7 +85,6 @@ export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
     ReactiveFormsModule,
     NgxSliderModule,
     HttpClientModule,
-    ChatbotDialogComponent,
     MatDialogModule,
     TranslateModule.forRoot({
       loader: {

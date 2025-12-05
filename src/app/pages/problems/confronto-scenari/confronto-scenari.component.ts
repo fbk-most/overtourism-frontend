@@ -40,7 +40,11 @@ export class ConfrontoScenariComponent {
   @ViewChild('chartRight', { static: true }) chartRight!: ElementRef<HTMLElement>;
   showControls: boolean = false; // per 'settings'
   isDownloading = false;
-
+  chatbot_data: {
+    scenario1?: any;
+    scenario2?: any;
+    differences?: { index_id: string; index_name: string; value: any; otherValue: any }[];
+  } = {};
   
   
   constructor(
@@ -131,14 +135,18 @@ export class ConfrontoScenariComponent {
 
     const res = await this.scenarioService.getScenarioData(id, this.problemId).toPromise();
     const input = this.plotService.preparePlotInput(res.data);
+    console.log('Loaded scenario data for slot', slot, res);
 
     const container = slot === 1 ? this.chartLeft.nativeElement : this.chartRight.nativeElement;
     if (slot === 1) {
       this.kpisLeft = input.kpis ? this.filterKpis(input.kpis) : undefined;
       this.widgetsLeft = res.widgets || {};
+      this.chatbot_data.scenario1 = res.data;
     } else {
       this.kpisRight = input.kpis ? this.filterKpis(input.kpis) : undefined;
       this.widgetsRight = res.widgets || {};
+      this.chatbot_data.scenario2 = res.data;
+      this.chatbot_data.differences = res.index_diffs;;
     }
     this.renderChart(container, input);
   }
@@ -256,13 +264,37 @@ export class ConfrontoScenariComponent {
 
   }
 
-  openChatbot(): void {
-  this.dialog.open(ChatbotDialogComponent, {
-    width: '450px',
-    height: '600px',
-    disableClose: false
-  });
-}
+
+  private buildScenarioSummary(kpis: KPIs | undefined, widgets: Record<string, Widget[]>): string {
+    let summary = "Main indexes:\n";
+
+    if (kpis) {
+      for (const key of Object.keys(kpis)) {
+        const val = kpis[key];
+        summary += ` - ${key}: level ${val.level}, confidence ${val.confidence}\n`;
+      }
+    }
+
+    summary += "\nOther indexes:\n";
+
+    for (const group of Object.values(widgets)) {
+      for (const widget of group) {
+        summary += ` - ${widget.index_name}: ${widget.v ?? widget.loc ?? ''}\n`;
+      }
+    }
+
+    return summary;
+  }
+
+  openChatbot() {
+    console.log(this.chatbot_data)
+    this.dialog.open(ChatbotDialogComponent, {
+      width: '400px',
+      height: '600px',
+      data: this.chatbot_data
+    });
+  }
+
 }
 // const KPI_TRANSLATIONS: Record<string, string> = {
 //   constraint_level_alberghi: 'constraint_level_alberghi',
