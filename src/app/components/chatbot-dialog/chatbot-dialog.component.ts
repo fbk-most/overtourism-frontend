@@ -1,9 +1,9 @@
-// chatbot-dialog.component.ts
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ChatbotService, ChatMessage } from '../../services/chatbot.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ChartSummary, ChartSeriesSummary } from '../../models/chart-summary.model';
 
 @Component({
   selector: 'app-chatbot-dialog',
@@ -23,42 +23,73 @@ export class ChatbotDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
 
-  ngOnInit() {
-    this.conversation = [];
+  private formatChartSummaries(charts: ChartSummary[] = []): string {
+    if (!charts || charts.length === 0) return "No chart data available.";
 
-    const scenario1 = JSON.stringify(this.data.scenario1, null, 2);
-    const scenario2 = JSON.stringify(this.data.scenario2, null, 2);
-    const differences = JSON.stringify(this.data.differences, null, 2);
+    return charts
+      .map(chart => {
+        const seriesSummaries = (chart.series || [])
+          .map((s: ChartSeriesSummary) => 
+            `${s.name} (Scenario: ${s.scenario}) → min: ${s.min}, max: ${s.max}, avg: ${s.avg}, trend: ${s.trend}`
+          )
+          .join("; ");
 
-    // Build the initial user request
-    const initialUserMessage: ChatMessage = {
-      role: 'user',
-      content: `
-      You are an expert in tourism management and sustainability, but your target audience may also include non-expert users, so start with simple and clear language and potentially increase the complexity of your responses based on the questions asked.
-  I have two scenarios to compare.
-  The difference between the two scenarios are these ${differences}
-  Scenario 1 data:${scenario1}
-  Scenario 2 data: ${scenario2}
-  Please analyze both scenarios and provide me with a summary of a short text (3/4 short sentences) stating what are the difference between scenarios and how these impacted the results.
-  In this whole conversation, round all numerical values to a maximum of two decimal places and never provide answers longer than a 2/3 sentences unless specifically asked.
-      `.trim()
-    };
-
-    // Add message to conversation
-    this.conversation.push(initialUserMessage);
-
-    // Send to backend immediately
-    this.chatbotService.sendConversation(this.conversation).subscribe({
-      next: (res) => {
-        // Push assistant's summary into chat
-        this.conversation.push({
-          role: 'assistant',
-          content: res.reply + "\n\nCan I help you with something?"
-        });
-      },
-      error: () => console.error("Errore nel contattare il backend")
-    });
+        return `Chart: ${chart.title} [${chart.subsystem}, ${chart.dimension}] → ${seriesSummaries}`;
+      })
+      .join("\n");
   }
+
+ngOnInit() {
+  this.conversation = [];
+
+  const scenarioLeft = this.data.scenarios?.left || {};
+  const scenarioRight = this.data.scenarios?.right || {};
+  const differences = JSON.stringify(this.data.comparisons?.widgetDiffs || [], null, 2);
+
+  const chartsArray: ChartSummary[] = [
+    ...(scenarioLeft.charts || []),
+    ...(scenarioRight.charts || [])
+  ];
+
+  const charts = this.formatChartSummaries(chartsArray);
+
+  const initialUserMessage: ChatMessage = {
+    role: 'user',
+    content: `
+You are an expert in tourism management and sustainability.
+Use clear and simple language by default so that non-experts can understand you, and increase technical depth only when the user's question requires it.
+Answer as concisely as possible, ideally in one sentence unless explicitly asked for a longer explanation.
+Round all numerical values to a maximum of two decimal places.
+
+You have access to scenario data and chart summaries.
+
+Initial conditions differences: ${differences}
+
+Scenario1 KPIs: ${JSON.stringify(scenarioLeft.kpis || {}, null, 2)}
+
+Scenario2 KPIs: ${JSON.stringify(scenarioRight.kpis || {}, null, 2)}
+
+Chart summaries:
+${charts}
+
+Please provide a concise summary of the key differences between the two scenarios based on the provided data.
+    `.trim()
+  };
+
+  console.log("Initial chatbot message:", initialUserMessage);
+
+  this.conversation.push(initialUserMessage);
+
+  this.chatbotService.sendConversation(this.conversation).subscribe({
+    next: (res) => {
+      this.conversation.push({
+        role: 'assistant',
+        content: res.reply + "\n\nCan I help you with something?"
+      });
+    },
+    error: () => console.error("Errore nel contattare il backend")
+  });
+}
 
 
   sendMessage() {

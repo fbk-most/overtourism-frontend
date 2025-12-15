@@ -11,6 +11,7 @@ import { PdfService } from '../../../services/pdf.service';
 import { TranslateService } from '@ngx-translate/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ChatbotDialogComponent } from '../../../components/chatbot-dialog/chatbot-dialog.component';
+import { ConfrontoScenariContext } from '../../../models/confronto-scenari-context.model';
 
 @Component({
   selector: 'app-confronto-scenari',
@@ -40,12 +41,8 @@ export class ConfrontoScenariComponent {
   @ViewChild('chartRight', { static: true }) chartRight!: ElementRef<HTMLElement>;
   showControls: boolean = false; // per 'settings'
   isDownloading = false;
-  chatbot_data: {
-    scenario1?: any;
-    scenario2?: any;
-    differences?: { index_id: string; index_name: string; value: any; otherValue: any }[];
-  } = {};
-  
+  plotInputLeft?: PlotInput;
+  plotInputRight?: PlotInput; 
   
   constructor(
     private scenarioService: ScenarioService,
@@ -135,19 +132,23 @@ export class ConfrontoScenariComponent {
 
     const res = await this.scenarioService.getScenarioData(id, this.problemId).toPromise();
     const input = this.plotService.preparePlotInput(res.data);
+
+    if (slot === 1) {
+      this.plotInputLeft = input;
+    } else {
+      this.plotInputRight = input;
+    }
     console.log('Loaded scenario data for slot', slot, res);
 
     const container = slot === 1 ? this.chartLeft.nativeElement : this.chartRight.nativeElement;
     if (slot === 1) {
       this.kpisLeft = input.kpis ? this.filterKpis(input.kpis) : undefined;
       this.widgetsLeft = res.widgets || {};
-      this.chatbot_data.scenario1 = res.data;
     } else {
       this.kpisRight = input.kpis ? this.filterKpis(input.kpis) : undefined;
       this.widgetsRight = res.widgets || {};
-      this.chatbot_data.scenario2 = res.data;
-      this.chatbot_data.differences = res.index_diffs;;
     }
+
     this.renderChart(container, input);
   }
   filterKpis(rawData: Record<string, any>): Record<string, { level: number, confidence: number }> {
@@ -264,34 +265,70 @@ export class ConfrontoScenariComponent {
 
   }
 
-
-  private buildScenarioSummary(kpis: KPIs | undefined, widgets: Record<string, Widget[]>): string {
-    let summary = "Main indexes:\n";
-
-    if (kpis) {
-      for (const key of Object.keys(kpis)) {
-        const val = kpis[key];
-        summary += ` - ${key}: level ${val.level}, confidence ${val.confidence}\n`;
+  buildChatbotContext(): ConfrontoScenariContext {
+    return {
+      scenarios: {
+        left: {
+          id: this.selectedScenario1Id,
+          name: this.getScenarioName(this.selectedScenario1Id) ?? 'Scenario 1',
+          color: this.scenario1Color,
+          kpis: this.kpisLeft ?? {},
+          widgets: Object.values(this.widgetsLeft).flat() ?? [],
+          charts: this.plotInputLeft
+            ? this.plotService.extractChartSummaries(
+                this.plotInputLeft,
+                'left',
+                {
+                  monoDimensionale: this.monoDimensionale,
+                  sottosistemaSelezionato: this.sottosistemaSelezionato
+                }
+              )
+            : []
+        },
+        right: {
+          id: this.selectedScenario2Id,
+          name: this.getScenarioName(this.selectedScenario2Id) ?? 'Scenario 2',
+          color: this.scenario2Color,
+          kpis: this.kpisRight ?? {},
+          widgets: Object.values(this.widgetsRight).flat() ?? [],
+          charts: this.plotInputRight
+            ? this.plotService.extractChartSummaries(
+                this.plotInputRight,
+                'right',
+                {
+                  monoDimensionale: this.monoDimensionale,
+                  sottosistemaSelezionato: this.sottosistemaSelezionato
+                }
+              )
+            : []
+        }
+      },
+      comparisons: {
+        widgetDiffs: this.getWidgetDiffs(this.widgetsLeft, this.widgetsRight).map(d => ({
+          index_id: d.index_id,
+          index_name: d.index_name,
+          left: d.value,
+          right: d.otherValue
+        }))
+      },
+      uiState: {
+        monoDimensionale: this.monoDimensionale,
+        sottosistemaSelezionato: this.sottosistemaSelezionato,
+        showAllSubsystems: this.showAllSubsystems
       }
-    }
-
-    summary += "\nOther indexes:\n";
-
-    for (const group of Object.values(widgets)) {
-      for (const widget of group) {
-        summary += ` - ${widget.index_name}: ${widget.v ?? widget.loc ?? ''}\n`;
-      }
-    }
-
-    return summary;
+    };
   }
 
   openChatbot() {
-    console.log(this.chatbot_data)
-    this.dialog.open(ChatbotDialogComponent, {
+    if (!this.plotInputLeft || !this.plotInputRight) {
+      alert('Please wait until both scenarios are fully loaded.');
+      return;
+    }
+
+  this.dialog.open(ChatbotDialogComponent, {
       width: '400px',
       height: '600px',
-      data: this.chatbot_data
+      data: this.buildChatbotContext()
     });
   }
 

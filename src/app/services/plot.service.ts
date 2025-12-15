@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { PlotInput, Curve, Point } from '../models/plot.model';
+import { ChartSummary, ChartSeriesSummary } from '../models/chart-summary.model';
 import Plotly from 'plotly.js-dist-min';
 import { DEFAULT_LAYOUT, PLOT_COLORS, RISK_COLOR_SCALE } from '../components/plot/plot.config';
 import { DataFact } from '../models/data-fact.model';
@@ -379,5 +380,63 @@ export class PlotService {
     };
   }
 
+
+  /**
+   * Extract structured summaries from PlotInput for chatbot
+   */
+    extractChartSummaries(
+    input: PlotInput,
+    scenario: 'left' | 'right',
+    uiState: { monoDimensionale: boolean; sottosistemaSelezionato: string }
+  ): ChartSummary[] {
+
+    if (!input.curves || input.curves.length === 0) return [];
+
+    // Group curves by subsystem if needed
+    // Here we simply filter by selected subsystem or keep all
+    const curves = uiState.sottosistemaSelezionato === 'default'
+      ? input.curves
+      : input.curves.filter(c => c.name.includes(uiState.sottosistemaSelezionato));
+
+    // Optionally: group by function/subsystem
+    // For simplicity, one ChartSummary per curve
+    return curves.map<ChartSummary>(curve => {
+      const x = curve.x;
+      const y = curve.y;
+
+      if (!y || y.length === 0) return {
+        title: curve.name,
+        subsystem: uiState.sottosistemaSelezionato,
+        dimension: uiState.monoDimensionale ? 'mono' : 'bi',
+        series: []
+      };
+
+      const min = Math.min(...y);
+      const max = Math.max(...y);
+      const avg = y.reduce((a, b) => a + b, 0) / y.length;
+
+      // Determine trend: compare first vs last point
+      let trend: 'increasing' | 'decreasing' | 'stable' = 'stable';
+      const delta = y[y.length - 1] - y[0];
+      if (delta > 1e-5) trend = 'increasing';
+      else if (delta < -1e-5) trend = 'decreasing';
+
+      const seriesSummary: ChartSeriesSummary = {
+        scenario,
+        name: curve.name,
+        min: +min.toFixed(2),
+        max: +max.toFixed(2),
+        avg: +avg.toFixed(2),
+        trend
+      };
+
+      return {
+        title: curve.name,
+        subsystem: uiState.sottosistemaSelezionato,
+        dimension: uiState.monoDimensionale ? 'mono' : 'bi',
+        series: [seriesSummary]
+      };
+    });
+  }
 
 }
