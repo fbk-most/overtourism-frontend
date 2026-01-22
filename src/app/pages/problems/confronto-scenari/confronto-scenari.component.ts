@@ -12,6 +12,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ChatbotDialogComponent } from '../../../components/chatbot-dialog/chatbot-dialog.component';
 import { ConfrontoScenariContext } from '../../../models/confronto-scenari-context.model';
+import { ChatbotComponent } from '../../../components/chatbot/chatbot.component';
 
 @Component({
   selector: 'app-confronto-scenari',

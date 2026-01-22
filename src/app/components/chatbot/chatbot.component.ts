@@ -20,9 +20,9 @@ interface ChatMessage {
 export class ChatbotComponent implements OnInit {
 
   // 🔹 Context injected by the page
-  @Input() scenarioId!: string;
+  @Input() scenarioId1!: string;
+  @Input() scenarioId2!: string;
   @Input() problemId!: string;
-  @Input() proposalId!: string;
 
   // 🔹 UI state
   isOpen = false;
@@ -36,6 +36,12 @@ export class ChatbotComponent implements OnInit {
 
   ngOnInit(): void {
     this.sessionId = this.getSessionIdFromStorage();
+
+    // Add initial bot message
+    this.messages.push({
+      sender: 'bot',
+      text: 'Hi! How can I help you?'
+    });
   }
 
   private getSessionIdFromStorage(): string {
@@ -74,11 +80,11 @@ export class ChatbotComponent implements OnInit {
 
     // Debug bot reply
     const botReply = [
-      `scenarioId: ${this.scenarioId}`,
       `problemId: ${this.problemId}`,
-      `proposalId: ${this.proposalId}`,
-      `sessionId: ${this.sessionId}`
-    ].join('\n');
+      `sessionId: ${this.sessionId}`,
+      this.scenarioId1 ? `scenarioId1: ${this.scenarioId1}` : null,
+      this.scenarioId2 ? `scenarioId2: ${this.scenarioId2}` : null
+    ].filter(Boolean).join('\n');
 
     this.messages.push({
       sender: 'bot',
