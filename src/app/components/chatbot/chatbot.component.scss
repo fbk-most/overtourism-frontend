@@ -19,8 +19,8 @@
   position: fixed;
   bottom: 96px;
   right: 24px;
-  width: 320px;
-  height: 420px;
+  width: 450px;
+  height: 600px;
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);
@@ -35,30 +35,104 @@
   color: white;
   display: flex;
   justify-content: space-between;
+  font-weight: bold;
 }
 
 .chatbot-messages {
   flex: 1;
   padding: 8px;
   overflow-y: auto;
-  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 16px;
+}
+
+.chatbot-messages .user,
+.chatbot-messages .bot {
+  display: flex;
 }
 
 .chatbot-messages .user {
-  text-align: right;
-  margin-bottom: 8px;
+  justify-content: flex-end;
 }
 
 .chatbot-messages .bot {
-  text-align: left;
-  margin-bottom: 8px;
+  justify-content: flex-start;
+}
+
+.message-text {
+  max-width: 75%;             // limit bubble width
+  word-wrap: break-word;       // wrap long text
+  overflow-wrap: anywhere;
+  padding: 6px 10px;
+  border-radius: 8px;
+  line-height: 1.4;
+}
+
+.chatbot-messages .user .message-text {
+  background: #DCF8C6;
+  color: #000;
+  border-top-right-radius: 0;
+}
+
+.chatbot-messages .bot .message-text {
   background: #f1f3f5;
-  padding: 6px;
-  border-radius: 4px;
+  color: #000;
+  border-top-left-radius: 0;
 }
 
 .chatbot-input {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   padding: 8px;
+  border-top: 1px solid #ccc;
+}
+
+.chatbot-input input {
+  flex: 1;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+.chatbot-input button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  background-color: #0d6efd;
+  color: white;
+  cursor: pointer;
+}
+
+.chatbot-messages .typing .message-text {
+  display: flex;
+  gap: 4px;
+  background: #f1f3f5;
+  padding: 6px 10px;
+  border-radius: 8px;
+  max-width: 75%;
+}
+
+.chatbot-messages .typing .message-text span {
+  width: 6px;
+  height: 6px;
+  background: #555;
+  border-radius: 50%;
+  display: inline-block;
+  animation: bounce 1.2s infinite ease-in-out;
+}
+
+.chatbot-messages .typing .message-text span:nth-child(1) { animation-delay: 0s; }
+.chatbot-messages .typing .message-text span:nth-child(2) { animation-delay: 0.2s; }
+.chatbot-messages .typing .message-text span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
 }

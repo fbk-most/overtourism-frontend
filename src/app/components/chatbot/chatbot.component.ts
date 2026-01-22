@@ -1,11 +1,8 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { environment } from '../../../environments/environment';
+import { Component, Input, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-interface ChatMessage {
-  sender: 'user' | 'bot';
-  text: string;
-}
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-chatbot',
@@ -19,6 +16,8 @@ interface ChatMessage {
 })
 export class ChatbotComponent implements OnInit {
 
+  private http = inject(HttpClient);
+
   // 🔹 Context injected by the page
   @Input() scenarioId1!: string;
   @Input() scenarioId2!: string;
@@ -26,10 +25,11 @@ export class ChatbotComponent implements OnInit {
 
   // 🔹 UI state
   isOpen = false;
+  isTyping = false;
   inputText = '';
 
   // 🔹 Chat state
-  messages: ChatMessage[] = [];
+  messages: { sender: 'user' | 'bot'; text: string }[] = [];
 
   // 🔹 Session identifier (one per page load)
   sessionId!: string;
@@ -45,52 +45,53 @@ export class ChatbotComponent implements OnInit {
   }
 
   private getSessionIdFromStorage(): string {
-    const key = 'session_info';
-    const stored = localStorage.getItem(key);
-    const fallbackId = "";
+    const stored = localStorage.getItem('session_info');
+    if (!stored) return '';
 
-    if (stored) {
-      try {
-        const { sessionId, timestamp } = JSON.parse(stored);
-        const expired = Date.now() - timestamp > 7 * 24 * 60 * 60 * 1000; // 7 days
-        if (!expired) return sessionId;
-      } catch {
-        return fallbackId;
-      }
-    }
-
-    return fallbackId;
+    try {
+      const { sessionId, timestamp } = JSON.parse(stored);
+      const expired = Date.now() - timestamp > 7 * 24 * 60 * 60 * 1000;
+      if (!expired) return sessionId;
+    } catch {}
+    return '';
   }
 
   toggle(): void {
     this.isOpen = !this.isOpen;
   }
 
+
   send(): void {
-    const text = this.inputText.trim();
-    if (!text) {
-      return;
+  const text = this.inputText.trim();
+  if (!text) return;
+
+  // User message
+  this.messages.push({ sender: 'user', text });
+
+  // Show typing indicator
+  this.isTyping = true;
+
+  const payload = {
+    message: text,
+    problem_id: this.problemId || null,
+    scenario_ids: [this.scenarioId1, this.scenarioId2].filter(Boolean),
+    session_id: this.sessionId || null
+  };
+
+  const url = `${environment.apiBaseUrl}/llm/chat`;
+
+  this.http.post<{ reply: string }>(url, payload).subscribe({
+    next: (res: { reply: string }) => {
+      this.isTyping = false;
+      this.messages.push({ sender: 'bot', text: res.reply });
+    },
+    error: (err: any) => {
+      this.isTyping = false;
+      console.error('Chat API error', err);
+      this.messages.push({ sender: 'bot', text: 'Sorry, something went wrong.' });
     }
+  });
 
-    // User message
-    this.messages.push({
-      sender: 'user',
-      text
-    });
-
-    // Debug bot reply
-    const botReply = [
-      `problemId: ${this.problemId}`,
-      `sessionId: ${this.sessionId}`,
-      this.scenarioId1 ? `scenarioId1: ${this.scenarioId1}` : null,
-      this.scenarioId2 ? `scenarioId2: ${this.scenarioId2}` : null
-    ].filter(Boolean).join('\n');
-
-    this.messages.push({
-      sender: 'bot',
-      text: botReply
-    });
-
-    this.inputText = '';
-  }
+  this.inputText = '';
+}
 }

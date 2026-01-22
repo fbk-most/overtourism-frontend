@@ -16,7 +16,15 @@
       [class.user]="msg.sender === 'user'"
       [class.bot]="msg.sender === 'bot'"
     >
-      <pre>{{ msg.text }}</pre>
+      <!-- Remove <pre> and just use a div for wrapping -->
+      <div class="message-text">{{ msg.text }}</div>
+    </div>
+
+    <!-- Typing indicator -->
+    <div *ngIf="isTyping" class="bot typing">
+      <div class="message-text">
+        <span></span><span></span><span></span>
+      </div>
     </div>
   </div>
 
@@ -25,8 +33,8 @@
       type="text"
       [(ngModel)]="inputText"
       (keydown.enter)="send()"
-      placeholder="Scrivi una domanda..."
+      placeholder="Type your message here.."
     />
-    <button itButton="primary" (click)="send()">Invia</button>
+    <button itButton="primary" (click)="send()">Send</button>
   </div>
 </div>
