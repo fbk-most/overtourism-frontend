@@ -37,9 +37,9 @@ export class OvertourismMapComponent implements OnChanges, AfterViewInit {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if ((changes['data'] && this.data?.length) || 
-        (changes['geojson'] && this.geojson) || 
-        changes['selectedKpi']) {
+    if ((changes['data'] && this.data?.length) ||
+      (changes['geojson'] && this.geojson) ||
+      changes['selectedKpi']) {
       if (this.active) {
         this.setupAnni();
         this.tryDrawMap();
@@ -66,7 +66,7 @@ export class OvertourismMapComponent implements OnChanges, AfterViewInit {
     const words = label.split(' ');
     let line = '';
     const lines: string[] = [];
-  
+
     for (const word of words) {
       if ((line + word).length > maxLength) {
         lines.push(line.trim());
@@ -75,59 +75,65 @@ export class OvertourismMapComponent implements OnChanges, AfterViewInit {
         line += word + ' ';
       }
     }
-  
+
     if (line) lines.push(line.trim());
     return lines.join('<br>');
   }
 
-  
+
   drawMap() {
     if (!this.data?.length || !this.geojson || !this.selectedKpi || this.selectedAnno === null) return;
     if (!this.mapEl?.nativeElement) return;
-  
+
     const datiAnno = this.data.filter(d => d.anno === this.selectedAnno);
-  
+
     const comuni: string[] = [];
     const valori: number[] = [];
     const hoverTexts: string[] = [];
-  
+
     this.geojson.features.forEach((feature: any) => {
-      const featureId = this.featureIdKey 
-        ? feature.properties[this.featureIdKey.split('.').pop()!] 
+      const featureId = this.featureIdKey
+        ? feature.properties[this.featureIdKey.split('.').pop()!]
         : null;
-      const datoComune = datiAnno.find(d => d[this.locationsCol!] === featureId);
-      
+      const datoComune = datiAnno.find(d => {
+        const colVal = d[this.locationsCol!];
+        if (colVal === undefined || colVal === null) return false;
+        if (Array.isArray(colVal)) {
+          return colVal.some(v => String(v) === String(featureId));
+        }
+        return String(colVal) === String(featureId);
+      });
       comuni.push(featureId);
       const valore = datoComune ? datoComune[this.selectedKpi!] : NaN;
       valori.push(valore);
-  
+
       if (datoComune && this.hoverTemplateBuilder) {
         hoverTexts.push(this.hoverTemplateBuilder(datoComune));
       } else {
         hoverTexts.push(`${featureId}<br>${this.selectedKpi}: ${valore}`);
       }
     });
-  
+
     // 🎨 Scala discreta se abbiamo kpiTicks, altrimenti Viridis continua
     let colorscale: [number, string][] | string = 'Viridis';
     let zmin: number | undefined;
     let zmax: number | undefined;
     let tickvals: number[] | undefined;
     let ticktext: string[] | undefined;
-  
+
     if (this.kpiTicks && this.kpiTicks[0].length > 1) {
       const [vals, labels] = this.kpiTicks;
       tickvals = vals;
       ticktext = labels;
       zmin = vals[0];
       zmax = vals[vals.length - 1];
-  
+
       // 🎨 Campiona Viridis in blocchi discreti
       const viridisColors = [
         '#440154', '#482878', '#3E4989', '#31688E', '#26828E',
         '#1F9E89', '#35B779', '#6CCE59', '#B4DE2C', '#FDE725'
       ];
-  
+
       const colorscaleSteps: [number, string][] = [];
       for (let i = 0; i < vals.length - 1; i++) {
         const relStart = (vals[i] - zmin) / (zmax - zmin);
@@ -136,10 +142,10 @@ export class OvertourismMapComponent implements OnChanges, AfterViewInit {
         colorscaleSteps.push([relStart, color]);
         colorscaleSteps.push([relEnd, color]);
       }
-  
+
       colorscale = colorscaleSteps;
     }
-  
+
     const trace: ChoroplethMapboxTrace = {
       type: 'choroplethmapbox',
       geojson: this.geojson,
@@ -169,7 +175,7 @@ export class OvertourismMapComponent implements OnChanges, AfterViewInit {
         ticktext,
       },
     };
-  
+
     const layout: Partial<Plotly.Layout> = {
       mapbox: {
         style: 'carto-positron',
@@ -179,10 +185,10 @@ export class OvertourismMapComponent implements OnChanges, AfterViewInit {
       margin: { t: 0, b: 0, l: 0, r: 0 },
       showlegend: true,
     };
-  
+
     Plotly.react(this.mapEl.nativeElement, [trace], layout, { responsive: true });
   }
-  
-  
-  
+
+
+
 }
