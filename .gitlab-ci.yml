@@ -46,9 +46,7 @@ frontend-container-build:
     - docker push $CONTAINER_IMAGE
     - docker push $CONTAINER_IMAGE_LATEST
   only:
-    - dev
-    - prod
-    - main
+    - demo
 
 container_scanning:
   stage: test
@@ -69,10 +67,10 @@ deploy-prod:
     name: smartcommunitylab/k8s-ansible-clusterctl:1.33.3-1.10.3
     entrypoint: ['']
   environment:
-    name: digitalhub-test
+    name: dslab
   script:
     - echo "deploy frontend"
-    - kubectl -n aixpa-overtourism-demo set image deployments/aixpa-overtourism-demo-frontend aixpa-overtourism-demo-frontend=$CONTAINER_IMAGE --record=true
-    - kubectl -n aixpa-overtourism-demo rollout status deployment aixpa-overtourism-demo-frontend
+    - kubectl -n overtourism set image deployments/overtourism-frontend overtourism-frontend=$CONTAINER_IMAGE --record=true
+    - kubectl -n overtourism rollout status deployment overtourism-frontend
   only:
-    - main
+    - demo
