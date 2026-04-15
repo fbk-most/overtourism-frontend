@@ -16,8 +16,9 @@
       [class.user]="msg.sender === 'user'"
       [class.bot]="msg.sender === 'bot'"
     >
-      <!-- Remove <pre> and just use a div for wrapping -->
-      <div class="message-text">{{ msg.text }}</div>
+      <!-- Plain text for user, rendered markdown for bot -->
+      <div class="message-text" *ngIf="msg.sender === 'user'">{{ msg.text }}</div>
+      <div class="message-text markdown-body" *ngIf="msg.sender === 'bot'" [innerHTML]="msg.html"></div>
     </div>
 
     <!-- Typing indicator -->
@@ -25,6 +26,7 @@
       <div class="message-text">
         <span></span><span></span><span></span>
       </div>
+      <div class="status-text" *ngIf="statusMessage">{{ statusMessage }}</div>
     </div>
   </div>
 

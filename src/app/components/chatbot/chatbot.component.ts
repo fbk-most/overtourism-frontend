@@ -1,20 +1,24 @@
-import { environment } from '../../../environments/environment';
-import { Component, Input, OnInit, inject } from '@angular/core';
+// import { environment } from '../../../environments/environment';
+import { Component, Input, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { marked } from 'marked';
+
+interface Message {
+  sender: 'user' | 'bot';
+  text: string;
+  html?: string;
+}
 
 @Component({
   selector: 'app-chatbot',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule
-  ],
+  imports: [CommonModule, FormsModule],
   templateUrl: './chatbot.component.html',
   styleUrls: ['./chatbot.component.scss']
 })
-export class ChatbotComponent implements OnInit {
+export class ChatbotComponent implements OnInit, OnDestroy {
 
   private http = inject(HttpClient);
 
@@ -27,71 +31,138 @@ export class ChatbotComponent implements OnInit {
   isOpen = false;
   isTyping = false;
   inputText = '';
+  statusMessage = '';
 
   // 🔹 Chat state
-  messages: { sender: 'user' | 'bot'; text: string }[] = [];
+  messages: Message[] = [];
 
-  // 🔹 Session identifier (one per page load)
+  // 🔹 Session identifier
   sessionId!: string;
 
-  ngOnInit(): void {
-    this.sessionId = this.getSessionIdFromStorage();
+  // 🔹 Language selection
+  language = 'Italian';
 
-    // Add initial bot message
+  private readonly API_URL = 'http://localhost:9000/agent';
+  private eventSource: EventSource | null = null;
+
+  // No external library needed
+  private parseMarkdown(text: string): string {
+    const result = marked.parse(text) as string;
+    console.log('Parsed markdown:', result); // should show <strong>, <ul> etc.
+    return result;
+  }
+
+  ngOnInit(): void {
+    this.sessionId = this.generateSessionId();
+
     this.messages.push({
       sender: 'bot',
-      text: 'Hi! How can I help you?'
+      text: 'Ciao! Come posso aiutarti?',
+      html: 'Ciao! Come posso aiutarti?'
     });
   }
 
-  private getSessionIdFromStorage(): string {
-    const stored = localStorage.getItem('session_info');
-    if (!stored) return '';
+  ngOnDestroy(): void {
+    this.closeEventSource();
+  }
 
-    try {
-      const { sessionId, timestamp } = JSON.parse(stored);
-      const expired = Date.now() - timestamp > 7 * 24 * 60 * 60 * 1000;
-      if (!expired) return sessionId;
-    } catch {}
-    return '';
+  private generateSessionId(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  private closeEventSource(): void {
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+    }
   }
 
   toggle(): void {
     this.isOpen = !this.isOpen;
   }
 
-
   send(): void {
-  const text = this.inputText.trim();
-  if (!text) return;
+    const text = this.inputText.trim();
+    if (!text || this.isTyping) return;
 
-  // User message
-  this.messages.push({ sender: 'user', text });
+    this.messages.push({ sender: 'user', text });
+    this.inputText = '';
+    this.isTyping = true;
+    this.statusMessage = '';
 
-  // Show typing indicator
-  this.isTyping = true;
+    this.closeEventSource();
+    this.eventSource = new EventSource(`${this.API_URL}/stream/${this.sessionId}`);
 
-  const payload = {
-    message: text,
-    problem_id: this.problemId || null,
-    scenario_ids: [this.scenarioId1, this.scenarioId2].filter(Boolean),
-    session_id: this.sessionId || null
-  };
+    this.eventSource.addEventListener('status', (e: MessageEvent) => {
+      this.statusMessage = e.data;
+    });
 
-  const url = `${environment.apiBaseUrl}/llm/chat`;
+    this.eventSource.addEventListener('done', async () => {
+      this.closeEventSource();
 
-  this.http.post<{ reply: string }>(url, payload).subscribe({
-    next: (res: { reply: string }) => {
+      try {
+        const data = await fetch(`${this.API_URL}/result/${this.sessionId}`)
+          .then(res => res.json());
+
+        if (data.session_id) {
+          this.sessionId = data.session_id;
+        }
+
+        const responseText = data.response ?? 'No response received.';
+
+        // parseMarkdown is called here when the bot response arrives
+        this.messages.push({
+          sender: 'bot',
+          text: responseText,
+          html: this.parseMarkdown(responseText)
+        });
+
+      } catch (err) {
+        console.error('Error fetching result:', err);
+        this.messages.push({
+          sender: 'bot',
+          text: 'Error fetching result.',
+          html: 'Error fetching result.'
+        });
+      }
+
       this.isTyping = false;
-      this.messages.push({ sender: 'bot', text: res.reply });
-    },
-    error: (err: any) => {
-      this.isTyping = false;
-      console.error('Chat API error', err);
-      this.messages.push({ sender: 'bot', text: 'Sorry, something went wrong.' });
-    }
-  });
+      this.statusMessage = '';
+    });
 
-  this.inputText = '';
-}
+    this.eventSource.onerror = () => {
+      this.closeEventSource();
+      this.messages.push({
+        sender: 'bot',
+        text: 'Connection error. Please try again.',
+        html: 'Connection error. Please try again.'
+      });
+      this.isTyping = false;
+      this.statusMessage = '';
+    };
+
+    const formData = new FormData();
+    formData.append('message', text);
+    formData.append('session_id', this.sessionId);
+    formData.append('user_lang', this.language);
+
+    this.http.post(this.API_URL, formData).subscribe({
+      error: (err) => {
+        console.error('Chat API error:', err);
+        this.closeEventSource();
+        this.messages.push({
+          sender: 'bot',
+          text: 'Sorry, something went wrong.',
+          html: 'Sorry, something went wrong.'
+        });
+        this.isTyping = false;
+        this.statusMessage = '';
+      }
+    });
+  }
 }
