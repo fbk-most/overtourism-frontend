@@ -151,6 +151,14 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     formData.append('session_id', this.sessionId);
     formData.append('user_lang', this.language);
 
+    const validScenarioIds = [this.scenarioId1, this.scenarioId2].filter(
+      id => typeof id === 'string' && id.trim().length > 0
+    );
+    if (validScenarioIds.length > 0) {
+      formData.append('integrated_mode', 'true');
+      validScenarioIds.forEach(id => formData.append('context', id));
+    }
+
     this.http.post(this.API_URL, formData).subscribe({
       error: (err) => {
         console.error('Chat API error:', err);
