@@ -21,6 +21,7 @@
     "@angular/router": "^19.2.0",
     "@ngx-translate/core": "^16.0.4",
     "@ngx-translate/http-loader": "^16.0.1",
+    "angular-oauth2-oidc": "^20.0.2",
     "bootstrap-icons": "^1.13.1",
     "bootstrap-italia": "^2.14.0",
     "design-angular-kit": "^19.0.0",

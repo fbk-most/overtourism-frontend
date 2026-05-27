@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthenticationService } from '../../services/authentication.service';
 
 @Component({
   selector: 'app-header',
@@ -9,7 +10,8 @@ import { Router } from '@angular/router';
 })
 export class AppHeaderComponent {
   darkMode = false;
-constructor(public router: Router) {
+constructor(public router: Router,    public authService: AuthenticationService 
+) {
 }
   toggleTheme() {
     this.darkMode = !this.darkMode;
@@ -23,7 +25,9 @@ constructor(public router: Router) {
     { label: 'Ridistribuzione dei turisti', route: '/redistribution' },
     { label: 'Turismo Sommerso', route: '/hidden' },
   ];
-
+  doLogout() {
+    this.authService.logout();
+  }
   isActive(link: any): boolean {
     if (link.route === '/problems') {
       return this.router.url.startsWith('/problems');

@@ -19,22 +19,28 @@ import { RedistributionComponent } from './pages/overtourism/redistribution/redi
 import { OvertourismComponent } from './pages/overtourism/overtourism/overtourism.component';
 
 import { UnsavedChangesGuard } from './guards/plot-unsaved-changes.guard';
+import { LoginComponent } from './pages/login/login.component';
+import { AuthGuard } from './guards/auth.guard';
 
 const routes: Routes = [
-  { path: '', redirectTo: 'problems', pathMatch: 'full' },
+  { path: 'login', component: LoginComponent },
+
 
   {
     path: 'problems',
     data: { breadcrumb: 'Analisi' },
+    canActivate: [AuthGuard] ,
     children: [
       {
         path: '',
-        component: ProblemsComponent
+        component: ProblemsComponent,
+        canActivate: [AuthGuard] 
       },
       {
         path: 'create',
         component: ProblemCreateComponent,
-        data: { breadcrumb: 'Nuova analisi' }
+        data: { breadcrumb: 'Nuova analisi' },
+        canActivate: [AuthGuard] 
       },
       {
         path: ':problemId',
@@ -42,16 +48,19 @@ const routes: Routes = [
         data: { 
           breadcrumb: 'Dettaglio analisi',
           breadcrumbUrl: '/problems/:problemId'
-        }
+        },
+        canActivate: [AuthGuard] 
       },
       {
         path: ':problemId/proposals',
         data: { breadcrumb: 'Proposte', breadcrumbUrl: '/problems/:problemId' },
+        canActivate: [AuthGuard] ,
         children: [
           {
             path: '',
             component: ProposalListPageComponent,
-            data: { breadcrumb: 'Lista proposte', breadcrumbUrl: '/problems/:problemId/proposals' }
+            data: { breadcrumb: 'Lista proposte', breadcrumbUrl: '/problems/:problemId/proposals' },
+            canActivate: [AuthGuard] 
           },
           {
             path: ':proposalId',
@@ -59,7 +68,8 @@ const routes: Routes = [
             data: { 
               breadcrumb: 'Dettaglio proposta',
               breadcrumbUrl: '/problems/:problemId/proposals/:proposalId'
-            }
+            },
+            canActivate: [AuthGuard] 
           },
           {
             path: ':proposalId/scenari',
@@ -67,16 +77,19 @@ const routes: Routes = [
               breadcrumb: 'Scenari',
               breadcrumbUrl: '/problems/:problemId/proposals/:proposalId'
             },
+            canActivate: [AuthGuard] ,
             children: [
               {
                 path: '',
                 component: ScenariComponent,
-                data: { breadcrumb: 'Lista scenari', breadcrumbUrl: '/problems/:problemId/proposals/:proposalId/scenari' }
+                data: { breadcrumb: 'Lista scenari', breadcrumbUrl: '/problems/:problemId/proposals/:proposalId/scenari' },
+                canActivate: [AuthGuard] 
               },
               {
                 path: 'confronta/:id1/:id2',
                 component: ConfrontoScenariComponent,
-                data: { breadcrumb: 'Confronto scenari' }
+                data: { breadcrumb: 'Confronto scenari' },
+                canActivate: [AuthGuard] 
               },
               {
                 path: ':scenarioId',
@@ -85,7 +98,8 @@ const routes: Routes = [
                 data: { 
                   breadcrumb: 'Dettaglio scenario',
                   breadcrumbUrl: '/problems/:problemId/proposals/:proposalId/scenari/:scenarioId'
-                }
+                },
+                canActivate: [AuthGuard] 
               }
             ]
           }
@@ -94,19 +108,23 @@ const routes: Routes = [
       {
         path: 'preferiti',
         component: PreferitiComponent,
-        data: { breadcrumb: 'Preferiti', breadcrumbUrl: '/problems/preferiti' }
-      }
+        data: { breadcrumb: 'Preferiti', breadcrumbUrl: '/problems/preferiti' },
+        canActivate: [AuthGuard] 
+      },
+     
     ]
   }
   ,
 
   // 🔹 Altre sezioni del portale
-  { path: 'capacity', component: CapacityComponent },
-  { path: 'overtourism', component: OvertourismComponent },
-  { path: 'flows', component: FlowsComponent },
-  { path: 'redistribution', component: RedistributionComponent },
-  { path: 'hidden', component: HiddenComponent },
-  { path: 'faqs', component: FaqsComponent, data: { breadcrumb: 'FAQ' } },
+  { path: 'capacity', component: CapacityComponent,canActivate: [AuthGuard]  },
+  { path: 'overtourism', component: OvertourismComponent,canActivate: [AuthGuard]  },
+  { path: 'flows', component: FlowsComponent ,canActivate: [AuthGuard] },
+  { path: 'redistribution', component: RedistributionComponent ,canActivate: [AuthGuard] },
+  { path: 'hidden', component: HiddenComponent ,canActivate: [AuthGuard] },
+  { path: 'faqs', component: FaqsComponent, data: { breadcrumb: 'FAQ' },canActivate: [AuthGuard]  },
+  { path: '', redirectTo: 'problems', pathMatch: 'full' },
+  { path: '**', redirectTo: 'problems' }
 ];
 
 @NgModule({

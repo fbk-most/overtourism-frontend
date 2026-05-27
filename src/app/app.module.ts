@@ -2,6 +2,8 @@ import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { OAuthModule } from 'angular-oauth2-oidc';
+import { environment } from '../environments/environment'; 
 
 // AGID Design
 import { DesignAngularKitModule } from 'design-angular-kit';
@@ -53,6 +55,8 @@ import { OvertourismComponent } from './pages/overtourism/overtourism/overtouris
 import { ProposalDetailPageComponent } from './pages/problems/proposal-detail-page/proposal-detail-page.component';
 import { ProposalListPageComponent } from './pages/problems/proposal-list-page/proposal-list-page.component';
 import { EmptyFieldPipe } from './pipes/empty-field.pipe';
+import { AuthenticationService } from './services/authentication.service';
+import { LoginComponent } from './pages/login/login.component';
 
 
 // Funzione per caricare i file delle traduzioni
@@ -61,6 +65,9 @@ export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
     { prefix: './assets/i18n/design-angular-kit/', suffix: '.json' }, // traduzioni design-angular-kit
     { prefix: './assets/i18n/app/', suffix: '.json' }, // traduzioni  personalizzate
   ]);
+}
+export function initializeAuth(authService: AuthenticationService) {
+  return () => authService.initialLoginSequence();
 }
 // export function initConfig(configService: ConfigService) {
 //   return () => configService.loadConfig();
@@ -73,7 +80,7 @@ export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
     HistogramComparisonComponent, ReadingComponent, ProposalCreateComponent, ProblemDetailComponent, 
     ProposalDetailComponent, ProposalDetailPageComponent,OvertourismComponent, OvertourismChartsComponent, OvertourismMapComponent,
      ToastComponent, AutocompleteComponent, CapacityComponent, FlowsComponent, RedistributionComponent, 
-     HiddenComponent, ProposalListPageComponent, EmptyFieldPipe],
+     HiddenComponent, ProposalListPageComponent, EmptyFieldPipe,LoginComponent],
   imports: [
     BrowserModule,
     AppRoutingModule,
@@ -83,7 +90,12 @@ export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
     FormsModule,
     ReactiveFormsModule,
     NgxSliderModule,
-    HttpClientModule,
+    OAuthModule.forRoot({
+      resourceServer: {
+        allowedUrls: [environment.apiBaseUrl], 
+        sendAccessToken: true
+      }
+    }),    HttpClientModule,
     TranslateModule.forRoot({
       loader: {
         provide: TranslateLoader,
@@ -102,12 +114,12 @@ export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
       }),
     })],
   providers: [
-    // {
-    //   provide: APP_INITIALIZER,
-    //   useFactory: initConfig,
-    //   deps: [ConfigService],
-    //   multi: true
-    // },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeAuth,
+      deps: [AuthenticationService],
+      multi: true
+    },
     {
       provide: HTTP_INTERCEPTORS,
       useClass: SessionInterceptor,

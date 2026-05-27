@@ -16,20 +16,20 @@
   </ng-container>
 
 
-<ng-container navItems>
-  <it-navbar-item *ngFor="let link of links"  >
-    <!-- <a
-      class="nav-link"
-      [ngClass]="{ active: isActive(link)}"
-      [href]="link.route"
-      >{{ link.label }}</a
-    > -->
-    <a
-      class="nav-link"
-      [ngClass]="{ active: isActive(link)}"
-      [routerLink]="link.route"
-      >{{ link.label }}</a
-    >
-  </it-navbar-item>
-</ng-container>
+  <ng-container navItems>
+    <it-navbar-item *ngFor="let link of links">
+      <a class="nav-link" [ngClass]="{ active: isActive(link)}" [routerLink]="link.route">
+        {{ link.label }}
+      </a>
+    </it-navbar-item>
+  
+    <ul class="navbar-nav ms-auto pe-3 align-items-center">
+      <li class="nav-item me-3 text-white">
+        Ciao, {{ authService.userName }}
+      </li>
+      <li class="nav-item">
+        <button class="btn btn-outline-light btn-sm text-white" (click)="doLogout()">Esci</button>
+      </li>
+    </ul>
+  </ng-container>
 </it-header>
