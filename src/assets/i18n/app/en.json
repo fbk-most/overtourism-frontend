@@ -3,6 +3,11 @@
   "header": {
     "title": "Bruno Kessler Foundation"
   },
+  "login": {
+    "title": "Tourism Overload Analysis",
+    "subtitle": "Log in to continue.",
+    "button": "Log in with AAC"
+  },
   "sidebar": {
     "home": "Home",
     "problems": "Problems",

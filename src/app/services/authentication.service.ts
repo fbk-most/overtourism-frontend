@@ -15,6 +15,8 @@ export const authConfig: AuthConfig = {
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
+  private readonly TENANT_KEY = 'active_tenant';
+
   constructor(private oauthService: OAuthService,private router: Router ) {}
 
   public async initialLoginSequence(): Promise<void> {
@@ -52,4 +54,31 @@ export class AuthenticationService {
   logout() {
     this.oauthService.logOut();
   }
+
+get availableTenants(): string[] {
+  const claims: any = this.oauthService.getIdentityClaims();
+  return claims?.['tenant_id'] || ['default'];
+}
+
+get activeTenant(): string {
+  let tenant = localStorage.getItem(this.TENANT_KEY);
+  if (!tenant || !this.availableTenants.includes(tenant)) {
+    tenant = this.availableTenants.length > 0 ? this.availableTenants[0] : 'default';
+    this.setActiveTenant(tenant, false);
+  }
+  return tenant;
+}
+
+setActiveTenant(tenant: string, reload: boolean = true) {
+  localStorage.setItem(this.TENANT_KEY, tenant);
+  
+  if (reload) {
+    this.router.routeReuseStrategy.shouldReuseRoute = () => false;
+    this.router.onSameUrlNavigation = 'reload';
+        this.router.navigate([this.router.url]).then(() => {
+      // Opzionale: rimettiamolo a true se avevi logiche particolari, 
+      // ma di solito lasciarlo resettato qui va benissimo per app di questo tipo.
+    });
+  }
+}
 }

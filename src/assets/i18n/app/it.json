@@ -3,6 +3,11 @@
   "header": {
     "title": "Fondazione Bruno Kessler"
   },
+  "login": {
+    "title": "Analisi dell'affollamento turistico",
+    "subtitle": "Effettua l'accesso per continuare.",
+    "button": "Accedi con AAC"
+  },
   "sidebar": {
     "home": "Home",
     "problems": "Problems",

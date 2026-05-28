@@ -34,4 +34,15 @@ constructor(public router: Router,    public authService: AuthenticationService
     }
     return this.router.url === link.route;
   }
+  get tenants() {
+    return this.authService.availableTenants;
+  }
+
+  get currentTenant() {
+    return this.authService.activeTenant;
+  }
+
+  onTenantChange(selectedTenant: string) {
+    this.authService.setActiveTenant(selectedTenant);
+  }
 }

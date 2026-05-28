@@ -3,7 +3,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { OAuthModule } from 'angular-oauth2-oidc';
-import { environment } from '../environments/environment'; 
+import { environment } from '../environments/environment';
 
 // AGID Design
 import { DesignAngularKitModule } from 'design-angular-kit';
@@ -57,6 +57,7 @@ import { ProposalListPageComponent } from './pages/problems/proposal-list-page/p
 import { EmptyFieldPipe } from './pipes/empty-field.pipe';
 import { AuthenticationService } from './services/authentication.service';
 import { LoginComponent } from './pages/login/login.component';
+import { TenantInterceptor } from './interceptors/tenant.interceptor';
 
 
 // Funzione per caricare i file delle traduzioni
@@ -77,10 +78,10 @@ export function initializeAuth(authService: AuthenticationService) {
     FaqsComponent, TermsComponent, SettingsComponent, ScenarioDetailComponent, PlotComponent,
     KpiBoxComponent, PlotControlsComponent, AppPlotEditorWidgetComponent, BreadcrumbsComponent,
     ConfrontoScenariComponent, BackButtonComponent, KpiComparisonComponent, ProblemCreateComponent,
-    HistogramComparisonComponent, ReadingComponent, ProposalCreateComponent, ProblemDetailComponent, 
-    ProposalDetailComponent, ProposalDetailPageComponent,OvertourismComponent, OvertourismChartsComponent, OvertourismMapComponent,
-     ToastComponent, AutocompleteComponent, CapacityComponent, FlowsComponent, RedistributionComponent, 
-     HiddenComponent, ProposalListPageComponent, EmptyFieldPipe,LoginComponent],
+    HistogramComparisonComponent, ReadingComponent, ProposalCreateComponent, ProblemDetailComponent,
+    ProposalDetailComponent, ProposalDetailPageComponent, OvertourismComponent, OvertourismChartsComponent, OvertourismMapComponent,
+    ToastComponent, AutocompleteComponent, CapacityComponent, FlowsComponent, RedistributionComponent,
+    HiddenComponent, ProposalListPageComponent, EmptyFieldPipe, LoginComponent],
   imports: [
     BrowserModule,
     AppRoutingModule,
@@ -92,10 +93,10 @@ export function initializeAuth(authService: AuthenticationService) {
     NgxSliderModule,
     OAuthModule.forRoot({
       resourceServer: {
-        allowedUrls: [environment.apiBaseUrl], 
+        allowedUrls: [environment.apiBaseUrl],
         sendAccessToken: true
       }
-    }),    HttpClientModule,
+    }), HttpClientModule,
     TranslateModule.forRoot({
       loader: {
         provide: TranslateLoader,
@@ -129,7 +130,11 @@ export function initializeAuth(authService: AuthenticationService) {
       provide: HTTP_INTERCEPTORS,
       useClass: HttpErrorInterceptor,
       multi: true
-    }
+    },
+    { provide: HTTP_INTERCEPTORS,
+       useClass: TenantInterceptor,
+        multi: true }
+
   ],
   bootstrap: [AppComponent],
 })

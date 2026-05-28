@@ -1,8 +1,12 @@
-<div class="d-flex justify-content-center align-items-center vh-100">
-    <div class="text-center p-5 shadow bg-white rounded">
-      <img src="assets/images/logo.png" alt="Logo" class="mb-4" style="height: 60px;" />
-      <h3 class="mb-3">Analisi dell'affollamento turistico</h3>
-      <p class="mb-4 text-muted">Devi effettuare l'accesso per continuare.</p>
-      <button class="btn btn-primary btn-lg" (click)="login()">Accedi con AAC</button>
-    </div>
+<div class="d-flex justify-content-center align-items-center vh-100 login-bg">
+  <div class="text-center p-5 shadow-lg bg-primary text-white login-card">
+    <img src="assets/images/logo.png" alt="Logo" class="mb-4" style="height: 70px;" />
+    
+    <h3 class="mb-3">{{ 'login.title' | translate }}</h3>
+    <p class="mb-4 text-light">{{ 'login.subtitle' | translate }}</p>
+    
+    <button class="btn btn-light btn-lg w-100 mt-2" (click)="login()">
+      {{ 'login.button' | translate }}
+    </button>
   </div>
+</div>

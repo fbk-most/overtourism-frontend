@@ -5,6 +5,36 @@
   [sticky]="true"
   [expand]="true"
 >
+<ng-container slimRightZone>
+  <div class="d-flex align-items-center me-3 mt-1">
+    
+    <!-- Menu a tendina per il Tenant -->
+    <div class="dropdown me-3">
+      <button class="btn btn-outline-light btn-sm d-flex justify-content-between align-items-center dropdown-toggle" 
+              type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.75rem;">
+        <span class="me-2 text-uppercase">{{ currentTenant || 'Seleziona Tenant' }}</span>
+      </button>
+      <div class="dropdown-menu">
+        <div class="link-list-wrapper">
+          <ul class="link-list">
+            <li *ngFor="let t of tenants">
+              <a class="list-item" style="cursor: pointer;" (click)="onTenantChange(t)">
+                <span class="text-uppercase">{{ t }}</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <span class="text-white small me-3">
+      Ciao, <strong>{{ authService.userName }}</strong>
+    </span>
+    <button class="btn btn-outline-light btn-sm px-2 py-1" style="font-size: 0.75rem;" (click)="doLogout()">
+      Esci
+    </button>
+  </div>
+</ng-container>
   <ng-container brand>
     <a href="#" class="d-flex align-items-center">
       <img src="assets/images/logo.png" alt="IAxPA Logo" class="responsive-logo me-2" />
@@ -22,14 +52,6 @@
         {{ link.label }}
       </a>
     </it-navbar-item>
-  
-    <ul class="navbar-nav ms-auto pe-3 align-items-center">
-      <li class="nav-item me-3 text-white">
-        Ciao, {{ authService.userName }}
-      </li>
-      <li class="nav-item">
-        <button class="btn btn-outline-light btn-sm text-white" (click)="doLogout()">Esci</button>
-      </li>
-    </ul>
+
   </ng-container>
 </it-header>
