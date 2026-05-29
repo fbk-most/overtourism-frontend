@@ -75,9 +75,8 @@ setActiveTenant(tenant: string, reload: boolean = true) {
   if (reload) {
     this.router.routeReuseStrategy.shouldReuseRoute = () => false;
     this.router.onSameUrlNavigation = 'reload';
-        this.router.navigate([this.router.url]).then(() => {
-      // Opzionale: rimettiamolo a true se avevi logiche particolari, 
-      // ma di solito lasciarlo resettato qui va benissimo per app di questo tipo.
+    this.router.navigate([this.router.url]).then(() => {
+      console.log("relaoded data for tenant change");
     });
   }
 }
