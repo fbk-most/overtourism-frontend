@@ -6,33 +6,41 @@
   [expand]="true"
 >
 <ng-container slimRightZone>
-  <div class="d-flex align-items-center me-3 mt-1">
+  <div class="d-flex align-items-center mt-1 gap-3">
     
-    <!-- Menu a tendina per il Tenant -->
-    <div class="dropdown me-3">
-      <button class="btn btn-outline-light btn-sm d-flex justify-content-between align-items-center dropdown-toggle" 
-              type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.75rem;">
-        <span class="me-2 text-uppercase">{{ currentTenant || 'Seleziona Tenant' }}</span>
-      </button>
-      <div class="dropdown-menu">
-        <div class="link-list-wrapper">
-          <ul class="link-list">
-            <li *ngFor="let t of tenants">
-              <a class="list-item" style="cursor: pointer;" (click)="onTenantChange(t)">
-                <span class="text-uppercase">{{ t }}</span>
-              </a>
-            </li>
-          </ul>
+    <div class="d-flex align-items-center">
+      <span class="text-white small me-2">Contesto:</span>
+      <div class="dropdown">
+        <button class="btn btn-outline-light btn-sm d-flex justify-content-between align-items-center dropdown-toggle" 
+                type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.75rem;">
+          <span class="me-2 text-uppercase">{{ currentTenant || 'Seleziona' }}</span>
+        </button>
+        <div class="dropdown-menu">
+          <div class="link-list-wrapper">
+            <ul class="link-list">
+              <li *ngFor="let t of tenants">
+                <a class="list-item" style="cursor: pointer;" (click)="onTenantChange(t)">
+                  <span class="text-uppercase">{{ t }}</span>
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
 
-    <span class="text-white small me-3">
-      Ciao, <strong>{{ authService.userName }}</strong>
-    </span>
-    <button class="btn btn-outline-light btn-sm px-2 py-1" style="font-size: 0.75rem;" (click)="doLogout()">
+    <div class="d-flex align-items-center gap-1">
+      <it-icon name="user" class="icon-white"></it-icon>
+      <span class="text-white small">
+        <strong>{{ authService.userName }}</strong>
+      </span>
+    </div>
+    
+    <button class="btn btn-outline-light btn-sm px-2 d-flex align-items-center gap-1" style="font-size: 0.75rem;" (click)="doLogout()">
+      <it-icon name="logout" class="icon-white"></it-icon>
       Esci
     </button>
+    
   </div>
 </ng-container>
   <ng-container brand>
