@@ -20,7 +20,7 @@
             <ul class="link-list">
               <li *ngFor="let t of tenants">
                 <a class="list-item" style="cursor: pointer;" (click)="onTenantChange(t)">
-                  <span class="text-uppercase">{{ t }}</span>
+                   <span class="text-uppercase" [ngStyle]="{'font-weight': currentTenant === t ? 'bold' : 'normal'}">{{ t }}</span>
                 </a>
               </li>
             </ul>
@@ -29,15 +29,16 @@
       </div>
     </div>
 
-    <div class="d-flex align-items-center gap-1">
-      <it-icon name="user" class="icon-white"></it-icon>
+    <!-- AGGIUNTE QUELLE CLASSI QUI SOTTO: d-none d-md-flex -->
+    <div class="d-none d-md-flex align-items-center gap-1">
+      <it-icon name="user" class="icon-white bg-white"></it-icon>
       <span class="text-white small">
         <strong>{{ authService.userName }}</strong>
       </span>
     </div>
     
-    <button class="btn btn-outline-light btn-sm px-2 d-flex align-items-center gap-1" style="font-size: 0.75rem;" (click)="doLogout()">
-      <it-icon name="logout" class="icon-white"></it-icon>
+    <button class="d-none d-md-flex btn btn-outline-light btn-sm px-2 align-items-center gap-1" style="font-size: 0.75rem;" (click)="doLogout()">
+      <it-icon name="logout" class="icon-white bg-white p-1" style="transform: scale(0.7);"></it-icon>
       Esci
     </button>
     
@@ -55,11 +56,28 @@
 
 
   <ng-container navItems>
-    <it-navbar-item *ngFor="let link of links">
+     <it-navbar-item *ngFor="let link of links">
       <a class="nav-link" [ngClass]="{ active: isActive(link)}" [routerLink]="link.route">
         {{ link.label }}
       </a>
     </it-navbar-item>
 
+     <li class="nav-item d-lg-none mt-2 mb-2">
+       <hr style="border-top: 1px solid #1c2024; opacity: 0.15; margin: 0 1rem;">
+    </li>
+
+     <it-navbar-item class="d-lg-none">
+      <a class="nav-link" style="pointer-events: none; opacity: 1 !important;">
+        <it-icon name="user" size="sm" class="me-2 icon-primary"></it-icon>
+        <span class="text-primary fw-bold">{{ authService.userName }}</span>
+      </a>
+    </it-navbar-item>
+
+     <it-navbar-item class="d-lg-none">
+      <a class="nav-link text-danger" (click)="doLogout()" style="cursor: pointer;">
+        <it-icon name="logout" size="sm" class="me-2 icon-danger"></it-icon>
+        <span class="fw-bold">Esci</span>
+      </a>
+    </it-navbar-item>
   </ng-container>
 </it-header>

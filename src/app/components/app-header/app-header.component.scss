@@ -35,4 +35,12 @@
     will-change: transform;
     transform: translateZ(0);
   }
+
+  ::ng-deep .icon-primary svg {
+    fill: #0066cc !important;  
+  }
+
+  ::ng-deep .icon-danger svg {
+    fill: #c0392b !important; 
+  }
   
