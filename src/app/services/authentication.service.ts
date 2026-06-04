@@ -52,7 +52,10 @@ export class AuthenticationService {
   }
 
   logout() {
+    this.router.navigate(['/login']).then(() => {
+
     this.oauthService.logOut();
+    });
   }
 
 get availableTenants(): string[] {
