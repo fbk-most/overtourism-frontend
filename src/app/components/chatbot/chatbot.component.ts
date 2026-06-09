@@ -1,14 +1,19 @@
-// import { environment } from '../../../environments/environment';
-import { Component, Input, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { marked } from 'marked';
 
+interface Feedback {
+  vote?: 'up' | 'down' | null;
+  comment?: string;
+}
+
 interface Message {
   sender: 'user' | 'bot';
   text: string;
   html?: string;
+  index?: number; // assigned when pushed, for feedback keying
 }
 
 @Component({
@@ -22,44 +27,36 @@ export class ChatbotComponent implements OnInit, OnDestroy {
 
   private http = inject(HttpClient);
 
-  // 🔹 Context injected by the page
   @Input() scenarioId1!: string;
   @Input() scenarioId2!: string;
   @Input() problemId!: string;
 
-  // 🔹 UI state
   isOpen = false;
   isTyping = false;
   inputText = '';
   statusMessage = '';
 
-  // 🔹 Chat state
   messages: Message[] = [];
+  feedbacks: Record<number, Feedback> = {};
 
-  // 🔹 Session identifier
+  // Modal state
+  showFeedbackModal = false;
+  modalMsgIndex = -1;
+  modalDraft = '';
+
   sessionId!: string;
-
-  // 🔹 Language selection
   language = 'Italian';
 
   private readonly API_URL = 'http://localhost:9000/agent';
   private eventSource: EventSource | null = null;
 
-  // No external library needed
   private parseMarkdown(text: string): string {
-    const result = marked.parse(text) as string;
-    console.log('Parsed markdown:', result); // should show <strong>, <ul> etc.
-    return result;
+    return marked.parse(text) as string;
   }
 
   ngOnInit(): void {
     this.sessionId = this.generateSessionId();
-
-    this.messages.push({
-      sender: 'bot',
-      text: 'Ciao! Come posso aiutarti?',
-      html: 'Ciao! Come posso aiutarti?'
-    });
+    this.pushBot('Ciao! Come posso aiutarti?');
   }
 
   ngOnDestroy(): void {
@@ -68,11 +65,9 @@ export class ChatbotComponent implements OnInit, OnDestroy {
 
   private generateSessionId(): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < 8; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
+    return Array.from({ length: 8 }, () =>
+      chars.charAt(Math.floor(Math.random() * chars.length))
+    ).join('');
   }
 
   private closeEventSource(): void {
@@ -82,9 +77,22 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Push a bot message and assign it a stable index for feedback. */
+  private pushBot(text: string): void {
+    const index = this.messages.length -1;
+    this.messages.push({
+      sender: 'bot',
+      text,
+      html: this.parseMarkdown(text),
+      index,
+    });
+  }
+
   toggle(): void {
     this.isOpen = !this.isOpen;
   }
+
+  // ─── Send ──────────────────────────────────────────────────────────────────
 
   send(): void {
     const text = this.inputText.trim();
@@ -104,44 +112,23 @@ export class ChatbotComponent implements OnInit, OnDestroy {
 
     this.eventSource.addEventListener('done', async () => {
       this.closeEventSource();
-
       try {
         const data = await fetch(`${this.API_URL}/result/${this.sessionId}`)
           .then(res => res.json());
 
-        if (data.session_id) {
-          this.sessionId = data.session_id;
-        }
-
-        const responseText = data.response ?? 'No response received.';
-
-        // parseMarkdown is called here when the bot response arrives
-        this.messages.push({
-          sender: 'bot',
-          text: responseText,
-          html: this.parseMarkdown(responseText)
-        });
-
-      } catch (err) {
-        console.error('Error fetching result:', err);
-        this.messages.push({
-          sender: 'bot',
-          text: 'Error fetching result.',
-          html: 'Error fetching result.'
-        });
+        if (data.session_id) this.sessionId = data.session_id;
+        this.pushBot(data.response ?? 'No response received.');
+      } catch {
+        this.pushBot('Error fetching result.');
       }
-
       this.isTyping = false;
       this.statusMessage = '';
+      this.saveConversation();
     });
 
     this.eventSource.onerror = () => {
       this.closeEventSource();
-      this.messages.push({
-        sender: 'bot',
-        text: 'Connection error. Please try again.',
-        html: 'Connection error. Please try again.'
-      });
+      this.pushBot('Connection error. Please try again.');
       this.isTyping = false;
       this.statusMessage = '';
     };
@@ -160,17 +147,73 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     }
 
     this.http.post(this.API_URL, formData).subscribe({
-      error: (err) => {
-        console.error('Chat API error:', err);
+      error: () => {
         this.closeEventSource();
-        this.messages.push({
-          sender: 'bot',
-          text: 'Sorry, something went wrong.',
-          html: 'Sorry, something went wrong.'
-        });
+        this.pushBot('Sorry, something went wrong.');
         this.isTyping = false;
         this.statusMessage = '';
       }
     });
+  }
+
+  // ─── Feedback ──────────────────────────────────────────────────────────────
+
+  getFeedback(index: number): Feedback {
+    return this.feedbacks[index] ?? {};
+  }
+
+  handleVote(index: number, vote: 'up' | 'down'): void {
+    const current = this.getFeedback(index);
+    const newVote = current.vote === vote ? null : vote;
+    this.feedbacks[index] = { ...current, vote: newVote };
+    this.submitFeedback(index);
+  }
+
+  private cdr = inject(ChangeDetectorRef);
+
+  openCommentModal(index: number): void {
+    this.modalMsgIndex = index;
+    this.modalDraft = this.getFeedback(index).comment ?? '';
+    this.showFeedbackModal = true;
+    this.cdr.detectChanges(); // force Angular to pick up the change
+  }
+
+  closeCommentModal(): void {
+    this.showFeedbackModal = false;
+    this.modalMsgIndex = -1;
+  }
+
+  saveComment(): void {
+    const index = this.modalMsgIndex;
+    this.feedbacks[index] = { ...this.getFeedback(index), comment: this.modalDraft.trim() };
+    this.submitFeedback(index);
+    this.closeCommentModal();
+  }
+
+  private async submitFeedback(index: number): Promise<void> {
+    const fb = this.getFeedback(index);
+    const params = new URLSearchParams({ session_id: this.sessionId, message_index: String(index) });
+    if (fb.vote) params.set('vote', fb.vote);
+    if (fb.comment) params.set('comment', fb.comment);
+    try {
+      await fetch(`${this.API_URL}/feedback?${params.toString()}`, { method: 'GET', credentials: 'include' });
+      this.saveConversation();
+    } catch (err) {
+      console.error('Failed to submit feedback', err);
+    }
+  }
+
+  // ─── Save ──────────────────────────────────────────────────────────────────
+
+  async saveConversation(): Promise<void> {
+    try {
+      const data = await fetch(`${this.API_URL}/save/${this.sessionId}`, {
+        method: 'GET',
+        credentials: 'include',
+      }).then(res => res.json());
+      console.log(data.message ?? 'Conversation saved!');
+    } catch {
+      console.error('Failed to save conversation.');
+    }
   }
 }

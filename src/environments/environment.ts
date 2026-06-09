@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiBaseUrl: (window as any)['env']['apiBaseUrl'] || 'https://overtourism.digitalhub-test.smartcommunitylab.it/api/v1'
+  apiBaseUrl: 'http://localhost:8000/api/v1',
 };
