@@ -59,6 +59,18 @@ export class ScenarioService {
       params: { problem_id: problemId }
     });
   }
+  getEvaluations(problemId: string, scenarioId?: string): Observable<any[]> {
+    let params = new HttpParams().set('problem_id', problemId);
+    if (scenarioId) {
+      params = params.set('scenario_id', scenarioId); 
+    }
+    return this.http.get<any[]>(`${this.baseUrl}/evaluations`, { params });
+  }
+  getEvaluationData(evaluationId: string, problemId: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/evaluations/${evaluationId}/data`, {
+      params: { problem_id: problemId ,as_snapshot:false}
+    });
+  }
   getUpdatedPlotInput(
     scenarioId: string,
     problemId: string,

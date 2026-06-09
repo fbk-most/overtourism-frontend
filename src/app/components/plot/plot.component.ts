@@ -57,6 +57,7 @@ export class PlotComponent implements AfterViewInit {
   //widget diversi ma non locali, usati per il reset locale
   originalIndexDiffs: Record<string, string> = {};
   pendingNavigationResolve: ((result: boolean) => void) | null = null;
+  sessionId!: string;
 
   constructor(private plotService: PlotService,
     private scenarioService: ScenarioService,
@@ -69,6 +70,16 @@ export class PlotComponent implements AfterViewInit {
   async ngAfterViewInit() {
     await this.loadWidgetsAsync();
     await this.loadData();
+  }
+  ngOnInit() {
+    this.initSession();
+  }
+  private initSession() {
+    this.sessionId = crypto.randomUUID ? crypto.randomUUID() : 'sess-' + Date.now().toString();
+        sessionStorage.setItem('overtourism_session_id', this.sessionId);
+  }
+  ngOnDestroy() {
+    sessionStorage.removeItem('overtourism_session_id');
   }
   private arrayToDict(values: any[]): Record<string, any> {
     const dict: Record<string, any> = {};
@@ -288,33 +299,48 @@ export class PlotComponent implements AfterViewInit {
         return;
       }
       try {
-        const rawData = await firstValueFrom(this.scenarioService.getScenarioData(this.scenarioId, this.problemId));
+        const evaluations = await firstValueFrom(this.scenarioService.getEvaluations(this.problemId, this.scenarioId));
+        const completedEvals = evaluations.filter(e => 
+          e.scenario_id === this.scenarioId && e.state === 'COMPLETED'
+        );
+
+        completedEvals.sort((a, b) => {
+          const dateA = new Date(a.finished || 0).getTime();
+          const dateB = new Date(b.finished || 0).getTime();
+          return dateB - dateA; // Ordine decrescente
+        });
+
+        const currentEval = completedEvals[0];
+        if (!currentEval) {
+          throw new Error('Nessuna evaluation completata trovata per questo scenario.');
+        }
+        const validEvaluationId = currentEval.evaluation_id;
+        const rawResponse = await firstValueFrom(this.scenarioService.getEvaluationData(validEvaluationId, this.problemId));
         
-         const valuesDict = this.arrayToDict(rawData.index_values || []);
+        const dataSet = rawResponse.data || {};
+        const valuesDict = this.arrayToDict(dataSet.index_values || []);
         
         this.originalIndexDiffs = JSON.parse(JSON.stringify(valuesDict));
         this.indexDiffs = JSON.parse(JSON.stringify(valuesDict));
         
- 
         this.widgets = this.applyIndexDiffsToWidgets(this.originalWidgets, this.indexDiffs);
         
-         const dataSet = rawData.extras || rawData;
         this.inputData = this.plotService.preparePlotInput(dataSet);
         
-        this.editableIndexes = rawData.extras?.editable_indexes || rawData.editable_indexes || [];
+        this.editableIndexes = dataSet.editable_indexes || dataSet.extras?.editable_indexes || [];
         this.kpisData = this.inputData.kpis;
         
         this.setupSelectOptions();
         this.renderPlot();
-      } catch (error) {
-      console.error('Errore nel caricamento dati scenario', error);
-      this.notificationService.showError(
-        'Errore nel caricamento dei dati dello scenario. Riprova più tardi.'
-      );
+      } catch (error: any) {
+        console.error('Errore nel caricamento dati evaluation', error);
+        this.notificationService.showError(
+          `Errore: ${error.message || 'impossibile caricare i dati del grafico.'}`
+        );
+      } finally {
+        this.loading = false;
+      }
     }
-
-    this.loading = false;
-  }
   private setupSelectOptions() {
     if (this.inputData?.heatmapsByFunction) {
       this.selectOptions = [

@@ -1,6 +1,7 @@
 import { Component, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import Plotly from 'plotly.js-dist-min';
+import { firstValueFrom } from 'rxjs';
 import { KPIs, PlotInput, Curve } from '../../../models/plot.model';
 import { PlotService } from '../../../services/plot.service';
 import { ScenarioService, Widget } from '../../../services/scenario.service';
@@ -38,6 +39,7 @@ export class ConfrontoScenariComponent {
   @ViewChild('chartRight', { static: true }) chartRight!: ElementRef<HTMLElement>;
   showControls: boolean = false; // per 'settings'
   isDownloading = false;
+  baseWidgets: Record<string, Widget[]> = {};
 
   
   
@@ -50,9 +52,18 @@ export class ConfrontoScenariComponent {
     
   ) { }
 
-  ngOnInit() {
+  async ngOnInit() {
     this.problemId = this.route.snapshot.paramMap.get('problemId')!;
 
+    // 1. CARICHIAMO I WIDGET DI BASE PRIMA DI TUTTO
+    try {
+      const data = await firstValueFrom(this.scenarioService.getWidgets());
+      this.baseWidgets = this.initializeWidgetBounds(data);
+    } catch (err) {
+      console.error('Errore caricamento widget base', err);
+    }
+
+    // 2. CARICHIAMO LA LISTA DEGLI SCENARI
     this.scenarioService.getScenarios(this.problemId).subscribe(scenari => {
       this.scenari = scenari;
       
@@ -67,7 +78,46 @@ export class ConfrontoScenariComponent {
       }
     });
   }
+  private initializeWidgetBounds(widgets: Record<string, Widget[]>): Record<string, Widget[]> {
+    const clone = JSON.parse(JSON.stringify(widgets));
+    for (const key of Object.keys(clone)) {
+      for (const widget of clone[key]) {
+        if (widget.scale && widget.index_category !== '%') {
+          widget.vMin ??= widget.loc;
+          widget.vMax ??= widget.loc + widget.scale;
+        }
+      }
+    }
+    return clone;
+  }
+  private arrayToDict(values: any[]): Record<string, any> {
+    const dict: Record<string, any> = {};
+    (values || []).forEach(v => {
+      if (v.index_id) dict[v.index_id] = v.value;
+    });
+    return dict;
+  }
 
+  private applyIndexDiffsToWidgets(
+    widgets: Record<string, Widget[]>,
+    indexVals: Record<string, any>  
+  ): Record<string, Widget[]> {
+    const clone = JSON.parse(JSON.stringify(widgets));
+    for (const key of Object.keys(clone)) {
+      for (const widget of clone[key]) {
+        const newVal = indexVals[widget.index_id];
+        if (newVal !== undefined) {
+          if (Array.isArray(newVal)) {
+            widget.vMin = newVal[0];
+            widget.vMax = newVal[1];
+          } else {
+            widget.v = typeof newVal === 'number' ? newVal : Number(newVal);
+          }
+        }
+      }
+    }
+    return clone;
+  }
   getScenarioName(id: string | undefined): string | undefined {
     return this.scenari.find(s => s.id === id)?.name;
   }
@@ -129,18 +179,36 @@ export class ConfrontoScenariComponent {
     const id = slot === 1 ? this.selectedScenario1Id : this.selectedScenario2Id;
     if (!id) return;
 
-    const res = await this.scenarioService.getScenarioData(id, this.problemId).toPromise();
-    const input = this.plotService.preparePlotInput(res.data);
+    try {
+      const evaluations = await firstValueFrom(this.scenarioService.getEvaluations(this.problemId, id));
+      const completedEvals = evaluations.filter(e => e.scenario_id === id && e.state === 'COMPLETED');
 
-    const container = slot === 1 ? this.chartLeft.nativeElement : this.chartRight.nativeElement;
-    if (slot === 1) {
-      this.kpisLeft = input.kpis ? this.filterKpis(input.kpis) : undefined;
-      this.widgetsLeft = res.widgets || {};
-    } else {
-      this.kpisRight = input.kpis ? this.filterKpis(input.kpis) : undefined;
-      this.widgetsRight = res.widgets || {};
+      completedEvals.sort((a, b) => new Date(b.finished || 0).getTime() - new Date(a.finished || 0).getTime());
+
+      const currentEval = completedEvals[0];
+      if (!currentEval) throw new Error(`Nessuna evaluation completata per lo scenario ${id}`);
+
+      const rawResponse = await firstValueFrom(this.scenarioService.getEvaluationData(currentEval.evaluation_id, this.problemId));
+      const dataSet = rawResponse.data || {};
+
+      const valuesDict = this.arrayToDict(dataSet.index_values || []);
+      const specificWidgets = this.applyIndexDiffsToWidgets(this.baseWidgets, valuesDict);
+
+      const input = this.plotService.preparePlotInput(dataSet);
+      const container = slot === 1 ? this.chartLeft.nativeElement : this.chartRight.nativeElement;
+
+      if (slot === 1) {
+        this.kpisLeft = input.kpis ? this.filterKpis(input.kpis) : undefined;
+        this.widgetsLeft = specificWidgets;
+      } else {
+        this.kpisRight = input.kpis ? this.filterKpis(input.kpis) : undefined;
+        this.widgetsRight = specificWidgets;
+      }
+
+      this.renderChart(container, input);
+    } catch (error) {
+      console.error('Errore nel caricamento dei dati di confronto:', error);
     }
-    this.renderChart(container, input);
   }
   filterKpis(rawData: Record<string, any>): Record<string, { level: number, confidence: number }> {
     return Object.keys(rawData)
