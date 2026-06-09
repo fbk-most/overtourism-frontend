@@ -1,20 +1,24 @@
 export interface ProposalScenario {
   scenario_id: string;
   scenario_name: string;
-  scenario_description: string;
-  }
-  
-  export interface Proposal {
-    proposal_id: string;
-    problem_id?: string;
-    proposal_title: string;
-    proposal_description: string;
-    resources: string[];
-    context: string;
-    impact: string;
-    status: string;
-    related_scenarios: ProposalScenario[];
-    created: string;
-    updated: string;
-  }
-  
+}
+
+export interface ProposalExtras {
+  impact?: string;
+  context?: string;
+  resources?: string[];
+  [key: string]: any;
+}
+
+export interface Proposal {
+  proposal_id: string;
+  problem_id: string;
+  version?: number;
+  name: string | null;
+  description: string | null;
+  status: string;
+  created?: string | null;
+  updated?: string | null;
+  extras?: ProposalExtras;
+  related_scenario_ids: string[];
+}

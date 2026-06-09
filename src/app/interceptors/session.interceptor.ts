@@ -6,6 +6,7 @@ import {
   HttpRequest
 } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable()
 export class SessionInterceptor implements HttpInterceptor {
@@ -13,8 +14,8 @@ export class SessionInterceptor implements HttpInterceptor {
   private readonly EXPIRATION_DAYS = 7;
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const urlPattern = /\/api\/v1\/scenarios\/[^\/]+$/;
-    const isTargetEndpoint = urlPattern.test(req.url);
+    const apiBaseUrl = environment.apiBaseUrl;
+    const isTargetEndpoint = req.url.startsWith(apiBaseUrl) && /\/scenarios\/[^\/]+$/.test(req.url);
     const isAllowedMethod = ['GET', 'PUT', 'POST'].includes(req.method);
 
     if (isTargetEndpoint && isAllowedMethod) {

@@ -22,26 +22,26 @@
       <span class="material-icons align-middle">delete</span> Elimina
     </button>
   </div>
-    <h3 class="mb-4">{{ proposal?.proposal_title }}</h3>
+    <h3 class="mb-4">{{ proposal?.name }}</h3>
   
     <!-- Tabella info proposta -->
     <table class="table table-borderless mb-4">
       <tbody>
         <tr>
           <td class="fw-bold w-25" >{{ 'problems.proposals.tableHeader.title' | translate }}</td>
-          <td [ngClass]="{'text-muted fst-italic': !proposal?.proposal_title}">{{ proposal?.proposal_title | emptyField:'(vuoto)'}}</td>
+          <td [ngClass]="{'text-muted fst-italic': !proposal?.name}">{{ proposal?.name | emptyField:'(vuoto)'}}</td>
         </tr>
         <tr>
           <td class="fw-bold w-25" >{{ 'problems.proposals.tableHeader.description' | translate }}</td>
-          <td [ngClass]="{'text-muted fst-italic': !proposal?.proposal_description}">{{ proposal?.proposal_description | emptyField:'(vuoto)'}}</td>
+          <td [ngClass]="{'text-muted fst-italic': !proposal?.description}">{{ proposal?.description | emptyField:'(vuoto)'}}</td>
         </tr>
         <tr>
           <td class="fw-bold w-25" >{{ 'problems.proposals.tableHeader.context' | translate }}</td>
-          <td [ngClass]="{'text-muted fst-italic': !proposal?.context}">{{ proposal?.context | emptyField:'(vuoto)'}}</td>
+          <td [ngClass]="{'text-muted fst-italic': ! proposal?.extras?.context}">{{  proposal?.extras?.context| emptyField:'(vuoto)'}}</td>
         </tr>
         <tr>
           <td class="fw-bold w-25" >{{ 'problems.proposals.tableHeader.impact' | translate }}</td>
-          <td [ngClass]="{'text-muted fst-italic': !proposal?.impact}">{{ proposal?.impact | emptyField:'(vuoto)'}}</td>
+          <td [ngClass]="{'text-muted fst-italic': ! proposal?.extras?.impact}">{{proposal?.extras?.impact| emptyField:'(vuoto)'}}</td>
         </tr>
         <tr>
           <td class="fw-bold w-25">{{ 'problems.proposals.tableHeader.status' | translate }}</td>
@@ -52,12 +52,12 @@
         <tr>
           <td class="fw-bold w-25">{{ 'problems.proposals.tableHeader.resources' | translate }}</td>
           <td>
-            <ul *ngIf="proposal?.resources?.length">
-              <li *ngFor="let resource of proposal?.resources">
+            <ul *ngIf="proposal?.extras?.resources?.length">
+              <li *ngFor="let resource of proposal?.extras?.resources">
                 <a [href]="resource" target="_blank">{{ resource }}</a>
               </li>
             </ul>
-            <span *ngIf="!proposal?.resources?.length">—</span>
+            <span *ngIf="!proposal?.extras?.resources?.length">—</span>
           </td>
         </tr>
       </tbody>
@@ -98,8 +98,8 @@
           </it-checkbox>
           </td>
           <td class="text-start align-middle">{{ i + 1 }}</td>
-          <td class="text-start align-middle" [ngClass]="{'text-muted fst-italic': !scenario?.scenario_name}">{{ scenario.scenario_name |emptyField:'(vuoto)'}}</td>
-          <td class="text-start align-middle" [ngClass]="{'text-muted fst-italic': !scenario?.scenario_description}">{{ scenario.scenario_description |emptyField:'(vuoto)'}}</td>
+          <td class="text-start align-middle" [ngClass]="{'text-muted fst-italic': !scenario?.name}">{{ scenario.name |emptyField:'(vuoto)'}}</td>
+          <td class="text-start align-middle" [ngClass]="{'text-muted fst-italic': !scenario?.description}">{{ scenario.description |emptyField:'(vuoto)'}}</td>
           <td class="text-start align-middle">
             <button
               *ngIf="hasParams(scenario) && widgets"
@@ -188,7 +188,7 @@
     </ng-container>
   
     <p>
-      {{ 'problems.proposals.confirm_delete_message' | translate:{name: proposal?.proposal_title} }}
+      {{ 'problems.proposals.confirm_delete_message' | translate:{name: proposal?.name} }}
     </p>
   
     <ng-container footer>

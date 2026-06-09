@@ -53,13 +53,15 @@ export class ConfrontoScenariComponent {
   ngOnInit() {
     this.problemId = this.route.snapshot.paramMap.get('problemId')!;
 
-
-    this.scenarioService.getScenariosByProblemId(this.problemId).subscribe(scenari => {
+    this.scenarioService.getScenarios(this.problemId).subscribe(scenari => {
       this.scenari = scenari;
+      
       if (scenari.length >= 2) {
         this.selectedScenario1Id = this.route.snapshot.paramMap.get('id1')!;
         const id2 = this.route.snapshot.paramMap.get('id2');
+        
         this.selectedScenario2Id = id2 && id2 !== 'default' ? id2 : '';
+        
         this.loadScenario(1);
         this.loadScenario(2);
       }

@@ -22,29 +22,29 @@
     </button>
   </div>
 
-  <h3 class="mb-4">{{ problem?.problem_name }}</h3>
+  <h3 class="mb-4">{{ problem?.name }}</h3>
 
   <!-- tabella info -->
   <table class="table table-borderless mb-4">
     <tbody>
       <tr>
         <td class="fw-bold w-25">{{ 'problems.fields.title' | translate }}</td>
-        <td>{{ problem?.problem_name| emptyField:'(vuoto)' }}</td>
+        <td>{{ problem?.name| emptyField:'(vuoto)' }}</td>
       </tr>
       <tr>
         <td class="fw-bold w-25">{{ 'problems.fields.descriptionProblem' | translate }}</td>
-        <td>{{ problem?.problem_description| emptyField:'(vuoto)' }}</td>
+        <td>{{ problem?.description| emptyField:'(vuoto)' }}</td>
       </tr>
       <tr>
         <td class="fw-bold w-25">{{ 'problems.fields.objective' | translate }}</td>
-        <td>{{ problem?.objective| emptyField:'(vuoto)' }}</td>
+        <td>{{ problem?.extras?.objective| emptyField:'(vuoto)' }}</td>
       </tr>
 
       <tr>
         <td class="fw-bold w-25">{{ 'problems.fields.category' | translate }}</td>
         <td>
-          <ng-container *ngIf="problem?.groups?.length; else noGroups">
-            <span *ngFor="let cat of problem.groups; let last = last">
+          <ng-container *ngIf="problem?.extras?.groups?.length; else noGroups">
+            <span *ngFor="let cat of problem?.extras?.groups; let last = last">
               {{ cat | translate }}<span *ngIf="!last">, </span>
             </span>
           </ng-container>
@@ -56,9 +56,9 @@
       <tr>
         <td class="fw-bold w-25">{{ 'problems.fields.resources' | translate }}</td>
         <td>
-          <ng-container *ngIf="problem?.links?.length; else noLinks">
+          <ng-container *ngIf="problem?.extras?.links?.length; else noLinks">
             <ul>
-              <li *ngFor="let link of problem.links">
+              <li *ngFor="let link of problem?.extras?.links">
                 <a [href]="link" target="_blank">{{ link }}</a>
               </li>
             </ul>
@@ -94,9 +94,9 @@
         <tr *ngFor="let proposal of proposals; let i = index"
             [ngClass]="{'bg-custom-light': i % 2 === 0, 'bg-white': i % 2 !== 0}">
           <td class="text-start align-middle">{{ i + 1 }}</td>
-          <td class="text-start align-middle">{{ proposal?.proposal_title }}</td>
+          <td class="text-start align-middle">{{ proposal?.name }}</td>
           <td class="text-start align-middle text-truncate" style="max-width: 300px;">
-            {{ proposal?.proposal_description }}
+            {{ proposal?.description }}
           </td>
           <td class="text-start align-middle">
             <span class="badge bg-secondary">{{ proposal?.status }}</span>
@@ -142,7 +142,7 @@
   </ng-container>
 
   <p>
-    {{ 'problems.confirm_delete_message' | translate:{name: problem?.problem_name || '—'} }}
+    {{ 'problems.confirm_delete_message' | translate:{name: problem?.name || '—'} }}
   </p>
 
   <ng-container footer>
@@ -177,7 +177,7 @@
   </ng-container>
 
   <p>
-    {{ 'problems.proposals.confirm_delete_message' | translate:{name: proposalToDelete?.proposal_title} }}
+    {{ 'problems.proposals.confirm_delete_message' | translate:{name: proposalToDelete?.name} }}
   </p>
 
   <ng-container footer>

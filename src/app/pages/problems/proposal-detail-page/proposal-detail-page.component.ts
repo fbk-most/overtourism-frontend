@@ -25,7 +25,7 @@ export class ProposalDetailPageComponent implements OnInit, AfterViewInit {
   problemId!: string;
   proposalId!: string;
   proposal: Proposal | null = null;
-  scenari: any[] = [];
+  scenari: ProblemScenario[] = [];
   proposalToDelete: Proposal | null = null;
   proposalToEdit: Proposal | null = null;
 
@@ -52,7 +52,11 @@ export class ProposalDetailPageComponent implements OnInit, AfterViewInit {
   onProblemEditCancelled() {
     this.editProposalModal.hide();
   }
-
+  getScenarioName(id: string): string {
+    if (!this.scenari || this.scenari.length === 0) return id;
+        const found = this.scenari.find(s => s.id === id || s.scenario_id === id);
+    return found ? (found.name || id) : id;
+  }
   ngOnInit(): void {
     this.problemId = this.route.snapshot.paramMap.get('problemId')!;
     this.proposalId = this.route.snapshot.paramMap.get('proposalId')!;
@@ -91,16 +95,8 @@ export class ProposalDetailPageComponent implements OnInit, AfterViewInit {
     this.loading = true;
     this.proposalService.getProposal(this.proposalId, this.problemId).subscribe({
       next: (data) => {
-        this.proposal = data;
-
-        // 🔹 Carica tutti gli scenari collegati alla proposta
-        if (data.related_scenarios?.length) {
-          // this.loadRelatedScenarios(data.related_scenarios);
-          this.scenari = data.related_scenarios;
-        } else {
-          this.scenari = [];
-          this.loading = false;
-        }
+        this.proposal = data;    
+        this.loadScenarios();
       },
       error: (err) => {
         console.error('Errore caricamento proposta', err);
@@ -128,9 +124,8 @@ export class ProposalDetailPageComponent implements OnInit, AfterViewInit {
     });
   }
   loadScenarios(): void {
-    this.loading = true;
-    this.scenarioService.getScenariosByProblemId(this.problemId).subscribe({
-      next: (data) => {
+    this.scenarioService.getScenarios(this.problemId, this.proposalId).subscribe({
+      next: (data:ProblemScenario[]) => {
         this.scenari = data;
         this.loading = false;
       },
@@ -258,7 +253,7 @@ export class ProposalDetailPageComponent implements OnInit, AfterViewInit {
     this.proposalService.deleteProposal(this.proposalToDelete.proposal_id, this.problemId).subscribe({
       next: () => {
         this.notificationService.showSuccess(
-          this.translate.instant('problems.delete_success', { name: this.proposalToDelete?.proposal_title })
+          this.translate.instant('problems.delete_success', { name: this.proposalToDelete?.name })
         );
         this.deleteProposalModal.hide();
 
@@ -266,7 +261,7 @@ export class ProposalDetailPageComponent implements OnInit, AfterViewInit {
       },
       error: (err) => {
         this.notificationService.showError(
-          this.translate.instant('problems.delete_error', { name: this.proposalToDelete?.proposal_title }) ||
+          this.translate.instant('problems.delete_error', { name: this.proposalToDelete?.name }) ||
           err?.message
         );
         this.deleteProposalModal.hide();

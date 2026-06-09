@@ -1,4 +1,4 @@
-<it-accordion   [title]="(proposal.proposal_title || 'Senza titolo') 
+<it-accordion   [title]="(proposal.name || 'Senza titolo') 
 + ' · ' 
 + (proposal.status || '—') 
 + ' · ' 
@@ -18,31 +18,30 @@
       <!-- Dettagli della proposta -->
       <div class="border rounded p-3">
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <p><strong>Titolo:</strong> {{ proposal.proposal_title || 'Senza titolo' }}</p>
+          <p><strong>Titolo:</strong> {{ proposal.name || 'Senza titolo' }}</p>
           <span class="badge" [ngClass]="statusClass(proposal.status)">
             {{ proposal.status || '—' }}
           </span>
         </div>
         <div class="d-flex justify-content-between align-items-center mb-2">
-         <p><strong>Descrizione:</strong> {{ proposal.proposal_description || 'Senza descrizione' }}</p>
-
-        </div>
-  
-        <p><strong>Risorse:</strong> {{ proposal.resources.length ? proposal.resources.join(', ') : 'Nessuna' }}</p>
-        <p><strong>Contesto:</strong> {{ proposal.context || 'Nessuno' }}</p>
-        <p><strong>Impatto:</strong> {{ proposal.impact || 'Nessuno' }}</p>
-  
-        <p>
+          <p><strong>Descrizione:</strong> {{ proposal.description || 'Senza descrizione' }}</p>
+ 
+         </div>
+   
+         <p><strong>Risorse:</strong> {{ proposal.extras?.resources?.length ? proposal.extras!.resources!.join(', ') : 'Nessuna' }}</p>
+         <p><strong>Contesto:</strong> {{ proposal.extras?.context || 'Nessuno' }}</p>
+         <p><strong>Impatto:</strong> {{ proposal.extras?.impact || 'Nessuno' }}</p>
+   
+         <p>
           <strong>Scenari correlati:</strong>
-          <ng-container *ngIf="proposal.related_scenarios.length; else noScenarios">
-            <span *ngFor="let s of proposal.related_scenarios; let last = last">
-              {{ s.scenario_name }}<span *ngIf="!last">, </span>
+          <ng-container *ngIf="proposal.related_scenario_ids.length; else noScenarios">
+            <span *ngFor="let sId of proposal.related_scenario_ids; let last = last">
+              <span class="badge bg-info text-white me-2 mb-2">{{ getScenarioName(sId) }}</span>
             </span>
           </ng-container>
           <ng-template #noScenarios> Nessuno </ng-template>
         </p>
-  
-        <small class="text-muted">
+         <small class="text-muted">
           Creato: {{ proposal.created | date:'short' }},
           Aggiornato: {{ proposal.updated | date:'short' }}
         </small>

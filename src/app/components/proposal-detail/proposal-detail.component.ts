@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter, ViewChild } from '@angular/core';
 import { Proposal } from '../../models/proposal.model';
 import { ItModalComponent } from 'design-angular-kit';
+import { ProblemScenario } from '../../models/scenario.model';
 
 @Component({
   selector: 'app-proposal-detail',
@@ -10,6 +11,7 @@ import { ItModalComponent } from 'design-angular-kit';
 })
 export class ProposalDetailComponent {
   @Input() proposal!: Proposal;
+  @Input() availableScenarios: ProblemScenario[] = []; 
   @Output() deleteProposal = new EventEmitter<string>();
   @Output() editProposal = new EventEmitter<string>();
   @ViewChild('deleteProposalModal') deleteProposalModal!: ItModalComponent;
@@ -41,5 +43,11 @@ export class ProposalDetailComponent {
       case 'rejected': return 'bg-danger text-white';
       default: return 'bg-light text-dark';
     }
+  }
+
+  getScenarioName(id: string): string {
+    if (!this.availableScenarios) return id;
+    const found = this.availableScenarios.find(s => s.id === id);
+    return found && found.name ? found.name : id;
   }
 }

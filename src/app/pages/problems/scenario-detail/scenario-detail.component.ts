@@ -44,7 +44,7 @@ export class ScenarioDetailComponent {
     return this.plotComponent?.canDeactivate() ?? true;
   }
   loadScenarioDetails(): void {
-    this.scenarioService.getScenariosByProblemId(this.problemId).subscribe({
+    this.scenarioService.getScenarios(this.problemId, this.proposalId).subscribe({
       next: (scenarios) => {
         this.scenario = scenarios.find(s => s.id === this.scenarioId);
       }

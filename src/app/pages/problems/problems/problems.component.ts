@@ -39,16 +39,16 @@ export class ProblemsComponent {
     this.loadProblems();
   }
 
-    searchProblems$: (search?: string | null | undefined) => Observable<Array<SearchItem>> = (search) => {
-      if (!search) {
-      return of([]);
-    }
+  searchProblems$: (search?: string | null | undefined) => Observable<Array<SearchItem>> = (search) => {
+    if (!search) {
+    return of([]);
+  }
 
-    return of(this.problems.map(problem => ({
-      id: problem.problem_id,
-      value: problem.problem_name, 
-      label: problem.problem_name 
-    })));
+  return of(this.problems.map(problem => ({
+    id: problem.problem_id,
+    value: problem.name, 
+    label: problem.name 
+  })));
   };
 
   onSearchSelected(item: any): void {

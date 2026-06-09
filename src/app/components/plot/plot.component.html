@@ -130,11 +130,11 @@
                     'text-danger fw-bold': getLocallyChangedKeys().includes(key),
                     'text-body': !getLocallyChangedKeys().includes(key)
                   }">
-                  {{ indexDiffs[key] }}
+                  {{ formatValue(indexDiffs[key]) }}
                 </span>
                 <span class="text-muted ms-2"
                   *ngIf="getLocallyChangedKeys().includes(key) && originalIndexDiffs[key] !== undefined">
-                  (originale: {{ originalIndexDiffs[key] }})
+                  (originale: {{ formatValue(originalIndexDiffs[key]) }})
                 </span>
               </li>
             </ul>

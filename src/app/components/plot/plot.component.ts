@@ -66,11 +66,22 @@ export class PlotComponent implements AfterViewInit {
     private notif: NotificationService
   ) { }
 
-  ngAfterViewInit() {
-    this.loadWidgets();
-
-    this.loadData();
+  async ngAfterViewInit() {
+    await this.loadWidgetsAsync();
+    await this.loadData();
   }
+  private arrayToDict(values: any[]): Record<string, any> {
+    const dict: Record<string, any> = {};
+    (values || []).forEach(v => {
+      if (v.index_id) dict[v.index_id] = v.value;
+    });
+    return dict;
+  }
+  formatValue(val: any): string {
+    if (Array.isArray(val)) return `${val[0]} - ${val[1]}`;
+    return String(val ?? '');
+  }
+
   openSaveModal(): void {
     this.saveModal.toggle();
   }
@@ -121,18 +132,29 @@ export class PlotComponent implements AfterViewInit {
   closeModal() {
     this.saveModal.toggle();
   }
-  loadWidgets() {
-    this.scenarioService.getWidgets().subscribe({
-      next: (data) => {
-        const initialized = this.initializeWidgetBounds(data);
-        this.originalWidgets = JSON.parse(JSON.stringify(initialized)); // copia profonda per reset
-        this.widgets = initialized;
-      },
-      error: (err) => {
-        console.error('Errore caricamento widget', err);
-        this.notificationService.showError('Errore nel caricamento dei widget.');
-      }
-    });
+  // loadWidgets() {
+  //   this.scenarioService.getWidgets().subscribe({
+  //     next: (data) => {
+  //       const initialized = this.initializeWidgetBounds(data);
+  //       this.originalWidgets = JSON.parse(JSON.stringify(initialized)); // copia profonda per reset
+  //       this.widgets = initialized;
+  //     },
+  //     error: (err) => {
+  //       console.error('Errore caricamento widget', err);
+  //       this.notificationService.showError('Errore nel caricamento dei widget.');
+  //     }
+  //   });
+  // }
+  async loadWidgetsAsync(): Promise<void> {
+    try {
+      const data = await firstValueFrom(this.scenarioService.getWidgets());
+      const initialized = this.initializeWidgetBounds(data);
+      this.originalWidgets = JSON.parse(JSON.stringify(initialized)); // copia profonda base
+      this.widgets = JSON.parse(JSON.stringify(this.originalWidgets));
+    } catch (err) {
+      console.error('Errore caricamento widget', err);
+      this.notificationService.showError('Errore nel caricamento dei widget.');
+    }
   }
   private initializeWidgetBounds(widgets: Record<string, Widget[]>): Record<string, Widget[]> {
     const clone = JSON.parse(JSON.stringify(widgets));
@@ -202,9 +224,10 @@ export class PlotComponent implements AfterViewInit {
   updateData(values: Record<string, number | [number, number]>) {
     this.loading = true;
     this.scenarioService.getUpdatedPlotInput(this.scenarioId, this.problemId, values).subscribe({
-      next: (newInput) => {
-        this.inputData = this.plotService.preparePlotInput(newInput.data);
-        this.indexDiffs = newInput.index_diffs || {};
+      next: (newInput: any) => {
+        const scenarioData = newInput.extras?.data || newInput.data; 
+        this.inputData = this.plotService.preparePlotInput(scenarioData);
+                this.indexDiffs = this.arrayToDict(newInput.index_values || newInput.index_diffs || []);
         this.kpisData = this.inputData.kpis;
         this.renderPlot();
         this.loading = false;
@@ -236,53 +259,54 @@ export class PlotComponent implements AfterViewInit {
       ]);
       console.log('Vai alla pagina di confronto');
     }
-  private applyIndexDiffsToWidgets(
-    widgets: Record<string, Widget[]>,
-    indexDiffs: Record<string, string>
-  ): Record<string, Widget[]> {
-    const clone = JSON.parse(JSON.stringify(widgets));
-    for (const key of Object.keys(clone)) {
-      for (const widget of clone[key]) {
-        const diff = indexDiffs[widget.index_id];
-        if (diff) {
-          // Esempi di diff: "1.05 -> 1.75" oppure "350-450 -> 350-630"
-          const [, newValue] = diff.split('->').map(s => s.trim());
-          if (newValue.includes('-')) {
-            // Caso range: "350-450 -> 350-630"
-            const [minStr, maxStr] = newValue.split('-').map(s => s.replace(/[^\d.]/g, '').trim());
-            const min = Number(minStr);
-            const max = Number(maxStr);
-            if (!isNaN(min)) widget.vMin = min;
-            if (!isNaN(max)) widget.vMax = max;
-          } else {
-            // Caso singolo valore: "1.05 -> 1.75"
-            const num = Number(newValue.replace(/[^\d.]/g, ''));
-            if (!isNaN(num)) widget.v = num;
+    private applyIndexDiffsToWidgets(
+      widgets: Record<string, Widget[]>,
+      indexVals: Record<string, any>  
+    ): Record<string, Widget[]> {
+      const clone = JSON.parse(JSON.stringify(widgets));
+      for (const key of Object.keys(clone)) {
+        for (const widget of clone[key]) {
+          const newVal = indexVals[widget.index_id];
+          
+          if (newVal !== undefined) {
+            if (Array.isArray(newVal)) {
+              widget.vMin = newVal[0];
+              widget.vMax = newVal[1];
+            } else {
+              widget.v = typeof newVal === 'number' ? newVal : Number(newVal);
+            }
           }
         }
       }
+      return clone;
     }
-    return clone;
-  }
-  async loadData() {
-    this.loading = true;
-    if (!this.scenarioId || !this.problemId) {
-      this.notificationService.showError('Scenario o problem mancanti.');
-      this.loading = false;
-      return;
-    }
-    try {
-      const rawData = await firstValueFrom(this.scenarioService.getScenarioData(this.scenarioId, this.problemId));
-      this.originalIndexDiffs = { ...(rawData.index_diffs || {}) };
-      // occhio che qui resetti widget e non hai piu' o valori inizialli
-      this.widgets = this.applyIndexDiffsToWidgets(this.initializeWidgetBounds(rawData.widgets), rawData.index_diffs || {});
-      this.inputData = this.plotService.preparePlotInput(rawData.data);
-      this.editableIndexes = rawData.editable_indexes || [];
-      this.indexDiffs = rawData.index_diffs || {};
-      this.kpisData = this.inputData.kpis;
-      this.setupSelectOptions();
-      this.renderPlot();
-    } catch (error) {
+    async loadData() {
+      this.loading = true;
+      if (!this.scenarioId || !this.problemId) {
+        this.notificationService.showError('Scenario o problem mancanti.');
+        this.loading = false;
+        return;
+      }
+      try {
+        const rawData = await firstValueFrom(this.scenarioService.getScenarioData(this.scenarioId, this.problemId));
+        
+         const valuesDict = this.arrayToDict(rawData.index_values || []);
+        
+        this.originalIndexDiffs = JSON.parse(JSON.stringify(valuesDict));
+        this.indexDiffs = JSON.parse(JSON.stringify(valuesDict));
+        
+ 
+        this.widgets = this.applyIndexDiffsToWidgets(this.originalWidgets, this.indexDiffs);
+        
+         const dataSet = rawData.extras || rawData;
+        this.inputData = this.plotService.preparePlotInput(dataSet);
+        
+        this.editableIndexes = rawData.extras?.editable_indexes || rawData.editable_indexes || [];
+        this.kpisData = this.inputData.kpis;
+        
+        this.setupSelectOptions();
+        this.renderPlot();
+      } catch (error) {
       console.error('Errore nel caricamento dati scenario', error);
       this.notificationService.showError(
         'Errore nel caricamento dei dati dello scenario. Riprova più tardi.'

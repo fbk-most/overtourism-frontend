@@ -39,7 +39,7 @@ export class ScenariComponent {
     this.proposalId = this.route.snapshot.paramMap.get('proposalId')!;
     this.problemName = this.route.snapshot.queryParamMap.get('problemName');
     
-    this.loadScenarios(this.problemId);
+    this.loadScenarios(this.problemId, this.proposalId);
     this.loadWidgets();
   }
 
@@ -149,9 +149,9 @@ export class ScenariComponent {
     return clone;
   }
 
-  loadScenarios(problemId: any): void {
+  loadScenarios(problemId: string, proposalId: string): void {
     this.loading = true;
-    this.scenarioService.getScenariosByProblemId(problemId).subscribe({
+    this.scenarioService.getScenarios(problemId, proposalId).subscribe({
       next: (data) => {
         this.scenari = data;
         this.loading = false;

@@ -22,7 +22,7 @@ interface ProposalResponse {
 export class ProblemDetailComponent implements OnInit,AfterViewInit {
 
   problemId!: string;
-  problem: any = null;
+  problem: Problem | null = null;
   proposals: Proposal[] = [];
   showProposalForm = false;
 
@@ -137,14 +137,14 @@ onConfirmDeleteProblem(): void {
   this.problemService.deleteProblem(this.problemId).subscribe({
     next: () => {
       this.notif.showSuccess(
-        this.translate.instant('problems.delete_success', { name: this.problem?.problem_name })
+        this.translate.instant('problems.delete_success', { name: this.problem?.name })
       );
       this.deleteProblemModal.hide();
       this.router.navigate(['/problems']);
     },
     error: (err) => {
       this.notif.showError(
-        this.translate.instant('problems.delete_error', { name: this.problem?.problem_name }) ||
+        this.translate.instant('problems.delete_error', { name: this.problem?.name }) ||
         err?.message
       );
       this.deleteProblemModal.hide();

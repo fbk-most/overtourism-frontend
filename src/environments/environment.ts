@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiBaseUrl: 'http://127.0.0.1:8000/api/v1',
+  apiBaseUrl: 'http://127.0.0.1:8000/api/v2',
   auth: {
     issuer: 'https://aac.platform.smartcommunitylab.it', 
     clientId: 'c_e550ec7f86174720872ac9c36fbecdcb',

@@ -20,11 +20,9 @@ getProposal(proposalId: string, problemId: string): Observable<Proposal> {
   });
 }
 getProposals(problemId: string): Observable<Proposal[]> {
-  return this.http.get<{ data: Proposal[] }>(`${this.baseUrl}/proposals`, {
+  return this.http.get<Proposal[]>(`${this.baseUrl}/proposals`, {
     params: { problem_id: problemId }
-  }).pipe(
-    map(res => res.data)
-  );
+  });
 }
   createProposal(problemId: string, payload: Proposal) {
     return this.http.post(`${this.baseUrl}/proposals?problem_id=${problemId}`, payload);

@@ -31,6 +31,11 @@ export class ProblemCreateComponent {
 
   savedProblemId?: string;
   isSaving = false;
+  originalExtras: any = {};
+
+  savedVersion?: number;
+  savedTenant?: string;
+  savedCreated?: Date;
 
   constructor(
     private svc: ProblemService,
@@ -62,18 +67,18 @@ export class ProblemCreateComponent {
     this.svc.getProblemById(problemId).subscribe({
       next: (res: any) => {
         this.savedProblemId = res.problem_id;
-        this.model.name = res.problem_name;
-        this.model.objective = res.objective;
-        this.model.descriptionProblem = res.problem_description;
-        this.model.resources = res.links || [];
-        this.proposals = res.proposals || [];
-  
-        // Inizializza tutte le chiavi a false
+        this.savedVersion = res.version;
+        this.savedTenant = res.tenant;
+        this.savedCreated = res.created ? new Date(res.created) : undefined;
+        this.model.name = res.name || '';
+        this.model.descriptionProblem = res.description || '';
+        this.originalExtras = res.extras || {};
+        this.model.objective = this.originalExtras.objective || '';
+        this.model.resources = this.originalExtras.links || this.originalExtras.resources || [];
+        this.proposals = this.originalExtras.proposals || [];
         this.model.groups = {};
         this.availableGroups.forEach(g => this.model.groups[g.key] = false);
-  
-        // Poi setta a true quelle effettive
-        (res.groups || []).forEach((g: string) => this.model.groups[g] = true);
+          (this.originalExtras.groups || []).forEach((g: string) => this.model.groups[g] = true);
       },
       error: (err) => this.notif.showError(err?.message || this.translate.instant('problems.load_error'))
     });
@@ -96,33 +101,42 @@ export class ProblemCreateComponent {
   }
 
 
-async onSubmit() {
-  if (this.isSaving) return; // evita doppi click
-  this.isSaving = true;
-
-  try {
-    const payload: Problem = {
-      problem_id: this.savedProblemId || '', 
-      problem_name: this.model.name,
-      problem_description: this.model.descriptionProblem,
-      objective: this.model.objective,
-      groups: Object.keys(this.model.groups).filter(k => this.model.groups[k]),
-      links: this.model.resources,
-      proposals: this.proposals
-    };
-
-    let res: any;
-
-    if (this.editProblemId) {
+  async onSubmit() {
+    if (this.isSaving) return;
+    this.isSaving = true;
+  
+    try {
+      const payload: Problem = {
+        problem_id: this.savedProblemId || '', 
+        
+        version: this.savedVersion,
+        tenant: this.savedTenant,
+        created: this.savedCreated,
+        updated: new Date(),
+        
+        name: this.model.name,
+        description: this.model.descriptionProblem,
+        extras: {
+          ...this.originalExtras, 
+          objective: this.model.objective,
+          groups: Object.keys(this.model.groups).filter(k => this.model.groups[k]),
+          links: this.model.resources,
+          proposals: this.proposals
+        }
+      };
+  
+      let res: any;
+  
+      if (this.editProblemId) {
       res = await this.svc.updateProblem(this.editProblemId, payload).toPromise();
       this.notif.showSuccess(
-        this.translate.instant('problems.update_success', { name: payload.problem_name })
+        this.translate.instant('problems.update_success', { name: payload.name })
       );
     } else {
       res = await this.svc.createProblem(payload).toPromise();
       this.savedProblemId = res?.problem_id;
       this.notif.showSuccess(
-        this.translate.instant('problems.create_success', { name: payload.problem_name })
+        this.translate.instant('problems.create_success', { name: payload.name })
       );
     }
 

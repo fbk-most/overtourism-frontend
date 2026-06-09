@@ -3,10 +3,14 @@ import { HttpEvent, HttpInterceptor, HttpHandler, HttpRequest, HttpErrorResponse
 import { Observable, throwError, TimeoutError } from 'rxjs';
 import { catchError, timeout } from 'rxjs/operators';
 import { NotificationService } from '../services/notifications.service';
+import { AuthenticationService } from '../services/authentication.service'; // AGGIUNTO
 
 @Injectable()
 export class HttpErrorInterceptor implements HttpInterceptor {
-  constructor(private notificationService: NotificationService) {}
+  constructor(private notificationService: NotificationService,
+    private authService: AuthenticationService
+
+  ) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(
@@ -21,6 +25,10 @@ export class HttpErrorInterceptor implements HttpInterceptor {
             case 0:
               message = 'Il server non è raggiungibile.';
               break;
+           case 401:
+                message = 'Sessione scaduta o non autorizzata. Effettua nuovamente il login.';
+                this.authService.logout();
+                break;
             case 404:
               message = 'Risorsa non trovata.';
               break;

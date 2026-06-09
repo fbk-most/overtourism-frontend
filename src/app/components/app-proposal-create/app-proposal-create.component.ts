@@ -35,6 +35,7 @@ export class ProposalCreateComponent {
   scenarioInput = '';
   availableScenarios: ProposalScenario[] = [];
 
+  originalExtras: any = {};
 
   
   // 🔹 Fonte per l’autocomplete
@@ -89,15 +90,17 @@ export class ProposalCreateComponent {
     if (changes['proposalToEdit']) {
       if (this.proposalToEdit) {
         this.model = {
-          title: this.proposalToEdit.proposal_title,
-          description: this.proposalToEdit.proposal_description,
-          resources: [...(this.proposalToEdit.resources || [])],
-          context: this.proposalToEdit.context,
-          impact: this.proposalToEdit.impact,
-          status: this.proposalToEdit.status,
-          related_scenarios: [...(this.proposalToEdit.related_scenarios || [])]
-        };
+          title: this.proposalToEdit.name || '',
+          description: this.proposalToEdit.description || '',
+          resources: [...(this.originalExtras.resources || [])],
+          context: this.originalExtras.context || '',
+          impact: this.originalExtras.impact || '',
+          status: this.proposalToEdit.status || 'draft',
+          related_scenarios: [] 
+           };
+           this.syncRelatedScenarios();
       } else {
+        this.originalExtras = {};
         this.model = {
           title: '',
           description: '',
@@ -118,19 +121,24 @@ export class ProposalCreateComponent {
   }
   
   
-  loadScenarios() {
-    this.scenarioSvc.getScenariosByProblemId(this.problemId).subscribe({
-      next: (scenarios: ProblemScenario[]) => {
-        // 🔹 Mappiamo ProblemScenario → ProposalScenario
-        this.availableScenarios = scenarios.map(s => ({
-          scenario_id: s.id,
-          scenario_name: s.name
-        } as ProposalScenario));
+    loadScenarios() {
+      // CAMBIATO: Usa la nuova funzione getScenarios
+      this.scenarioSvc.getScenarios(this.problemId).subscribe({
+        next: (scenarios: ProblemScenario[]) => {
+          // 🔹 Mappiamo ProblemScenario → ProposalScenario
+          this.availableScenarios = scenarios.map(s => ({
+            scenario_id: s.id,
+            scenario_name: s.name
+          } as ProposalScenario));
+    
+          // Sincronizza i chip dopo il caricamento degli scenari (se stiamo modificando)
+          this.syncRelatedScenarios();
   
-        const baseScenario = this.availableScenarios.find(s => s.scenario_id === 'model_0');
+          const baseScenario = this.availableScenarios.find(s => s.scenario_id === 'model_0');
+  
   
         if (
-          baseScenario &&
+          baseScenario && !this.proposalToEdit && 
           !this.model.related_scenarios.some(s => s.scenario_id === baseScenario.scenario_id)
         ) {
           this.model.related_scenarios.push(baseScenario);
@@ -163,7 +171,13 @@ export class ProposalCreateComponent {
   isUrl(value: string): boolean {
     return value.startsWith('http://') || value.startsWith('https://');
   }
-
+  syncRelatedScenarios() {
+    if (this.proposalToEdit && this.proposalToEdit.related_scenario_ids && this.availableScenarios.length > 0) {
+      this.model.related_scenarios = this.proposalToEdit.related_scenario_ids
+        .map(id => this.availableScenarios.find(s => s.scenario_id === id))
+        .filter(s => !!s) as ProposalScenario[];
+    }
+  }
   isSaving = false;
 
 async onSubmit() {
@@ -175,16 +189,19 @@ async onSubmit() {
       this.notif.showError(this.translate.instant('problems.proposals.invalid_problem'));
       return;
     }
-
     const payload: Proposal = {
       proposal_id: this.proposalToEdit ? this.proposalToEdit.proposal_id : this.generateId(),
-      proposal_title: this.model.title,
-      proposal_description: this.model.description,
-      resources: this.model.resources || [],
-      context: this.model.context || '',
-      impact: this.model.impact || '',
+      problem_id: this.problemId,
+      name: this.model.title,
+      description: this.model.description,
       status: this.model.status || 'draft',
-      related_scenarios: this.model.related_scenarios || [],
+      related_scenario_ids: this.model.related_scenarios.map(s => s.scenario_id),
+      extras: {
+        ...this.originalExtras,
+        resources: this.model.resources || [],
+        context: this.model.context || '',
+        impact: this.model.impact || ''
+      },
       created: this.proposalToEdit ? this.proposalToEdit.created : new Date().toISOString(),
       updated: new Date().toISOString()
     };
@@ -197,13 +214,13 @@ async onSubmit() {
         .toPromise();
 
       this.notif.showSuccess(
-        this.translate.instant('problems.proposals.update_success', { name: payload.proposal_title })
+        this.translate.instant('problems.proposals.update_success', { name: payload.name })
       );
     } else {
       res = await this.proposalSvc.createProposal(this.problemId, payload).toPromise();
 
       this.notif.showSuccess(
-        this.translate.instant('problems.proposals.create_success', { name: payload.proposal_title })
+        this.translate.instant('problems.proposals.create_success', { name: payload.name })
       );
     }
 

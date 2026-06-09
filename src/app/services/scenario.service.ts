@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { ProblemScenario } from '../models/scenario.model';
 import { Observable, BehaviorSubject, map } from 'rxjs';
 import dataExample from '../../assets/dataExample.json';
@@ -46,10 +46,12 @@ export class ScenarioService {
     : Observable<any> {
     return this.http.post<any>(
       `${this.baseUrl}/scenarios/${scenarioId}`,
-      { values,
-        scenario_name: titolo, scenario_description: descrizione
-       }, // body
-      { params: { problem_id: problemId,proposal_id:proposalId } } // query
+      { 
+        values, 
+        name: titolo,             
+        description: descrizione   
+       },  
+      { params: { problem_id: problemId, proposal_id:proposalId } }  
     );
   }
   getScenarioData(scenarioId: string, problemId: string): Observable<any> {
@@ -74,19 +76,51 @@ export class ScenarioService {
       { params: { problem_id: problemId, proposal_id:proposalId} }
     );
   }
-  getScenariosByProblemId(problemId: string): Observable<ProblemScenario[]> {
+
+  getScenarios(problemId: string, proposalId?: string): Observable<ProblemScenario[]> {
+    let params = new HttpParams().set('problem_id', problemId);
+    
+    if (proposalId) {
+      params = params.set('proposal_id', proposalId);
+    }
+    
     return this.http
-      .get<ScenarioResponse>(`${this.baseUrl}/problems/${problemId}/scenarios`)
+      .get<any[]>(`${this.baseUrl}/scenarios`, { params })
       .pipe(
-        map(response => response.scenarios.map(scenario => ({
-          id: scenario.scenario_id,
-          name: scenario.scenario_name,
-          description: scenario.scenario_description,
-          problemId: scenario.problem_id,
-          index_diffs: scenario.index_diffs || {}
+        map(response => response.map(scenario => ({
+          id: scenario.scenario_id, 
+          scenario_id: scenario.scenario_id,
+          problem_id: scenario.problem_id,
+          version: scenario.version,
+          
+          name: scenario.name,
+          description: scenario.description,
+          
+          created: scenario.created,
+          updated: scenario.updated,
+          extras: scenario.extras,
+          
+          index_values: scenario.index_values || []
         })))
       );
   }
+
+  // getScenariosByProblemId(problemId: string): Observable<ProblemScenario[]> {
+  //   const params = new HttpParams().set('problem_id', problemId);
+
+  //   return this.http
+  //     .get<ScenarioResponse>(`${this.baseUrl}/scenarios`, { params })
+  
+  //     .pipe(
+  //       map(response => response.scenarios.map(scenario => ({
+  //         id: scenario.scenario_id,
+  //         name: scenario.scenario_name,
+  //         description: scenario.scenario_description,
+  //         problemId: scenario.problem_id,
+  //         index_diffs: scenario.index_diffs || {}
+  //       })))
+  //     );
+  // }
   
   getWidgets(): Observable<Record<string, Widget[]>> {
     return this.http.get<{ widgets: Record<string, Widget[]> }>(

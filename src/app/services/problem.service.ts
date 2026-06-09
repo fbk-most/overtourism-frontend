@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
-import { Problem, ProblemResponse } from '../models/problem.model';
+import { Problem } from '../models/problem.model';
 import { ConfigService } from './config.service';
 import { environment } from '../../environments/environment';
 
@@ -17,18 +17,17 @@ export class ProblemService {
 
   /** GET all problems */
   getProblems(): Observable<Problem[]> {
-    return this.http.get<ProblemResponse>(`${this.baseUrl}/problems`).pipe(
+    return this.http.get<any[]>(`${this.baseUrl}/problems`).pipe(
       map(response =>
-        response.data?.map(problem => ({
+        response.map(problem => ({
           problem_id: problem.problem_id,
-          problem_name: problem.problem_name,
-          problem_description: problem.problem_description,
+          version: problem.version,
+          tenant: problem.tenant,
+          name: problem.name,
+          description: problem.description,
           updated: problem.updated ? new Date(problem.updated) : undefined,
           created: problem.created ? new Date(problem.created) : undefined,
-          objective: problem.objective,
-          category: problem.groups ?? [],
-          links: problem.links ?? [],
-          proposals: problem.proposals ?? []
+          extras: problem.extras
         }))
       )
     );
@@ -55,6 +54,7 @@ export class ProblemService {
   }
   /** PUT update problem */
 updateProblem(problemId: string, payload: Problem): Observable<Problem> {
-  return this.http.put<Problem>(`${this.baseUrl}/problems/${problemId}`, payload);
+  const { problem_id, tenant, updated,...body } = payload;
+  return this.http.put<Problem>(`${this.baseUrl}/problems/${problemId}`, body);
 }
 }
