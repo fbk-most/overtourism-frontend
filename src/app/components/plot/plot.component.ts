@@ -12,6 +12,8 @@ import { NotificationService } from '../../services/notifications.service';
 import { Router } from '@angular/router';
 import { ItModalComponent } from 'design-angular-kit';
 import { TranslateService } from '@ngx-translate/core';
+import { ProblemService } from '../../services/problem.service'; 
+
 @Component({
   selector: 'app-plot',
   templateUrl: './plot.component.html',
@@ -28,6 +30,7 @@ export class PlotComponent implements AfterViewInit {
   @Input() scenarioId!: string;
   @Input() problemId!: string;
   @Input() proposalId!: string;
+  @Input() version: number = 1;
   private navigationAfterSave = false;
   isSaving = false;
   inputData: PlotInput | null = null;
@@ -58,9 +61,11 @@ export class PlotComponent implements AfterViewInit {
   originalIndexDiffs: Record<string, string> = {};
   pendingNavigationResolve: ((result: boolean) => void) | null = null;
   sessionId!: string;
+  sessionScenarioId: string | null = null;
 
   constructor(private plotService: PlotService,
     private scenarioService: ScenarioService,
+    private problemService: ProblemService,
     private notificationService: NotificationService,
     private router: Router,
     private translate: TranslateService,
@@ -84,7 +89,7 @@ export class PlotComponent implements AfterViewInit {
   private arrayToDict(values: any[]): Record<string, any> {
     const dict: Record<string, any> = {};
     (values || []).forEach(v => {
-      if (v.index_id) dict[v.index_id] = v.value;
+      if (v.index_name) dict[v.index_name] = v.index_value;
     });
     return dict;
   }
@@ -107,27 +112,47 @@ export class PlotComponent implements AfterViewInit {
     this.isSaving = true;
     this.saveAsNewScenario();
   }
+  onSaveFromUnsaved(): void {
+    this.unsavedModal.hide();
+    this.saveModal.toggle();
+  }
+
   saveAsNewScenario(): void {
+
+    const targetScenarioId = this.sessionScenarioId || this.scenarioId;
+
     this.scenarioService
-      .saveNewScenario(this.scenarioId, this.problemId, this.proposalId, this.changedWidgets, this.titolo, this.descrizione)
+      .saveSessionScenario(
+        this.sessionId,
+        targetScenarioId,
+        this.version,
+        this.problemId,
+        this.titolo,
+        this.descrizione,
+        this.changedWidgets
+      )
       .subscribe({
         next: (res) => {
           this.isSaving = false;  
           this.hasChanges = false;
           this.closeModal();
           this.navigationAfterSave = true;
-  
+          
+          if (this.pendingNavigationResolve) {
+            this.pendingNavigationResolve(true);
+            this.pendingNavigationResolve = null;
+          }
+
           this.notif.showSuccess(
             this.translate.instant('scenari.create_success', { name: this.titolo })
           );
   
-          this.router.navigate(['/problems', this.problemId, 'scenari']);
+          this.router.navigate(['/problems', this.problemId, 'proposals', this.proposalId]);
         },
         error: (err) => {
           this.isSaving = false;  
           this.notif.showError(
-            this.translate.instant('scenari.create_error', { name: this.titolo }) ||
-            err?.message
+            this.translate.instant('scenari.create_error', { name: this.titolo }) || err?.message
           );
           this.closeModal();
         }
@@ -232,23 +257,50 @@ export class PlotComponent implements AfterViewInit {
   
     return widget.v ?? widget.loc ?? 0;
   }
-  updateData(values: Record<string, number | [number, number]>) {
+  async updateData(values: Record<string, number | [number, number]>) {
     this.loading = true;
-    this.scenarioService.getUpdatedPlotInput(this.scenarioId, this.problemId, values).subscribe({
-      next: (newInput: any) => {
-        const scenarioData = newInput.extras?.data || newInput.data; 
-        this.inputData = this.plotService.preparePlotInput(scenarioData);
-                this.indexDiffs = this.arrayToDict(newInput.index_values || newInput.index_diffs || []);
-        this.kpisData = this.inputData.kpis;
-        this.renderPlot();
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Errore aggiornamento dati:', err);
-        this.notificationService.showError('Errore durante l\'aggiornamento del grafico.');
-        this.loading = false;
-      }
-    });
+    
+    try {
+      const sessionScenario = await firstValueFrom(
+        this.scenarioService.createSessionScenario(
+          this.sessionId, 
+          this.problemId, 
+          this.scenarioId, 
+          values
+        )
+      );
+      
+      this.sessionScenarioId = sessionScenario.scenario_id;
+      const evaluationRes = await firstValueFrom(
+        this.scenarioService.createSessionEvaluation(
+          this.sessionId,
+          this.problemId,
+          this.sessionScenarioId!
+        )
+      );
+
+      const evaluationId = evaluationRes.evaluation_id || evaluationRes.id; // Verifica il nome esatto della property sulla response
+      const rawResponse = await firstValueFrom(
+        this.scenarioService.getSessionEvaluationData(
+          this.sessionId,
+          evaluationId,
+          this.problemId
+        )
+      );
+
+      const scenarioData = rawResponse.extras?.data || rawResponse.data || rawResponse; 
+      this.inputData = this.plotService.preparePlotInput(scenarioData);
+            this.indexDiffs = this.arrayToDict(sessionScenario.index_values || []);
+      this.kpisData = this.inputData.kpis;
+      
+      this.renderPlot();
+
+    } catch (err: any) {
+      console.error('Errore aggiornamento dati di sessione:', err);
+      this.notificationService.showError('Errore durante l\'aggiornamento iterativo del grafico.');
+    } finally {
+      this.loading = false;
+    }
   }
 
   toggleEditing(): void {
@@ -299,6 +351,9 @@ export class PlotComponent implements AfterViewInit {
         return;
       }
       try {
+        const problemData = await firstValueFrom(this.problemService.getProblemById(this.problemId));
+        this.editableIndexes = problemData?.extras?.editable_indexes || [];
+
         const evaluations = await firstValueFrom(this.scenarioService.getEvaluations(this.problemId, this.scenarioId));
         const completedEvals = evaluations.filter(e => 
           e.scenario_id === this.scenarioId && e.state === 'COMPLETED'
@@ -326,8 +381,7 @@ export class PlotComponent implements AfterViewInit {
         this.widgets = this.applyIndexDiffsToWidgets(this.originalWidgets, this.indexDiffs);
         
         this.inputData = this.plotService.preparePlotInput(dataSet);
-        
-        this.editableIndexes = dataSet.editable_indexes || dataSet.extras?.editable_indexes || [];
+
         this.kpisData = this.inputData.kpis;
         
         this.setupSelectOptions();

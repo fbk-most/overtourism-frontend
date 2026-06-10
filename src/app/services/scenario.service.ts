@@ -42,23 +42,90 @@ export class ScenarioService {
   constructor(private http: HttpClient, private configService: ConfigService) {
     this.baseUrl = environment.apiBaseUrl;
   }
-  saveNewScenario(scenarioId: string, problemId: string, proposalId:string, values: Record<string, number | [number, number]>, titolo: string, descrizione: string)
-    : Observable<any> {
+  saveSessionScenario(
+    sessionId: string,
+    scenarioId: string,
+    version: number,
+    problemId: string,
+    name: string,
+    description: string,
+    changedWidgets: Record<string, number | [number, number]>
+  ): Observable<any> {
+    
+    const indexValues = Object.keys(changedWidgets || {}).map(key => ({
+      index_id: key,
+      value: changedWidgets[key]
+    }));
+
+    const payload = {
+      problem_id: problemId,
+      scenario_id: scenarioId,
+      version:version,
+      name: name,
+      description: description,
+      index_values: indexValues
+    };
+
     return this.http.post<any>(
-      `${this.baseUrl}/scenarios/${scenarioId}`,
-      { 
-        values, 
-        name: titolo,             
-        description: descrizione   
-       },  
-      { params: { problem_id: problemId, proposal_id:proposalId } }  
+      `${this.baseUrl}/sessions/${sessionId}/scenarios/${scenarioId}`,
+      payload,
+      { params: { problem_id: problemId } }
     );
   }
+  // saveNewScenario(scenarioId: string, problemId: string, proposalId:string, values: Record<string, number | [number, number]>, titolo: string, descrizione: string)
+  //   : Observable<any> {
+  //   return this.http.post<any>(
+  //     `${this.baseUrl}/scenarios/${scenarioId}`,
+  //     { 
+  //       values, 
+  //       name: titolo,             
+  //       description: descrizione   
+  //      },  
+  //     { params: { problem_id: problemId, proposal_id:proposalId } }  
+  //   );
+  // }
   getScenarioData(scenarioId: string, problemId: string): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/scenarios/${scenarioId}`,{
       params: { problem_id: problemId }
     });
   }
+  createSessionScenario(
+    sessionId: string,
+    problemId: string,
+    baseScenarioId: string,
+    values: Record<string, number | [number, number]>
+  ): Observable<any> {
+    const payload = {
+      base_scenario_id: baseScenarioId,
+      // name: "Temp Session Scenario",
+      // description: "Auto-generated for session preview",
+      values: values
+    };
+    return this.http.post<any>(`${this.baseUrl}/sessions/${sessionId}/scenarios`, payload, {
+      params: { problem_id: problemId }
+    });
+  }
+  createSessionEvaluation(
+    sessionId: string,
+    problemId: string,
+    scenarioId: string
+  ): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/sessions/${sessionId}/evaluations`, 
+      { scenario_id: scenarioId }, 
+      { params: { problem_id: problemId } }
+    );
+  }
+
+  getSessionEvaluationData(
+    sessionId: string,
+    evaluationId: string,
+    problemId: string
+  ): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/sessions/${sessionId}/evaluations/${evaluationId}/data`, {
+      params: { problem_id: problemId,as_snapshot:false }
+    });
+  }
+  
   getEvaluations(problemId: string, scenarioId?: string): Observable<any[]> {
     let params = new HttpParams().set('problem_id', problemId);
     if (scenarioId) {

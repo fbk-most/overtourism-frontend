@@ -72,26 +72,25 @@
 
   <p> Vuoi salvarlo come nuovo scenario per renderlo disponibile tra quelli salvati?
 
-  </p>
-  <it-input label="{{ 'save.title' | translate }} *" name="titolo" required [(ngModel)]="titolo" #titoloInput="ngModel">
-  </it-input>
+  <div class="alert alert-warning mb-3">
+    <span class="material-icons me-1 align-middle text-warning" style="font-size: 1.2rem;">warning</span>
+    <strong>Attenzione:</strong> salvando, lo scenario appena creato verrà condiviso e reso disponibile sulla piattaforma.
+  </div>
+
+  <it-input label="{{ 'save.title' | translate }} *" name="titolo" required [(ngModel)]="titolo" #titoloInput="ngModel"></it-input>
   <small *ngIf="formInvalid && !titolo?.trim()" class="text-danger">Il titolo è obbligatorio</small>
 
-
   <it-textarea class="w-100" label="{{ 'save.description' | translate }} *" name="descrizione" required
-    [(ngModel)]="descrizione" #descrizioneInput="ngModel">
-  </it-textarea>
+    [(ngModel)]="descrizione" #descrizioneInput="ngModel"></it-textarea>
   <small *ngIf="formInvalid && !descrizione?.trim()" class="text-danger">La descrizione è obbligatoria</small>
 
-
   <ng-container footer>
-    <button itButton="outline-primary" size="sm" type="button" data-bs-dismiss="modal"
-      (click)="closeModal()">Annulla</button>
+    <button itButton="outline-primary" size="sm" type="button" data-bs-dismiss="modal" (click)="closeModal()">Annulla</button>
     <button itButton="primary" size="sm" type="button"
       [disabled]="isSaving || (titoloInput.invalid ?? false) || (descrizioneInput.invalid ?? false)"
       (click)="confirmSave()">
       <ng-container *ngIf="!isSaving; else saving">
-        Salva
+        Salva e Condividi
       </ng-container>
       <ng-template #saving>
         <span class="spinner-border spinner-border-sm me-2" role="status"></span>
@@ -101,11 +100,13 @@
   </ng-container>
 </it-modal>
 <it-modal #unsavedModal>
-  <ng-container modalTitle>Modifiche non salvate</ng-container>
-  <p>Hai modifiche non salvate. Vuoi davvero uscire senza salvare?</p>
+  <ng-container modalTitle>Sei sicuro di voler abbandonare la pagina?</ng-container>
+  <p>Hai modifiche non salvate.  Chiudendo ora, tutte le impostazioni modificate in questa sessione andranno perse.</p>
+  
   <ng-container footer>
     <button itButton="outline-primary" (click)="onCancelLeave()">Annulla</button>
     <button itButton="danger" (click)="onConfirmLeaveWithoutSaving()">Esci senza salvare</button>
+    <button itButton="primary" (click)="onSaveFromUnsaved()">Salva configurazione</button>
   </ng-container>
 </it-modal>
  <!-- Info e note SEMPRE visibili -->

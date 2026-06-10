@@ -26,7 +26,7 @@
 </div>
 
 <div class="my-4 d-flex flex-column w-100">
-  <app-plot [scenarioId]="scenarioId" [problemId]="problemId" [proposalId]="proposalId" id="pdfContent"></app-plot>
+  <app-plot [scenarioId]="scenarioId" [problemId]="problemId" [version]="scenario?.version || 0" [proposalId]="proposalId" id="pdfContent"></app-plot>
 </div>
 <it-modal #deleteModal id="deleteModal">
   <ng-container modalTitle>Elimina scenario</ng-container>
