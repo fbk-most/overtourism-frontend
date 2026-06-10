@@ -193,6 +193,7 @@ async onSubmit() {
       proposal_id: this.proposalToEdit ? this.proposalToEdit.proposal_id : this.generateId(),
       problem_id: this.problemId,
       name: this.model.title,
+      version: this.proposalToEdit?.version || 0,
       description: this.model.description,
       status: this.model.status || 'draft',
       related_scenario_ids: this.model.related_scenarios.map(s => s.scenario_id),
