@@ -129,11 +129,20 @@ export class ProblemCreateComponent {
   
       if (this.editProblemId) {
       res = await this.svc.updateProblem(this.editProblemId, payload).toPromise();
+      if (res && res.version) {
+        this.savedVersion = res.version;
+      }
       this.notif.showSuccess(
         this.translate.instant('problems.update_success', { name: payload.name })
       );
     } else {
       res = await this.svc.createProblem(payload).toPromise();
+      if (res) {
+        this.savedProblemId = res.problem_id;
+        this.savedVersion = res.version;
+        this.savedTenant = res.tenant;
+        this.savedCreated = res.created ? new Date(res.created) : undefined;
+      }
       this.savedProblemId = res?.problem_id;
       this.notif.showSuccess(
         this.translate.instant('problems.create_success', { name: payload.name })
