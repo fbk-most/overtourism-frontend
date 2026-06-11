@@ -88,6 +88,8 @@ export class ProposalCreateComponent {
     }
 
     if (changes['proposalToEdit']) {
+      this.originalExtras = this.proposalToEdit?.extras || {};
+
       if (this.proposalToEdit) {
         this.model = {
           title: this.proposalToEdit.name || '',
@@ -184,7 +186,7 @@ export class ProposalCreateComponent {
     if (this.scenarioAuto) {
       this.scenarioAuto.clear();
     }
-    
+
     const baseScenario = this.availableScenarios.find(s => s.scenario_id === 'model_0');
     if (baseScenario) {
       this.model.related_scenarios.push(baseScenario);
