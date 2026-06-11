@@ -37,7 +37,7 @@ export class ProposalCreateComponent {
 
   originalExtras: any = {};
 
-  
+
   // 🔹 Fonte per l’autocomplete
   scenarioSource = (query: string, populateResults: (results: string[]) => void) => {
     const filtered = this.availableScenarios
@@ -53,7 +53,7 @@ export class ProposalCreateComponent {
     if (scenario && !this.model.related_scenarios.some(s => s.scenario_id === scenario.scenario_id)) {
       this.model.related_scenarios.push(scenario);
     }
-  
+
     // puliamo input e chiudiamo panel
     if (this.scenarioAuto) {
       this.scenarioAuto.clear(); // svuota e chiude
@@ -79,14 +79,14 @@ export class ProposalCreateComponent {
     private notif: NotificationService,
     private scenarioSvc: ScenarioService,
     private translate: TranslateService
-    
 
-  ) {}
+
+  ) { }
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['problemId'] && this.problemId) {
       this.loadScenarios();
     }
-  
+
     if (changes['proposalToEdit']) {
       if (this.proposalToEdit) {
         this.model = {
@@ -96,9 +96,9 @@ export class ProposalCreateComponent {
           context: this.originalExtras.context || '',
           impact: this.originalExtras.impact || '',
           status: this.proposalToEdit.status || 'draft',
-          related_scenarios: [] 
-           };
-           this.syncRelatedScenarios();
+          related_scenarios: []
+        };
+        this.syncRelatedScenarios();
       } else {
         this.originalExtras = {};
         this.model = {
@@ -119,26 +119,26 @@ export class ProposalCreateComponent {
       }
     }
   }
-  
-  
-    loadScenarios() {
-      // CAMBIATO: Usa la nuova funzione getScenarios
-      this.scenarioSvc.getScenarios(this.problemId).subscribe({
-        next: (scenarios: ProblemScenario[]) => {
-          // 🔹 Mappiamo ProblemScenario → ProposalScenario
-          this.availableScenarios = scenarios.map(s => ({
-            scenario_id: s.id,
-            scenario_name: s.name
-          } as ProposalScenario));
-    
-          // Sincronizza i chip dopo il caricamento degli scenari (se stiamo modificando)
-          this.syncRelatedScenarios();
-  
-          const baseScenario = this.availableScenarios.find(s => s.scenario_id === 'model_0');
-  
-  
+
+
+  loadScenarios() {
+    // CAMBIATO: Usa la nuova funzione getScenarios
+    this.scenarioSvc.getScenarios(this.problemId).subscribe({
+      next: (scenarios: ProblemScenario[]) => {
+        // 🔹 Mappiamo ProblemScenario → ProposalScenario
+        this.availableScenarios = scenarios.map(s => ({
+          scenario_id: s.id,
+          scenario_name: s.name
+        } as ProposalScenario));
+
+        // Sincronizza i chip dopo il caricamento degli scenari (se stiamo modificando)
+        this.syncRelatedScenarios();
+
+        const baseScenario = this.availableScenarios.find(s => s.scenario_id === 'model_0');
+
+
         if (
-          baseScenario && !this.proposalToEdit && 
+          baseScenario && !this.proposalToEdit &&
           !this.model.related_scenarios.some(s => s.scenario_id === baseScenario.scenario_id)
         ) {
           this.model.related_scenarios.push(baseScenario);
@@ -149,7 +149,7 @@ export class ProposalCreateComponent {
       }
     });
   }
-  
+
   addResource() {
     if (this.newResource.trim()) {
       this.model.resources.push(this.newResource.trim());
@@ -167,7 +167,29 @@ export class ProposalCreateComponent {
     }
     this.onSubmit();
   }
-
+  resetForm() {
+    this.model = {
+      title: '',
+      description: '',
+      resources: [],
+      context: '',
+      impact: '',
+      status: 'draft',
+      related_scenarios: []
+    };
+    this.originalExtras = {};
+    if (this.proposalForm) {
+      this.proposalForm.resetForm();
+    }
+    if (this.scenarioAuto) {
+      this.scenarioAuto.clear();
+    }
+    
+    const baseScenario = this.availableScenarios.find(s => s.scenario_id === 'model_0');
+    if (baseScenario) {
+      this.model.related_scenarios.push(baseScenario);
+    }
+  }
   isUrl(value: string): boolean {
     return value.startsWith('http://') || value.startsWith('https://');
   }
@@ -180,61 +202,64 @@ export class ProposalCreateComponent {
   }
   isSaving = false;
 
-async onSubmit() {
-  if (this.isSaving) return; // evita doppi click
-  this.isSaving = true;
+  async onSubmit() {
+    if (this.isSaving) return; // evita doppi click
+    this.isSaving = true;
 
-  try {
-    if (!this.problemId) {
-      this.notif.showError(this.translate.instant('problems.proposals.invalid_problem'));
-      return;
-    }
-    const payload: Proposal = {
-      proposal_id: this.proposalToEdit ? this.proposalToEdit.proposal_id : this.generateId(),
-      problem_id: this.problemId,
-      name: this.model.title,
-      version: this.proposalToEdit?.version || 0,
-      description: this.model.description,
-      status: this.model.status || 'draft',
-      related_scenario_ids: this.model.related_scenarios.map(s => s.scenario_id),
-      extras: {
-        ...this.originalExtras,
-        resources: this.model.resources || [],
-        context: this.model.context || '',
-        impact: this.model.impact || ''
-      },
-      created: this.proposalToEdit ? this.proposalToEdit.created : new Date().toISOString(),
-      updated: new Date().toISOString()
-    };
+    try {
+      if (!this.problemId) {
+        this.notif.showError(this.translate.instant('problems.proposals.invalid_problem'));
+        return;
+      }
+      const payload: Proposal = {
+        proposal_id: this.proposalToEdit ? this.proposalToEdit.proposal_id : this.generateId(),
+        problem_id: this.problemId,
+        name: this.model.title,
+        version: this.proposalToEdit?.version || 0,
+        description: this.model.description,
+        status: this.model.status || 'draft',
+        related_scenario_ids: this.model.related_scenarios.map(s => s.scenario_id),
+        extras: {
+          ...this.originalExtras,
+          resources: this.model.resources || [],
+          context: this.model.context || '',
+          impact: this.model.impact || ''
+        },
+        created: this.proposalToEdit ? this.proposalToEdit.created : new Date().toISOString(),
+        updated: new Date().toISOString()
+      };
 
-    let res: any;
+      let res: any;
 
-    if (this.proposalToEdit) {
-      res = await this.proposalSvc
-        .updateProposal(this.proposalToEdit.proposal_id, this.problemId, payload)
-        .toPromise();
+      if (this.proposalToEdit) {
+        res = await this.proposalSvc
+          .updateProposal(this.proposalToEdit.proposal_id, this.problemId, payload)
+          .toPromise();
 
-      this.notif.showSuccess(
-        this.translate.instant('problems.proposals.update_success', { name: payload.name })
+        this.notif.showSuccess(
+          this.translate.instant('problems.proposals.update_success', { name: payload.name })
+        );
+      } else {
+        res = await this.proposalSvc.createProposal(this.problemId, payload).toPromise();
+
+        this.notif.showSuccess(
+          this.translate.instant('problems.proposals.create_success', { name: payload.name })
+        );
+      }
+
+      this.proposalCreated.emit();
+      if (!this.proposalToEdit) {
+        this.resetForm();
+      }
+    } catch (err: any) {
+      this.notif.showError(
+        this.translate.instant('problems.proposals.create_error', { name: this.model.title }) ||
+        err?.message
       );
-    } else {
-      res = await this.proposalSvc.createProposal(this.problemId, payload).toPromise();
-
-      this.notif.showSuccess(
-        this.translate.instant('problems.proposals.create_success', { name: payload.name })
-      );
+    } finally {
+      this.isSaving = false;
     }
-
-    this.proposalCreated.emit();
-  } catch (err: any) {
-    this.notif.showError(
-      this.translate.instant('problems.proposals.create_error', { name: this.model.title }) ||
-      err?.message
-    );
-  } finally {
-    this.isSaving = false;
   }
-}
 
   private generateId(): string {
     return Math.random().toString(36).substring(2, 12);
