@@ -72,7 +72,7 @@ export class ScenariComponent {
   }
 
   hasParams(scenario: any): boolean {
-    return !!scenario.index_diffs && Object.keys(scenario.index_diffs).length > 0;
+    return !!scenario.extras?.index_diffs && Object.keys(scenario.extras.index_diffs).length > 0;
   }
   
   onScenarioCheck(scenario: any, checked: boolean) {
@@ -88,9 +88,9 @@ export class ScenariComponent {
   }
 
   getDiffDescription(scenario: any): string {
-    if (!scenario.index_diffs) return '';
+    if (!scenario.extras?.index_diffs) return '';
   
-    const diffs = Object.entries(scenario.index_diffs).map(([key, value]) => {
+    const diffs = Object.entries(scenario.extras.index_diffs).map(([key, value]) => {
       const name = this.getIndexNameFromKey(key);
       return `<div width="300px"><strong>${name}</strong>: ${value}</div>`;
     });

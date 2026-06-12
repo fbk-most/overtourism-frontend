@@ -89,6 +89,13 @@ export class ScenarioService {
       params: { problem_id: problemId }
     });
   }
+
+  createSession(problemId: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/sessions`, {}, {
+      params: { problem_id: problemId }
+    });
+  }
+  
   createSessionScenario(
     sessionId: string,
     problemId: string,

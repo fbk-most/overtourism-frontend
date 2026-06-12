@@ -60,9 +60,9 @@ export class PlotComponent implements AfterViewInit {
   //widget diversi ma non locali, usati per il reset locale
   originalIndexDiffs: Record<string, string> = {};
   pendingNavigationResolve: ((result: boolean) => void) | null = null;
-  sessionId!: string;
-  sessionScenarioId: string | null = null;
-
+  sessionId!: string; 
+  sessionScenarioId: string | null = null; 
+ 
   constructor(private plotService: PlotService,
     private scenarioService: ScenarioService,
     private problemService: ProblemService,
@@ -73,18 +73,31 @@ export class PlotComponent implements AfterViewInit {
   ) { }
 
   async ngAfterViewInit() {
-    await this.loadWidgetsAsync();
-    await this.loadData();
+    await this.initSessionAsync();  
+    await this.loadWidgetsAsync(); 
+    await this.loadData();         
+  } catch (e: any) {
+    console.error("Errore inizializzazione component plot", e);
+  
   }
   ngOnInit() {
-    this.initSession();
+
   }
-  private initSession() {
-    this.sessionId = crypto.randomUUID ? crypto.randomUUID() : 'sess-' + Date.now().toString();
-        sessionStorage.setItem('overtourism_session_id', this.sessionId);
+  private async initSessionAsync(): Promise<void> {
+    try {
+      const response = await firstValueFrom(this.scenarioService.createSession(this.problemId));
+      this.sessionId = response.session_id;
+      sessionStorage.setItem('overtourism_session_id', this.sessionId);
+      console.log('Session ID from backend:', this.sessionId);
+    } catch (err: any) {
+      console.error('Errore generazione sessione: ', err);
+      this.notificationService.showError('Impossibile creare una sessione di calcolo con il server.');
+      throw err;
+    }
   }
   ngOnDestroy() {
     sessionStorage.removeItem('overtourism_session_id');
+    console.log('Session ID removed');
   }
   private arrayToDict(values: any[]): Record<string, any> {
     const dict: Record<string, any> = {};
@@ -120,7 +133,7 @@ export class PlotComponent implements AfterViewInit {
   saveAsNewScenario(): void {
 
     const targetScenarioId = this.sessionScenarioId || this.scenarioId;
-
+    console.log('Saving as scenario ID:', targetScenarioId);
     this.scenarioService
       .saveSessionScenario(
         this.sessionId,
@@ -222,8 +235,6 @@ export class PlotComponent implements AfterViewInit {
           changedValues[updated.index_id] = this.extractValue(updated);
           continue;
         }
-  
-        // Per lognorm confronto solo v, per gli altri confronto anche vMin e vMax
         const isLognorm = updated.index_type === 'lognorm';
         const hasChanged =
           isLognorm
@@ -271,6 +282,7 @@ export class PlotComponent implements AfterViewInit {
       );
       
       this.sessionScenarioId = sessionScenario.scenario_id;
+      console.log('Session scenario created with ID:', this.sessionScenarioId);
       const evaluationRes = await firstValueFrom(
         this.scenarioService.createSessionEvaluation(
           this.sessionId,
@@ -291,9 +303,15 @@ export class PlotComponent implements AfterViewInit {
       const scenarioData = rawResponse.extras?.data || rawResponse.data || rawResponse; 
       this.inputData = this.plotService.preparePlotInput(scenarioData);
             this.indexDiffs = this.arrayToDict(sessionScenario.index_values || []);
-      this.kpisData = this.inputData.kpis;
+            let diffsValues = sessionScenario.extras?.index_diffs;
+            if (!diffsValues && sessionScenario.index_values) {
+                diffsValues = this.arrayToDict(sessionScenario.index_values);
+            }
       
-      this.renderPlot();
+            this.indexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
+            
+            this.kpisData = this.inputData.kpis;
+            this.renderPlot();
 
     } catch (err: any) {
       console.error('Errore aggiornamento dati di sessione:', err);
@@ -353,7 +371,22 @@ export class PlotComponent implements AfterViewInit {
       try {
         const problemData = await firstValueFrom(this.problemService.getProblemById(this.problemId));
         this.editableIndexes = problemData?.extras?.editable_indexes || [];
+        const scenarioMetadata = await firstValueFrom(this.scenarioService.getScenarioData(this.scenarioId, this.problemId));
+        
+        let diffsValues = scenarioMetadata.extras?.index_diffs;
+        
+        // Se non trovi index_diffs, fallback su index_values dello scenario
+        if (!diffsValues && scenarioMetadata.index_values) {
+            diffsValues = this.arrayToDict(scenarioMetadata.index_values);
+        }        
+        
+        this.originalIndexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
+        this.indexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
+        
+        // Applica i widget basandoti sui dati dello scenario
+        this.widgets = this.applyIndexDiffsToWidgets(this.originalWidgets, this.indexDiffs);
 
+        // 2. RECUPERA LE EVALUATIONS PER DISEGNARE LE CURVE DEL GRAFICO
         const evaluations = await firstValueFrom(this.scenarioService.getEvaluations(this.problemId, this.scenarioId));
         const completedEvals = evaluations.filter(e => 
           e.scenario_id === this.scenarioId && e.state === 'COMPLETED'
@@ -369,19 +402,14 @@ export class PlotComponent implements AfterViewInit {
         if (!currentEval) {
           throw new Error('Nessuna evaluation completata trovata per questo scenario.');
         }
+        
         const validEvaluationId = currentEval.evaluation_id;
         const rawResponse = await firstValueFrom(this.scenarioService.getEvaluationData(validEvaluationId, this.problemId));
         
         const dataSet = rawResponse.data || {};
-        const valuesDict = this.arrayToDict(dataSet.index_values || []);
         
-        this.originalIndexDiffs = JSON.parse(JSON.stringify(valuesDict));
-        this.indexDiffs = JSON.parse(JSON.stringify(valuesDict));
-        
-        this.widgets = this.applyIndexDiffsToWidgets(this.originalWidgets, this.indexDiffs);
-        
+        // Prepariamo i dati per il plot (le curve)
         this.inputData = this.plotService.preparePlotInput(dataSet);
-
         this.kpisData = this.inputData.kpis;
         
         this.setupSelectOptions();

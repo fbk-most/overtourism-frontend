@@ -33,7 +33,6 @@ import { BreadcrumbsComponent } from './components/breadcrumbs/breadcrumbs.compo
 import { ConfrontoScenariComponent } from './pages/problems/confronto-scenari/confronto-scenari.component';
 // import { ConfigService } from './services/config.service';
 import { HttpErrorInterceptor } from './interceptors/http-error.interceptor';
-import { SessionInterceptor } from './interceptors/session.interceptor';
 import { BackButtonComponent } from './components/back-button/back-button.component';
 import { NgxSliderModule } from '@angular-slider/ngx-slider';
 import { KpiComparisonComponent } from './components/kpi-comparison/kpi-comparison.component';
@@ -119,11 +118,6 @@ export function initializeAuth(authService: AuthenticationService) {
       provide: APP_INITIALIZER,
       useFactory: initializeAuth,
       deps: [AuthenticationService],
-      multi: true
-    },
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: SessionInterceptor,
       multi: true
     },
     {
