@@ -95,8 +95,14 @@ export class OvertourismMapComponent implements OnChanges, AfterViewInit {
       const featureId = this.featureIdKey 
         ? feature.properties[this.featureIdKey.split('.').pop()!] 
         : null;
-      const datoComune = datiAnno.find(d => d[this.locationsCol!] === featureId);
-      
+        const datoComune = datiAnno.find(d => {
+          const colVal = d[this.locationsCol!];
+          if (colVal === undefined || colVal === null) return false;
+          if (Array.isArray(colVal)) {
+            return colVal.some(v => String(v) === String(featureId));
+          }
+          return String(colVal) === String(featureId);
+        });      
       comuni.push(featureId);
       const valore = datoComune ? datoComune[this.selectedKpi!] : NaN;
       valori.push(valore);
