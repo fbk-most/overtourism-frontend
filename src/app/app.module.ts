@@ -54,7 +54,8 @@ import { OvertourismComponent } from './pages/overtourism/overtourism/overtouris
 import { ProposalDetailPageComponent } from './pages/problems/proposal-detail-page/proposal-detail-page.component';
 import { ProposalListPageComponent } from './pages/problems/proposal-list-page/proposal-list-page.component';
 import { EmptyFieldPipe } from './pipes/empty-field.pipe';
-import { AuthenticationService } from './services/authentication.service';
+import { ChatbotComponent } from './components/chatbot/chatbot.component';
+import { MatDialogModule } from '@angular/material/dialog';import { AuthenticationService } from './services/authentication.service';
 import { LoginComponent } from './pages/login/login.component';
 import { TenantInterceptor } from './interceptors/tenant.interceptor';
 
@@ -89,13 +90,9 @@ export function initializeAuth(authService: AuthenticationService) {
     AppSideBarModule,
     FormsModule,
     ReactiveFormsModule,
+    ChatbotComponent,
     NgxSliderModule,
-    OAuthModule.forRoot({
-      resourceServer: {
-        allowedUrls: [environment.apiBaseUrl],
-        sendAccessToken: true
-      }
-    }), HttpClientModule,
+    HttpClientModule,
     TranslateModule.forRoot({
       loader: {
         provide: TranslateLoader,

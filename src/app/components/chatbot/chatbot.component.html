@@ -1,0 +1,42 @@
+<!-- Floating button -->
+<div class="chatbot-button" (click)="toggle()">
+  💬
+</div>
+
+<!-- Chat window -->
+<div class="chatbot-window" *ngIf="isOpen">
+  <div class="chatbot-header">
+    Chatbot
+    <span class="close" (click)="toggle()">✕</span>
+  </div>
+
+  <div class="chatbot-messages">
+    <div
+      *ngFor="let msg of messages"
+      [class.user]="msg.sender === 'user'"
+      [class.bot]="msg.sender === 'bot'"
+    >
+      <!-- Plain text for user, rendered markdown for bot -->
+      <div class="message-text" *ngIf="msg.sender === 'user'">{{ msg.text }}</div>
+      <div class="message-text markdown-body" *ngIf="msg.sender === 'bot'" [innerHTML]="msg.html"></div>
+    </div>
+
+    <!-- Typing indicator -->
+    <div *ngIf="isTyping" class="bot typing">
+      <div class="message-text">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="status-text" *ngIf="statusMessage">{{ statusMessage }}</div>
+    </div>
+  </div>
+
+  <div class="chatbot-input">
+    <input
+      type="text"
+      [(ngModel)]="inputText"
+      (keydown.enter)="send()"
+      placeholder="Type your message here.."
+    />
+    <button itButton="primary" (click)="send()">Send</button>
+  </div>
+</div>

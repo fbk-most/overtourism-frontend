@@ -10,6 +10,9 @@ import {
 } from '../../../components/plot/plot.config';
 import { PdfService } from '../../../services/pdf.service';
 import { TranslateService } from '@ngx-translate/core';
+import { MatDialog } from '@angular/material/dialog';
+import { ChatbotDialogComponent } from '../../../components/chatbot-dialog/chatbot-dialog.component';
+import { ConfrontoScenariContext } from '../../../models/confronto-scenari-context.model';
 
 @Component({
   selector: 'app-confronto-scenari',
@@ -42,14 +45,17 @@ export class ConfrontoScenariComponent {
   baseWidgets: Record<string, Widget[]> = {};
 
   
+  // merged
+  // plotInputLeft?: PlotInput;
+  // plotInputRight?: PlotInput; 
   
   constructor(
     private scenarioService: ScenarioService,
     private plotService: PlotService,
     private route: ActivatedRoute,
     private pdfService: PdfService,
-    private translate: TranslateService
-    
+    private translate: TranslateService,
+    private dialog: MatDialog
   ) { }
 
   async ngOnInit() {
@@ -209,6 +215,23 @@ export class ConfrontoScenariComponent {
     } catch (error) {
       console.error('Errore nel caricamento dei dati di confronto:', error);
     }
+    // if (slot === 1) {
+    //   this.plotInputLeft = input;
+    // } else {
+    //   this.plotInputRight = input;
+    // }
+    // console.log('Loaded scenario data for slot', slot, res);
+
+    // const container = slot === 1 ? this.chartLeft.nativeElement : this.chartRight.nativeElement;
+    // if (slot === 1) {
+    //   this.kpisLeft = input.kpis ? this.filterKpis(input.kpis) : undefined;
+    //   this.widgetsLeft = res.widgets || {};
+    // } else {
+    //   this.kpisRight = input.kpis ? this.filterKpis(input.kpis) : undefined;
+    //   this.widgetsRight = res.widgets || {};
+    // }
+
+    // this.renderChart(container, input);
   }
   filterKpis(rawData: Record<string, any>): Record<string, { level: number, confidence: number }> {
     return Object.keys(rawData)
@@ -323,6 +346,74 @@ export class ConfrontoScenariComponent {
   }, 0);
 
   }
+
+  buildChatbotContext(): ConfrontoScenariContext {
+    return {
+      scenarios: {
+        left: {
+          id: this.selectedScenario1Id,
+          name: this.getScenarioName(this.selectedScenario1Id) ?? 'Scenario 1',
+          color: this.scenario1Color,
+          kpis: this.kpisLeft ?? {},
+          widgets: Object.values(this.widgetsLeft).flat() ?? [],
+          charts: this.plotInputLeft
+            ? this.plotService.extractChartSummaries(
+                this.plotInputLeft,
+                'left',
+                {
+                  monoDimensionale: this.monoDimensionale,
+                  sottosistemaSelezionato: this.sottosistemaSelezionato
+                }
+              )
+            : []
+        },
+        right: {
+          id: this.selectedScenario2Id,
+          name: this.getScenarioName(this.selectedScenario2Id) ?? 'Scenario 2',
+          color: this.scenario2Color,
+          kpis: this.kpisRight ?? {},
+          widgets: Object.values(this.widgetsRight).flat() ?? [],
+          charts: this.plotInputRight
+            ? this.plotService.extractChartSummaries(
+                this.plotInputRight,
+                'right',
+                {
+                  monoDimensionale: this.monoDimensionale,
+                  sottosistemaSelezionato: this.sottosistemaSelezionato
+                }
+              )
+            : []
+        }
+      },
+      comparisons: {
+        widgetDiffs: this.getWidgetDiffs(this.widgetsLeft, this.widgetsRight).map(d => ({
+          index_id: d.index_id,
+          index_name: d.index_name,
+          left: d.value,
+          right: d.otherValue
+        }))
+      },
+      uiState: {
+        monoDimensionale: this.monoDimensionale,
+        sottosistemaSelezionato: this.sottosistemaSelezionato,
+        showAllSubsystems: this.showAllSubsystems
+      }
+    };
+  }
+
+  openChatbot() {
+    if (!this.plotInputLeft || !this.plotInputRight) {
+      alert('Please wait until both scenarios are fully loaded.');
+      return;
+    }
+
+  this.dialog.open(ChatbotDialogComponent, {
+      width: '400px',
+      height: '600px',
+      data: this.buildChatbotContext()
+    });
+  }
+
 }
 // const KPI_TRANSLATIONS: Record<string, string> = {
 //   constraint_level_alberghi: 'constraint_level_alberghi',

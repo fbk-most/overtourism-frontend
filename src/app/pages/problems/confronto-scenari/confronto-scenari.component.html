@@ -56,6 +56,9 @@
       </div>
     </div>
     <div class="col-md-2 d-flex align-items-center">
+        <button itButton="secondary" (click)="openChatbot()">
+          Apri Chatbot
+        </button>
       <button itButton="primary" (click)="downloadPdf()" [disabled]="isDownloading">
         <ng-container *ngIf="!isDownloading; else loading">
           Scarica PDF
@@ -140,3 +143,10 @@
 
   <app-back-button class="exclude-from-pdf"></app-back-button>
 </div>
+
+<app-chatbot
+  [scenarioId1]="selectedScenario1Id"
+  [scenarioId2]="selectedScenario2Id"
+  [problemId]="problemId"
+>
+</app-chatbot>
