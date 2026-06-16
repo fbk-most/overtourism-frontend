@@ -23,7 +23,6 @@ import { AppFooterModule } from './components/app-footer/app-footer.module';
 
 // Interceptors & Services
 import { HttpErrorInterceptor } from './interceptors/http-error.interceptor';
-import { SessionInterceptor } from './interceptors/session.interceptor';
 import { TenantInterceptor } from './interceptors/tenant.interceptor';
 import { AuthenticationService } from './services/authentication.service';
 
@@ -131,11 +130,6 @@ export function initializeAuth(authService: AuthenticationService) {
       provide: APP_INITIALIZER,
       useFactory: initializeAuth,
       deps: [AuthenticationService],
-      multi: true
-    },
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: SessionInterceptor,
       multi: true
     },
     {

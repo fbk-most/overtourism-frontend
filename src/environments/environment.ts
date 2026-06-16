@@ -3,9 +3,9 @@ export const environment = {
   apiBaseUrl: 'http://127.0.0.1:8000/api/v2',
   auth: {
     issuer: 'https://aac.platform.smartcommunitylab.it', 
-    clientId: 'c_e550ec7f86174720872ac9c36fbecdcb',
+    clientId: 'c_50e8e205e30243588df8f1ad9425831a',
     responseType: 'code',
-    scope: 'openid profile email',
+    scope: 'openid profile offline_access email',
     redirectUri: window.location.origin + '/'
   }
 };

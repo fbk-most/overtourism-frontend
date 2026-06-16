@@ -25,7 +25,7 @@
     "@ngx-translate/http-loader": "^16.0.1",
     "angular-oauth2-oidc": "^20.0.2",
     "bootstrap-icons": "^1.13.1",
-    "bootstrap-italia": "^2.14.0",
+    "bootstrap-italia": "^2.16.1",
     "design-angular-kit": "^19.0.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.1",
