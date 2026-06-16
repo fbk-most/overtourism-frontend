@@ -9,9 +9,25 @@ import { environment } from '../environments/environment';
 import { DesignAngularKitModule } from 'design-angular-kit';
 
 // Translate
-import { HttpClientModule, HttpClient, HttpBackend, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HttpClientModule, HttpBackend, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
-import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+import { MultiTranslateHttpLoader } from 'ngx-translate-multi-http-loader';
+
+// Forms & Modules
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { NgxSliderModule } from '@angular-slider/ngx-slider';
+import { MatDialogModule } from '@angular/material/dialog';
+import { AppSideBarModule } from './components/app-side-bar/app-side-bar.module';
+import { AppHeaderModule } from './components/app-header/app-header.module';
+import { AppFooterModule } from './components/app-footer/app-footer.module';
+
+// Interceptors & Services
+import { HttpErrorInterceptor } from './interceptors/http-error.interceptor';
+import { SessionInterceptor } from './interceptors/session.interceptor';
+import { TenantInterceptor } from './interceptors/tenant.interceptor';
+import { AuthenticationService } from './services/authentication.service';
+
+// Pages & Components
 import { HomeComponent } from './pages/home/home.component';
 import { ProblemsComponent } from './pages/problems/problems/problems.component';
 import { ScenariComponent } from './pages/problems/scenari/scenari.component';
@@ -19,22 +35,14 @@ import { PreferitiComponent } from './pages/problems/preferiti/preferiti.compone
 import { FaqsComponent } from './pages/faqs/faqs.component';
 import { TermsComponent } from './pages/terms/terms.component';
 import { SettingsComponent } from './pages/settings/settings.component';
-import { AppSideBarModule } from './components/app-side-bar/app-side-bar.module';
-import { AppHeaderModule } from './components/app-header/app-header.module';
-import { AppFooterModule } from './components/app-footer/app-footer.module';
 import { ScenarioDetailComponent } from './pages/problems/scenario-detail/scenario-detail.component';
 import { PlotComponent } from './components/plot/plot.component';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MultiTranslateHttpLoader } from 'ngx-translate-multi-http-loader';
 import { KpiBoxComponent } from './components/plot/kpi-box/kpi-box.component';
 import { PlotControlsComponent } from './components/plot/plot-controls/plot-controls.component';
 import { AppPlotEditorWidgetComponent } from './components/plot/app-plot-editor-widget/app-plot-editor-widget.component';
 import { BreadcrumbsComponent } from './components/breadcrumbs/breadcrumbs.component';
 import { ConfrontoScenariComponent } from './pages/problems/confronto-scenari/confronto-scenari.component';
-// import { ConfigService } from './services/config.service';
-import { HttpErrorInterceptor } from './interceptors/http-error.interceptor';
 import { BackButtonComponent } from './components/back-button/back-button.component';
-import { NgxSliderModule } from '@angular-slider/ngx-slider';
 import { KpiComparisonComponent } from './components/kpi-comparison/kpi-comparison.component';
 import { ProblemCreateComponent } from './pages/problems/problem-create/problem-create.component';
 import { HistogramComparisonComponent } from './components/histogram-comparison/histogram-comparison.component';
@@ -53,35 +61,35 @@ import { HiddenComponent } from './pages/overtourism/hidden/hidden.component';
 import { OvertourismComponent } from './pages/overtourism/overtourism/overtourism.component';
 import { ProposalDetailPageComponent } from './pages/problems/proposal-detail-page/proposal-detail-page.component';
 import { ProposalListPageComponent } from './pages/problems/proposal-list-page/proposal-list-page.component';
-import { EmptyFieldPipe } from './pipes/empty-field.pipe';
-import { ChatbotComponent } from './components/chatbot/chatbot.component';
-import { MatDialogModule } from '@angular/material/dialog';import { AuthenticationService } from './services/authentication.service';
 import { LoginComponent } from './pages/login/login.component';
-import { TenantInterceptor } from './interceptors/tenant.interceptor';
+import { ChatbotComponent } from './components/chatbot/chatbot.component';
 
+// Pipes
+import { EmptyFieldPipe } from './pipes/empty-field.pipe';
 
-// Funzione per caricare i file delle traduzioni
+// Funzioni Factory
 export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
   return new MultiTranslateHttpLoader(httpBackend, [
-    { prefix: './assets/i18n/design-angular-kit/', suffix: '.json' }, // traduzioni design-angular-kit
-    { prefix: './assets/i18n/app/', suffix: '.json' }, // traduzioni  personalizzate
+    { prefix: './assets/i18n/design-angular-kit/', suffix: '.json' },
+    { prefix: './assets/i18n/app/', suffix: '.json' }, 
   ]);
 }
+
 export function initializeAuth(authService: AuthenticationService) {
   return () => authService.initialLoginSequence();
 }
-// export function initConfig(configService: ConfigService) {
-//   return () => configService.loadConfig();
-// }
+
 @NgModule({
-  declarations: [AppComponent, HomeComponent, ProblemsComponent, ScenariComponent, PreferitiComponent,
+  declarations: [
+    AppComponent, HomeComponent, ProblemsComponent, ScenariComponent, PreferitiComponent,
     FaqsComponent, TermsComponent, SettingsComponent, ScenarioDetailComponent, PlotComponent,
     KpiBoxComponent, PlotControlsComponent, AppPlotEditorWidgetComponent, BreadcrumbsComponent,
     ConfrontoScenariComponent, BackButtonComponent, KpiComparisonComponent, ProblemCreateComponent,
     HistogramComparisonComponent, ReadingComponent, ProposalCreateComponent, ProblemDetailComponent,
-    ProposalDetailComponent, ProposalDetailPageComponent, OvertourismComponent, OvertourismChartsComponent, OvertourismMapComponent,
-    ToastComponent, AutocompleteComponent, CapacityComponent, FlowsComponent, RedistributionComponent,
-    HiddenComponent, ProposalListPageComponent, EmptyFieldPipe, LoginComponent],
+    ProposalDetailComponent, ProposalDetailPageComponent, OvertourismComponent, OvertourismChartsComponent, 
+    OvertourismMapComponent, ToastComponent, AutocompleteComponent, CapacityComponent, FlowsComponent, 
+    RedistributionComponent, HiddenComponent, ProposalListPageComponent, EmptyFieldPipe, LoginComponent
+  ],
   imports: [
     BrowserModule,
     AppRoutingModule,
@@ -90,9 +98,16 @@ export function initializeAuth(authService: AuthenticationService) {
     AppSideBarModule,
     FormsModule,
     ReactiveFormsModule,
-    ChatbotComponent,
     NgxSliderModule,
     HttpClientModule,
+    MatDialogModule,
+    ChatbotComponent,
+    OAuthModule.forRoot({
+      resourceServer: {
+        allowedUrls: [environment.apiBaseUrl],
+        sendAccessToken: true
+      }
+    }), 
     TranslateModule.forRoot({
       loader: {
         provide: TranslateLoader,
@@ -109,7 +124,8 @@ export function initializeAuth(authService: AuthenticationService) {
         ]),
         deps: [HttpBackend],
       }),
-    })],
+    })
+  ],
   providers: [
     {
       provide: APP_INITIALIZER,
@@ -119,14 +135,20 @@ export function initializeAuth(authService: AuthenticationService) {
     },
     {
       provide: HTTP_INTERCEPTORS,
-      useClass: HttpErrorInterceptor,
+      useClass: SessionInterceptor,
       multi: true
     },
-    { provide: HTTP_INTERCEPTORS,
-       useClass: TenantInterceptor,
-        multi: true }
-
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: TenantInterceptor,
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: HttpErrorInterceptor,
+      multi: true
+    }
   ],
-  bootstrap: [AppComponent],
+  bootstrap: [AppComponent]
 })
 export class AppModule { }
