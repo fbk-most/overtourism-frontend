@@ -5,11 +5,12 @@ import { firstValueFrom } from 'rxjs';
 import { ChatFeedback, ChatMessage } from '../../models/chat.model';
 import { ChatMessageComponent } from './chat-message/chat-message.component';
 import { AgentService } from '../../services/agent.service';
+import { DesignAngularKitModule } from 'design-angular-kit';
 
 @Component({
   selector: 'app-chatbot',
   standalone: true,
-  imports: [CommonModule, FormsModule, ChatMessageComponent],
+  imports: [CommonModule, FormsModule, ChatMessageComponent,DesignAngularKitModule],
   templateUrl: './chatbot-integrated.component.html',
   styleUrls: ['./chatbot-integrated.component.scss']
 })

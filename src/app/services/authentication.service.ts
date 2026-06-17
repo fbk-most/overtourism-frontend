@@ -35,13 +35,13 @@ export class AuthenticationService {
         case 'token_refresh_error':
         case 'token_error':
           console.warn(' Rinnovo token fallito:', event.type);
-          this.logout();
+          this.forceLocalLogout();
           break;
 
         case 'session_terminated':
         case 'session_error':
           console.warn('Sessione terminata:', event.type);
-          this.logout();
+          this.forceLocalLogout();
           break;
       }
     });
@@ -81,7 +81,10 @@ export class AuthenticationService {
     this.oauthService.logOut();
     });
   }
-
+  forceLocalLogout() {
+    this.oauthService.logOut(true);
+    this.router.navigate(['/login']);
+  }
 get availableTenants(): string[] {
   const claims: any = this.oauthService.getIdentityClaims();
   return claims?.['tenant_id'] || ['default'];

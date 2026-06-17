@@ -1,16 +1,20 @@
 <div class="chatbot-app">
-
-  <div class="chatbot-header">
-    <h2>AIxPA - Digital Twin Agent</h2>
-    <span class="session-id">Sessione: {{ sessionId }}</span>
-  </div>
-
-  <div class="context-bar">
+  
+  <div class="context-bar shadow-sm">
     <span>Contesto attivo: <strong>{{ activeContext }}</strong></span>
+    <span class="session-id text-muted" title="ID Sessione">#{{ sessionId | slice:0:8 }}</span>
   </div>
 
   <div class="chat-wrapper" #chatRef>
     <div class="chat-container">
+      
+      <!-- Welcome message se vuoto -->
+      <div class="empty-state text-muted text-center mt-5" *ngIf="messages.length === 0">
+        <it-icon name="comment" size="lg" class="mb-3"></it-icon>
+        <h5>Come posso aiutarti oggi?</h5>
+        <p>Invia un messaggio o allega un file per iniziare.</p>
+      </div>
+
       <app-chat-message
         *ngFor="let msg of messages; let i = index"
         [msg]="msg"
@@ -31,25 +35,37 @@
 
   <div class="input-container">
     <div class="input-wrapper">
-      <div class="input-inner">
+      
+      <div *ngIf="attachments.length > 0" class="attachments-preview mb-2">
+        <div *ngFor="let file of attachments; let i = index" class="attachment-badge">
+          <it-icon name="clip" size="xs"></it-icon>
+          <span class="file-name text-truncate">{{ file.name }}</span>
+          <it-icon name="close" size="xs" class="remove-attachment" (click)="removeAttachment(i)"></it-icon>
+        </div>
+      </div>
+
+      <div class="input-inner shadow-sm focus-ring">
+        <button class="icon-btn attach-btn" (click)="fileInputRef.click()" title="Allega file">
+           <it-icon name="plus" size="sm"></it-icon>
+        </button>
+        <input type="file" multiple (change)="onFileChange($event)" #fileInputRef style="display:none" />
+        
         <textarea
           #textareaRef
           [(ngModel)]="input"
           (input)="onInputChange($event)"
           (keydown)="handleKeyDown($event)"
-          placeholder="Scrivi qui il tuo messaggio..."
+          placeholder="Scrivi al Digital Twin Agent..."
           [disabled]="loading"
           rows="1"
           spellcheck="false">
         </textarea>
-        <span class="attachment-icon" (click)="fileInputRef.click()" title="Allega file">📎</span>
-        <input type="file" multiple (change)="onFileChange($event)" #fileInputRef style="display:none" />
-        <button class="send-btn" (click)="sendMessage()" [disabled]="loading">Invia</button>
+        
+        <button class="icon-btn send-btn" [class.active]="input.trim().length > 0 || attachments.length > 0" (click)="sendMessage()" [disabled]="loading || (!input.trim() && attachments.length === 0)">
+          <it-icon name="arrow-right" class="icon-white bg-white" size="sm"></it-icon>
+        </button>
       </div>
-      <div *ngFor="let file of attachments; let i = index" class="attachment-name">
-        {{ file.name }}
-        <span class="remove-attachment" (click)="removeAttachment(i)">✕</span>
-      </div>
+      
     </div>
   </div>
 
