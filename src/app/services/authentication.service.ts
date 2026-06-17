@@ -14,7 +14,7 @@ export const authConfig: AuthConfig = {
     useSilentRefresh: false,
     timeoutFactor: 0.75,
     sessionChecksEnabled: false,
-    showDebugInformation: false,
+    showDebugInformation: true,
 };
 
 @Injectable({ providedIn: 'root' })
