@@ -24,6 +24,7 @@ constructor(public router: Router,    public authService: AuthenticationService
     { label: 'Livello di Affollamento', route: '/overtourism' },
     { label: 'Ridistribuzione dei turisti', route: '/redistribution' },
     { label: 'Turismo Sommerso', route: '/hidden' },
+    { label: 'AI Agent', route: '/agent' }
   ];
   doLogout() {
     this.authService.logout();

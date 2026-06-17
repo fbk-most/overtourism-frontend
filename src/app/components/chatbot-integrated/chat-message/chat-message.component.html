@@ -1,0 +1,13 @@
+<div class="message user" *ngIf="msg.role === 'user'">{{ msg.content }}</div>
+
+<div class="message assistant" *ngIf="msg.role === 'assistant'">
+  <div class="message-content" [innerHTML]="msg.content | markdown"></div>
+  <app-chat-chart-panel *ngIf="msg.chartData" [figure]="msg.chartData"></app-chat-chart-panel>
+  <app-chat-sliders-panel *ngIf="msg.slidersData" [slidersData]="msg.slidersData" [sessionId]="sessionId"
+    (sliderSubmit)="sliderSubmit.emit($event)">
+  </app-chat-sliders-panel>
+  <app-chat-feedback-bar [feedback]="feedback"
+    (voteChange)="voteChange.emit($event)"
+    (commentChange)="commentChange.emit($event)">
+  </app-chat-feedback-bar>
+</div>

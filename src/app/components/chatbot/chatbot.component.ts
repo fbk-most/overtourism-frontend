@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { marked } from 'marked';
+import { environment } from '../../../environments/environment';
 
 interface Message {
   sender: 'user' | 'bot';
@@ -42,7 +43,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   // 🔹 Language selection
   language = 'Italian';
 
-  private readonly API_URL = 'http://localhost:9000/agent';
+  private readonly API_URL = environment.agentApiUrl;
   private eventSource: EventSource | null = null;
 
   // No external library needed

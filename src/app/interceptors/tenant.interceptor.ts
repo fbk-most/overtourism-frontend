@@ -11,7 +11,7 @@ export class TenantInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const apiBase = environment.apiBaseUrl;
 
-    if (req.url.startsWith(apiBase)) {
+    if (req.url.startsWith(apiBase)|| req.url.startsWith(environment.agentApiUrl)) {
       const activeTenant = this.authService.activeTenant;
       
       if (activeTenant) {

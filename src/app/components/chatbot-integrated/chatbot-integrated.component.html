@@ -1,0 +1,56 @@
+<div class="chatbot-app">
+
+  <div class="chatbot-header">
+    <h2>AIxPA - Digital Twin Agent</h2>
+    <span class="session-id">Sessione: {{ sessionId }}</span>
+  </div>
+
+  <div class="context-bar">
+    <span>Contesto attivo: <strong>{{ activeContext }}</strong></span>
+  </div>
+
+  <div class="chat-wrapper" #chatRef>
+    <div class="chat-container">
+      <app-chat-message
+        *ngFor="let msg of messages; let i = index"
+        [msg]="msg"
+        [sessionId]="sessionId"
+        [feedback]="feedbacks[i] || {}"
+        (sliderSubmit)="onSliderSubmit($event)"
+        (voteChange)="onVote(i, $event)"
+        (commentChange)="onComment(i, $event)">
+      </app-chat-message>
+
+      <!-- Loading bubble -->
+      <div class="message assistant loading-bubble" *ngIf="loading">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="status-msg" *ngIf="statusMessage">{{ statusMessage }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-container">
+    <div class="input-wrapper">
+      <div class="input-inner">
+        <textarea
+          #textareaRef
+          [(ngModel)]="input"
+          (input)="onInputChange($event)"
+          (keydown)="handleKeyDown($event)"
+          placeholder="Scrivi qui il tuo messaggio..."
+          [disabled]="loading"
+          rows="1"
+          spellcheck="false">
+        </textarea>
+        <span class="attachment-icon" (click)="fileInputRef.click()" title="Allega file">📎</span>
+        <input type="file" multiple (change)="onFileChange($event)" #fileInputRef style="display:none" />
+        <button class="send-btn" (click)="sendMessage()" [disabled]="loading">Invia</button>
+      </div>
+      <div *ngFor="let file of attachments; let i = index" class="attachment-name">
+        {{ file.name }}
+        <span class="remove-attachment" (click)="removeAttachment(i)">✕</span>
+      </div>
+    </div>
+  </div>
+
+</div>

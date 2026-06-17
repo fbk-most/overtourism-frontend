@@ -21,6 +21,7 @@ import { OvertourismComponent } from './pages/overtourism/overtourism/overtouris
 import { UnsavedChangesGuard } from './guards/plot-unsaved-changes.guard';
 import { LoginComponent } from './pages/login/login.component';
 import { AuthGuard } from './guards/auth.guard';
+import { ChatbotIntegratedComponent } from './components/chatbot-integrated/chatbot-integrated.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -29,77 +30,77 @@ const routes: Routes = [
   {
     path: 'problems',
     data: { breadcrumb: 'Analisi' },
-    canActivate: [AuthGuard] ,
+    canActivate: [AuthGuard],
     children: [
       {
         path: '',
         component: ProblemsComponent,
-        canActivate: [AuthGuard] 
+        canActivate: [AuthGuard]
       },
       {
         path: 'create',
         component: ProblemCreateComponent,
         data: { breadcrumb: 'Nuova analisi' },
-        canActivate: [AuthGuard] 
+        canActivate: [AuthGuard]
       },
       {
         path: ':problemId',
         component: ProblemDetailComponent,
-        data: { 
+        data: {
           breadcrumb: 'Dettaglio analisi',
           breadcrumbUrl: '/problems/:problemId'
         },
-        canActivate: [AuthGuard] 
+        canActivate: [AuthGuard]
       },
       {
         path: ':problemId/proposals',
         data: { breadcrumb: 'Proposte', breadcrumbUrl: '/problems/:problemId' },
-        canActivate: [AuthGuard] ,
+        canActivate: [AuthGuard],
         children: [
           {
             path: '',
             component: ProposalListPageComponent,
             data: { breadcrumb: 'Lista proposte', breadcrumbUrl: '/problems/:problemId/proposals' },
-            canActivate: [AuthGuard] 
+            canActivate: [AuthGuard]
           },
           {
             path: ':proposalId',
             component: ProposalDetailPageComponent,
-            data: { 
+            data: {
               breadcrumb: 'Dettaglio proposta',
               breadcrumbUrl: '/problems/:problemId/proposals/:proposalId'
             },
-            canActivate: [AuthGuard] 
+            canActivate: [AuthGuard]
           },
           {
             path: ':proposalId/scenari',
-            data: { 
+            data: {
               breadcrumb: 'Scenari',
               breadcrumbUrl: '/problems/:problemId/proposals/:proposalId'
             },
-            canActivate: [AuthGuard] ,
+            canActivate: [AuthGuard],
             children: [
               {
                 path: '',
                 component: ScenariComponent,
                 data: { breadcrumb: 'Lista scenari', breadcrumbUrl: '/problems/:problemId/proposals/:proposalId/scenari' },
-                canActivate: [AuthGuard] 
+                canActivate: [AuthGuard]
               },
               {
                 path: 'confronta/:id1/:id2',
                 component: ConfrontoScenariComponent,
                 data: { breadcrumb: 'Confronto scenari' },
-                canActivate: [AuthGuard] 
+                canActivate: [AuthGuard]
               },
               {
                 path: ':scenarioId',
                 component: ScenarioDetailComponent,
                 canDeactivate: [UnsavedChangesGuard],
-                data: { 
+                data: {
                   breadcrumb: 'Dettaglio scenario',
                   breadcrumbUrl: '/problems/:problemId/proposals/:proposalId/scenari/:scenarioId'
                 },
-                canActivate: [AuthGuard] 
+                canActivate: [AuthGuard]
               }
             ]
           }
@@ -109,20 +110,24 @@ const routes: Routes = [
         path: 'preferiti',
         component: PreferitiComponent,
         data: { breadcrumb: 'Preferiti', breadcrumbUrl: '/problems/preferiti' },
-        canActivate: [AuthGuard] 
+        canActivate: [AuthGuard]
       },
-     
+
+
+
     ]
   }
   ,
-
+  { path: 'agent', 
+    component: ChatbotIntegratedComponent, 
+    canActivate: [AuthGuard] },
   // 🔹 Altre sezioni del portale
-  { path: 'capacity', component: CapacityComponent,canActivate: [AuthGuard]  },
-  { path: 'overtourism', component: OvertourismComponent,canActivate: [AuthGuard]  },
-  { path: 'flows', component: FlowsComponent ,canActivate: [AuthGuard] },
-  { path: 'redistribution', component: RedistributionComponent ,canActivate: [AuthGuard] },
-  { path: 'hidden', component: HiddenComponent ,canActivate: [AuthGuard] },
-  { path: 'faqs', component: FaqsComponent, data: { breadcrumb: 'FAQ' },canActivate: [AuthGuard]  },
+  { path: 'capacity', component: CapacityComponent, canActivate: [AuthGuard] },
+  { path: 'overtourism', component: OvertourismComponent, canActivate: [AuthGuard] },
+  { path: 'flows', component: FlowsComponent, canActivate: [AuthGuard] },
+  { path: 'redistribution', component: RedistributionComponent, canActivate: [AuthGuard] },
+  { path: 'hidden', component: HiddenComponent, canActivate: [AuthGuard] },
+  { path: 'faqs', component: FaqsComponent, data: { breadcrumb: 'FAQ' }, canActivate: [AuthGuard] },
   { path: '', redirectTo: 'problems', pathMatch: 'full' },
   { path: '**', redirectTo: 'problems' }
 ];
@@ -131,4 +136,4 @@ const routes: Routes = [
   imports: [RouterModule.forRoot(routes)],
   exports: [RouterModule]
 })
-export class AppRoutingModule {}
+export class AppRoutingModule { }
