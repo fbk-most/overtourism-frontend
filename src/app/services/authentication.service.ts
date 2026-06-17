@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { AuthConfig, OAuthService } from 'angular-oauth2-oidc';
+import { AuthConfig, OAuthEvent, OAuthService } from 'angular-oauth2-oidc';
 import { environment } from '../../environments/environment';
 import { Router } from '@angular/router';
 
@@ -10,7 +10,11 @@ export const authConfig: AuthConfig = {
   scope: environment.auth.scope,
   redirectUri: environment.auth.redirectUri,
   postLogoutRedirectUri: window.location.origin + '/', 
-  clearHashAfterLogin: true
+  clearHashAfterLogin: true,
+    useSilentRefresh: false,
+    timeoutFactor: 0.75,
+    sessionChecksEnabled: false,
+    showDebugInformation: false,
 };
 
 @Injectable({ providedIn: 'root' })
@@ -22,7 +26,25 @@ export class AuthenticationService {
   public async initialLoginSequence(): Promise<void> {
     this.oauthService.configure(authConfig);
     this.oauthService.setupAutomaticSilentRefresh();
+    this.oauthService.events.subscribe((event: OAuthEvent) => {
+      switch (event.type) {
+        case 'token_received':
+          console.log('Token rinnovato correttamente');
+          break;
 
+        case 'token_refresh_error':
+        case 'token_error':
+          console.warn(' Rinnovo token fallito:', event.type);
+          this.logout();
+          break;
+
+        case 'session_terminated':
+        case 'session_error':
+          console.warn('Sessione terminata:', event.type);
+          this.logout();
+          break;
+      }
+    });
     if (window.location.search.includes('state') && !window.location.search.includes('code=')) {
       window.history.replaceState({}, window.document.title, window.location.pathname);
     }
@@ -40,7 +62,9 @@ export class AuthenticationService {
   get isLoggedIn(): boolean {
     return this.oauthService.hasValidAccessToken();
   }
-
+  get accessToken(): string {
+    return this.oauthService.getAccessToken();
+  }
   get userName(): string {
     const claims: any = this.oauthService.getIdentityClaims();
     if (!claims) return '';

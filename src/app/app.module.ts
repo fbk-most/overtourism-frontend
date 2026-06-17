@@ -65,6 +65,7 @@ import { ChatbotComponent } from './components/chatbot/chatbot.component';
 
 // Pipes
 import { EmptyFieldPipe } from './pipes/empty-field.pipe';
+import { AuthInterceptor } from './interceptors/auth.interceptor';
 
 // Funzioni Factory
 export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
@@ -130,6 +131,11 @@ export function initializeAuth(authService: AuthenticationService) {
       provide: APP_INITIALIZER,
       useFactory: initializeAuth,
       deps: [AuthenticationService],
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
       multi: true
     },
     {
