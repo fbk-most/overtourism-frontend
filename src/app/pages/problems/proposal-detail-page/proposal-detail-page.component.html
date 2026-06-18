@@ -123,8 +123,7 @@
                       aria-label="Dettaglio scenario">
                 <span class="material-icons">visibility</span>
               </button>
-              
-              <button *ngIf="scenario.scenario_id !== 'model_0'" 
+              <button *ngIf="!scenario.id.endsWith('_base_scenario')" 
                       class="btn btn-sm btn-icon text-primary"
                       (click)="openDeleteScenarioModal(scenario); $event.stopPropagation()" 
                       [disabled]="comparazioneAttiva"
@@ -153,7 +152,7 @@
     </ng-container>
   
     <p>
-      {{ 'scenari.confirm_delete_message' | translate:{name: scenarioToDelete?.scenario_name} }}
+      {{ 'scenari.confirm_delete_message' | translate:{name: scenarioToDelete?.name} }}
     </p>
   
     <ng-container footer>
