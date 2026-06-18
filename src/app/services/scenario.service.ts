@@ -47,6 +47,7 @@ export class ScenarioService {
     scenarioId: string,
     version: number,
     problemId: string,
+    proposalId: string,
     name: string,
     description: string,
     changedWidgets: Record<string, number | [number, number]>
@@ -61,9 +62,10 @@ export class ScenarioService {
       problem_id: problemId,
       scenario_id: scenarioId,
       version:version,
+      proposal_id: proposalId,
       name: name,
       description: description,
-      index_values: indexValues
+      index_values: indexValues,
     };
 
     return this.http.post<any>(

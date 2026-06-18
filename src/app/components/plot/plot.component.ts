@@ -140,6 +140,7 @@ export class PlotComponent implements AfterViewInit {
         targetScenarioId,
         this.version,
         this.problemId,
+        this.proposalId,
         this.titolo,
         this.descrizione,
         this.changedWidgets
