@@ -123,7 +123,6 @@ export class ChatbotComponent implements OnInit, OnDestroy {
       }
       this.isTyping = false;
       this.statusMessage = '';
-      this.saveConversation();
     });
 
     this.eventSource.onerror = () => {
@@ -197,23 +196,8 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     if (fb.comment) params.set('comment', fb.comment);
     try {
       await fetch(`${this.API_URL}/feedback?${params.toString()}`, { method: 'GET', credentials: 'include' });
-      this.saveConversation();
     } catch (err) {
       console.error('Failed to submit feedback', err);
-    }
-  }
-
-  // ─── Save ──────────────────────────────────────────────────────────────────
-
-  async saveConversation(): Promise<void> {
-    try {
-      const data = await fetch(`${this.API_URL}/save/${this.sessionId}`, {
-        method: 'GET',
-        credentials: 'include',
-      }).then(res => res.json());
-      console.log(data.message ?? 'Conversation saved!');
-    } catch {
-      console.error('Failed to save conversation.');
     }
   }
 }

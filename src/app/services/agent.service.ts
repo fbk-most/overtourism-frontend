@@ -37,10 +37,6 @@ export class AgentService {
     return this.http.get(`${this.apiUrl}/feedback`, { params, withCredentials: true });
   }
 
-  saveConversation(sessionId: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/save/${sessionId}`, { withCredentials: true });
-  }
-
   createEventSource(sessionId: string): EventSource {
     return new EventSource(`${this.apiUrl}/stream/${sessionId}`, { withCredentials: true });
   }

@@ -103,7 +103,6 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked {
       this.loading = false;
       this.statusMessage = null;
       this.shouldScroll = true;
-      this.agentSvc.saveConversation(this.sessionId).subscribe();
     });
 
     eventSource.onerror = () => {
