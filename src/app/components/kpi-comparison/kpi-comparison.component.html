@@ -18,7 +18,7 @@
               class="text-muted ms-1"
               title="Intervallo di confidenza"
               >
-              ± {{ kpisLeft[key].confidence | number:'1.0-1' }}%
+              ± {{ kpisLeft[key]?.confidence | number:'1.0-1' }}%
               </span>
             </p>
             </div>
@@ -46,11 +46,11 @@
               <p class="h3 text-secondary d-flex align-items-baseline gap-2 ms-5">
                 <span class="fw-bold">{{ formatNumber(kpisRight[key]) }}</span>
                 <span
-                *ngIf="kpisRight[key]?.confidence !== undefined"
-                class="text-muted ms-1"
-                title="Intervallo di confidenza"
+                  *ngIf="kpisRight[key]?.confidence !== undefined"
+                  class="text-muted ms-1"
+                  title="Intervallo di confidenza"
                 >
-                ± {{ kpisRight[key].confidence | number:'1.0-1' }}%
+                  ± {{ kpisRight[key]?.confidence | number:'1.0-1' }}%
                 </span>
               </p>
               <!-- <div class="h5 mb-0 kpi-value-right text-start">

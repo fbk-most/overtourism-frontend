@@ -38,6 +38,8 @@ export class ConfrontoScenariComponent {
   sottosistemaSelezionato = 'default';
   widgetsLeft: Record<string, Widget[]> = {};
   widgetsRight: Record<string, Widget[]> = {};
+  diffsLeftToRight: any[] = [];
+  diffsRightToLeft: any[] = [];
   @ViewChild('chartLeft', { static: true }) chartLeft!: ElementRef<HTMLElement>;
   @ViewChild('chartRight', { static: true }) chartRight!: ElementRef<HTMLElement>;
   showControls: boolean = false; // per 'settings'
@@ -95,13 +97,13 @@ export class ConfrontoScenariComponent {
     }
     return clone;
   }
-  private arrayToDict(values: any[]): Record<string, any> {
-    const dict: Record<string, any> = {};
-    (values || []).forEach(v => {
-      if (v.index_id) dict[v.index_id] = v.value;
-    });
-    return dict;
-  }
+  // private arrayToDict(values: any[]): Record<string, any> {
+  //   const dict: Record<string, any> = {};
+  //   (values || []).forEach(v => {
+  //     if (v.index_id) dict[v.index_id] = v.value;
+  //   });
+  //   return dict;
+  // }
 
   private applyIndexDiffsToWidgets(
     widgets: Record<string, Widget[]>,
@@ -185,10 +187,16 @@ export class ConfrontoScenariComponent {
     if (!id) return;
 
     try {
-      // Recupera le Evaluation secondo le Nuove API (V2)
+      // 1. Recupera i dati di base dello SCENARIO (Qui ci sono i tuoi index_values!)
+      const scenarioRes = await firstValueFrom(this.scenarioService.getScenarioData(id, this.problemId));
+      const indexArray = scenarioRes.index_values || [];
+      
+      const valuesDict = this.arrayToDict(indexArray);
+      const specificWidgets = this.applyIndexDiffsToWidgets(this.baseWidgets, valuesDict);
+
+      // 2. Recupera le EVALUATION per i grafici e i KPI
       const evaluations = await firstValueFrom(this.scenarioService.getEvaluations(this.problemId, id));
       const completedEvals = evaluations.filter(e => e.scenario_id === id && e.state === 'COMPLETED');
-
       completedEvals.sort((a, b) => new Date(b.finished || 0).getTime() - new Date(a.finished || 0).getTime());
 
       const currentEval = completedEvals[0];
@@ -197,29 +205,60 @@ export class ConfrontoScenariComponent {
       const rawResponse = await firstValueFrom(this.scenarioService.getEvaluationData(currentEval.evaluation_id, this.problemId));
       const dataSet = rawResponse.data || {};
 
-       const indexArray = dataSet.index_values || rawResponse.index_values || [];
-      const valuesDict = this.arrayToDict(indexArray);
-      const specificWidgets = this.applyIndexDiffsToWidgets(this.baseWidgets, valuesDict);
-
+      // 3. Prepara input grafici
       const input = this.plotService.preparePlotInput(dataSet);
       const container = slot === 1 ? this.chartLeft.nativeElement : this.chartRight.nativeElement;
 
+      // 4. Assegna variabili
       if (slot === 1) {
         this.plotInputLeft = input;
-        
         this.kpisLeft = input.kpis ? this.filterKpis(input.kpis) : undefined;
         this.widgetsLeft = specificWidgets;
       } else {
         this.plotInputRight = input;
-        
         this.kpisRight = input.kpis ? this.filterKpis(input.kpis) : undefined;
         this.widgetsRight = specificWidgets;
       }
 
       this.renderChart(container, input);
-    } catch (error) {
-      console.error('Errore nel caricamento dei dati di confronto:', error);
+      this.updateDiffs(); // Ricalcola le differenze dopo il fetch
+
+    } catch (err) {
+      console.error(`Errore durante il caricamento dello scenario ${slot}:`, err);
     }
+  }
+
+  private arrayToDict(values: any): Record<string, any> {
+    if (!values) return {};
+    
+    if (Array.isArray(values)) {
+      const dict: Record<string, any> = {};
+      values.forEach(v => {
+        if (!v) return;
+        // Compatibilità con V1 (index_id, value) e V2 (index_name, index_value)
+        const key = v.index_id || v.index_name;
+        const val = v.index_value !== undefined ? v.index_value : v.value;
+        if (key && val !== undefined) {
+          dict[key] = val;
+        }
+      });
+      return dict;
+    }
+    
+    if (typeof values === 'object') {
+      return values;
+    }
+
+    return {};
+  }
+  updateDiffs() {
+    console.log('Widgets Left:', this.widgetsLeft);
+    console.log('Widgets Right:', this.widgetsRight);
+    
+    this.diffsLeftToRight = this.getWidgetDiffs(this.widgetsLeft, this.widgetsRight);
+    this.diffsRightToLeft = this.getWidgetDiffs(this.widgetsRight, this.widgetsLeft);
+    
+    console.log('Differenze L->R trovate:', this.diffsLeftToRight);
   }
   filterKpis(rawData: Record<string, any>): Record<string, { level: number, confidence: number }> {
     return Object.keys(rawData)
