@@ -62,7 +62,6 @@ export class ConfrontoScenariComponent {
   async ngOnInit() {
     this.problemId = this.route.snapshot.paramMap.get('problemId')!;
 
-    // 1. CARICHIAMO I WIDGET DI BASE PRIMA DI TUTTO
     try {
       const data = await firstValueFrom(this.scenarioService.getWidgets());
       this.baseWidgets = this.initializeWidgetBounds(data);
@@ -70,7 +69,6 @@ export class ConfrontoScenariComponent {
       console.error('Errore caricamento widget base', err);
     }
 
-    // 2. CARICHIAMO LA LISTA DEGLI SCENARI
     this.scenarioService.getScenarios(this.problemId).subscribe(scenari => {
       this.scenari = scenari;
       
@@ -187,14 +185,12 @@ export class ConfrontoScenariComponent {
     if (!id) return;
 
     try {
-      // 1. Recupera i dati di base dello SCENARIO (Qui ci sono i tuoi index_values!)
       const scenarioRes = await firstValueFrom(this.scenarioService.getScenarioData(id, this.problemId));
       const indexArray = scenarioRes.index_values || [];
       
       const valuesDict = this.arrayToDict(indexArray);
       const specificWidgets = this.applyIndexDiffsToWidgets(this.baseWidgets, valuesDict);
 
-      // 2. Recupera le EVALUATION per i grafici e i KPI
       const evaluations = await firstValueFrom(this.scenarioService.getEvaluations(this.problemId, id));
       const completedEvals = evaluations.filter(e => e.scenario_id === id && e.state === 'COMPLETED');
       completedEvals.sort((a, b) => new Date(b.finished || 0).getTime() - new Date(a.finished || 0).getTime());
@@ -205,11 +201,9 @@ export class ConfrontoScenariComponent {
       const rawResponse = await firstValueFrom(this.scenarioService.getEvaluationData(currentEval.evaluation_id, this.problemId));
       const dataSet = rawResponse.data || {};
 
-      // 3. Prepara input grafici
       const input = this.plotService.preparePlotInput(dataSet);
       const container = slot === 1 ? this.chartLeft.nativeElement : this.chartRight.nativeElement;
 
-      // 4. Assegna variabili
       if (slot === 1) {
         this.plotInputLeft = input;
         this.kpisLeft = input.kpis ? this.filterKpis(input.kpis) : undefined;
