@@ -19,7 +19,11 @@ export class KpiComparisonComponent {
       const level = Math.round(v.level);
       return `${level}%`;
     }
-    
+    getConfidence(val: any): number | undefined {
+      return (val !== null && typeof val === 'object' && val.confidence !== undefined) 
+        ? val.confidence 
+        : undefined;
+    }
 
 
     getDeltaPerc(left?: { level: number }, right?: { level: number }): string {

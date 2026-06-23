@@ -11,30 +11,17 @@
               {{ key | translate }}
             </h6>
             <div class="d-flex justify-content-end align-items-baseline text-secondary">
-            <p class="h3 text-secondary d-flex align-items-baseline gap-2 me-5">
-              <span class="fw-bold">{{ formatNumber(kpisLeft[key]) }}</span>
-              <span
-              *ngIf="kpisLeft[key]?.confidence !== undefined"
-              class="text-muted ms-1"
-              title="Intervallo di confidenza"
-              >
-              ± {{ kpisLeft[key]?.confidence | number:'1.0-1' }}%
-              </span>
-            </p>
+              <p class="h3 text-secondary d-flex align-items-baseline gap-2 me-5">
+                <span class="fw-bold">{{ formatNumber(kpisLeft[key]) }}</span>
+                <span
+                  *ngIf="getConfidence(kpisLeft[key]) !== undefined"
+                  class="text-muted ms-1"
+                  title="Intervallo di confidenza"
+                >
+                  ± {{ getConfidence(kpisLeft[key]) | number:'1.0-1' }}%
+                </span>
+              </p>
             </div>
-            <!-- <div class="d-flex justify-content-end align-items-baseline text-secondary">
-              <div class="h5 mb-0 kpi-value-left">
-                {{ formatNumber(kpisLeft[key]) }}
-              </div>
-              <small
-                *ngIf="kpisLeft[key]?.confidence !== undefined"
-                class="text-muted ms-1"
-                title="Intervallo di confidenza"
-              >
-                ± {{ kpisLeft[key].confidence | number:'1.0-1' }}%
-              </small>
-              <span class="btn invisible ms-2">_</span>
-            </div> -->
           </div>
         </div>
 
@@ -46,23 +33,14 @@
               <p class="h3 text-secondary d-flex align-items-baseline gap-2 ms-5">
                 <span class="fw-bold">{{ formatNumber(kpisRight[key]) }}</span>
                 <span
-                  *ngIf="kpisRight[key]?.confidence !== undefined"
+                  *ngIf="getConfidence(kpisRight[key]) !== undefined"
                   class="text-muted ms-1"
                   title="Intervallo di confidenza"
                 >
-                  ± {{ kpisRight[key]?.confidence | number:'1.0-1' }}%
+                  ± {{ getConfidence(kpisRight[key]) | number:'1.0-1' }}%
                 </span>
               </p>
-              <!-- <div class="h5 mb-0 kpi-value-right text-start">
-                {{ formatNumber(kpisRight[key]) }}
-                <small
-                  *ngIf="kpisRight[key]?.confidence !== undefined"
-                  class="text-muted ms-1"
-                  title="Intervallo di confidenza"
-                >
-                  ± {{ kpisRight[key].confidence | number:'1.0-1' }}%
-                </small>
-              </div> -->
+              
               <span
                 class="btn ms-2"
                 [ngClass]="getDeltaClass(kpisLeft[key], kpisRight[key])"
@@ -72,7 +50,7 @@
             </div>
           </div>
         </div>
-      </div>
+    </div>
     </div>
   </it-card>
 </div>

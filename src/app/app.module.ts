@@ -61,7 +61,7 @@ import { OvertourismComponent } from './pages/overtourism/overtourism/overtouris
 import { ProposalDetailPageComponent } from './pages/problems/proposal-detail-page/proposal-detail-page.component';
 import { ProposalListPageComponent } from './pages/problems/proposal-list-page/proposal-list-page.component';
 import { LoginComponent } from './pages/login/login.component';
-import { ChatbotComponent } from './components/chatbot/chatbot.component';
+import { ChatbotComponent } from './components/chatbot/chatbot-window/chatbot.component';
 
 // Pipes
 import { EmptyFieldPipe } from './pipes/empty-field.pipe';

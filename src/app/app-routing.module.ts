@@ -21,7 +21,7 @@ import { OvertourismComponent } from './pages/overtourism/overtourism/overtouris
 import { UnsavedChangesGuard } from './guards/plot-unsaved-changes.guard';
 import { LoginComponent } from './pages/login/login.component';
 import { AuthGuard } from './guards/auth.guard';
-import { ChatbotIntegratedComponent } from './components/chatbot-integrated/chatbot-integrated.component';
+import { ChatbotIntegratedComponent } from './components/chatbot/chatbot-integrated/chatbot-integrated.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },

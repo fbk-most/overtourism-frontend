@@ -2,6 +2,12 @@ $primary-color: #0066cc;
 
 .chatbot-app {
   display: flex;
+  
+  width: 80%; 
+  max-width: 1200px;
+  min-width: 320px; 
+  
+  margin: auto;
   flex-direction: column;
   height: calc(100vh - 190px);
   max-height: calc(100vh - 190px);
@@ -45,8 +51,9 @@ $primary-color: #0066cc;
 }
 
 .chat-container {
-  max-width: 860px;
-  margin: 0 auto;
+  max-width: 800px;   
+  width: 100%;
+  margin: 0 auto;     
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -69,6 +76,7 @@ $primary-color: #0066cc;
       background: $primary-color;
       color: #fff;
       align-self: flex-end;
+      max-width: 80%;
       border-bottom-right-radius: 4px;
     }
 
@@ -79,6 +87,8 @@ $primary-color: #0066cc;
       border-bottom-left-radius: 4px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       border: 1px solid #f0f0f0;
+      width: 100%;
+      max-width: 100%;
     }
   }
 
@@ -104,6 +114,8 @@ $primary-color: #0066cc;
 
 .input-wrapper { 
   max-width: 860px; 
+  width: 100%;
+
   margin: 0 auto; 
 }
 

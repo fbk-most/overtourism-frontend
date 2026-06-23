@@ -2,10 +2,10 @@ import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { ChatFeedback, ChatMessage } from '../../models/chat.model';
 import { ChatMessageComponent } from './chat-message/chat-message.component';
-import { AgentService } from '../../services/agent.service';
 import { DesignAngularKitModule } from 'design-angular-kit';
+import { ChatFeedback, ChatMessage } from '../../../models/chat.model';
+import { AgentService } from '../../../services/agent.service';
 
 @Component({
   selector: 'app-chatbot',

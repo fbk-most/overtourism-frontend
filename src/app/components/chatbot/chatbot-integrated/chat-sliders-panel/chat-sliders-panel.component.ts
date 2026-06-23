@@ -1,8 +1,9 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChatSliderWidgetComponent } from '../chat-slider-widget/chat-slider-widget.component';
-import { SlidersData, SliderWidget } from '../../../models/chat.model';
-import { AgentService } from '../../../services/agent.service';
+import { SlidersData, SliderWidget } from '../../../../models/chat.model';
+import { AgentService } from '../../../../services/agent.service';
+
 
 @Component({
   selector: 'app-chat-sliders-panel',

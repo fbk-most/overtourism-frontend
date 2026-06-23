@@ -1,9 +1,9 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { ChatbotService, ChatMessage } from '../../services/chatbot.service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ChartSummary, ChartSeriesSummary } from '../../models/chart-summary.model';
+import { ChartSeriesSummary, ChartSummary } from '../../../../models/chart-summary.model';
+import { ChatbotService, ChatMessage } from '../../../../services/chatbot.service';
 
 @Component({
   selector: 'app-chatbot-dialog',

@@ -11,8 +11,8 @@ import {
 import { PdfService } from '../../../services/pdf.service';
 import { TranslateService } from '@ngx-translate/core';
 import { MatDialog } from '@angular/material/dialog';
-import { ChatbotDialogComponent } from '../../../components/chatbot-dialog/chatbot-dialog.component';
 import { ConfrontoScenariContext } from '../../../models/confronto-scenari-context.model';
+import { ChatbotDialogComponent } from '../../../components/chatbot/chatbot-window/chatbot-dialog/chatbot-dialog.component';
 
 @Component({
   selector: 'app-confronto-scenari',

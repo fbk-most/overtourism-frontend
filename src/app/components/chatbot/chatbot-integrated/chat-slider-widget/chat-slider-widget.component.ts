@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SliderWidget } from '../../../models/chat.model';
+import { SliderWidget } from '../../../../models/chat.model';
 
 @Component({
   selector: 'app-chat-slider-widget',
