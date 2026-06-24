@@ -3,9 +3,8 @@ import { CommonModule } from '@angular/common';
 import { ChatChartPanelComponent } from '../chat-chart-panel/chat-chart-panel.component';
 import { ChatSlidersPanelComponent } from '../chat-sliders-panel/chat-sliders-panel.component';
 import { ChatFeedbackBarComponent } from '../chat-feedback-bar/chat-feedback-bar.component';
-import { ChatFeedback } from '../../../../models/chat.model';
+import { ChatFeedback, ChatMessage } from '../../../../models/chat.model';
 import { MarkdownPipe } from '../../../../pipes/markdown.pipe';
-import { ChatMessage } from '../../../../services/chatbot.service';
 
 
 @Component({

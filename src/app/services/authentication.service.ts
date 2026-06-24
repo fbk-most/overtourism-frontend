@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { AuthConfig, OAuthEvent, OAuthService } from 'angular-oauth2-oidc';
 import { environment } from '../../environments/environment';
 import { Router } from '@angular/router';
+import { NotificationService } from './notifications.service';
 
 export const authConfig: AuthConfig = {
   issuer: environment.auth.issuer,
@@ -21,7 +22,10 @@ export const authConfig: AuthConfig = {
 export class AuthenticationService {
   private readonly TENANT_KEY = 'active_tenant';
 
-  constructor(private oauthService: OAuthService,private router: Router ) {}
+  constructor(private oauthService: OAuthService,
+    private router: Router,
+    private notificationService: NotificationService
+  ) {}
 
   public async initialLoginSequence(): Promise<void> {
     this.oauthService.configure(authConfig);
@@ -50,11 +54,24 @@ export class AuthenticationService {
     }
 
     try {
+      const authError = localStorage.getItem('auth_error');
+      if (authError) {
+        setTimeout(() => this.notificationService.showError(authError), 500); // 500ms altrimenti il Toast rischia di non essere ancora montato
+        localStorage.removeItem('auth_error');
+      }
+
       await this.oauthService.loadDiscoveryDocumentAndTryLogin();
+      
+      if (this.isLoggedIn && this.availableTenants.length === 0) {
+        localStorage.setItem('auth_error', 'Utente non abilitato: nessun contesto associato al profilo.');
+        this.oauthService.logOut(); 
+        return; 
+      }
     } catch (e: any) {
       if (e?.type === 'invalid_nonce_in_state') {
         console.warn('Ignorato errore di stato disallineato post-logout');
         this.oauthService.logOut(true); 
+      
       }
     }
   }
@@ -85,19 +102,25 @@ export class AuthenticationService {
     this.oauthService.logOut(true);
     this.router.navigate(['/login']);
   }
-get availableTenants(): string[] {
-  const claims: any = this.oauthService.getIdentityClaims();
-  return claims?.['tenant_id'] || ['default'];
-}
-
-get activeTenant(): string {
-  let tenant = localStorage.getItem(this.TENANT_KEY);
-  if (!tenant || !this.availableTenants.includes(tenant)) {
-    tenant = this.availableTenants.length > 0 ? this.availableTenants[0] : 'default';
-    this.setActiveTenant(tenant, false);
+  get availableTenants(): string[] {
+    const claims: any = this.oauthService.getIdentityClaims();
+    const tenants = claims?.['tenant_id'];
+    if (!tenants) return [];
+    return Array.isArray(tenants) ? tenants : [tenants];
   }
-  return tenant;
-}
+
+  get activeTenant(): string {
+    let tenant = localStorage.getItem(this.TENANT_KEY);
+    if (!tenant || !this.availableTenants.includes(tenant)) {
+      if (this.availableTenants.length > 0) {
+        tenant = this.availableTenants[0];
+        this.setActiveTenant(tenant, false);
+      } else {
+        return ''; 
+      }
+    }
+    return tenant;
+  }
 
 setActiveTenant(tenant: string, reload: boolean = true) {
   localStorage.setItem(this.TENANT_KEY, tenant);
