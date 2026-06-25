@@ -76,12 +76,12 @@
     <strong>Attenzione:</strong> salvando, lo scenario appena creato verrà condiviso e reso disponibile sulla piattaforma.
   </div>
 
-  <it-input label="{{ 'save.title' | translate }} *" name="titolo" required [(ngModel)]="titolo" #titoloInput="ngModel"></it-input>
-  <small *ngIf="formInvalid && !titolo?.trim()" class="text-danger">Il titolo è obbligatorio</small>
+  <it-input label="{{ 'save.title' | translate }} *" name="titolo"  [(ngModel)]="titolo" #titoloInput="ngModel"></it-input>
+  <!-- <small *ngIf="formInvalid && !titolo?.trim()" class="text-danger">Il titolo è obbligatorio</small> -->
 
-  <it-textarea class="w-100" label="{{ 'save.description' | translate }} *" name="descrizione" required
+  <it-textarea class="w-100" label="{{ 'save.description' | translate }} *" name="descrizione" 
     [(ngModel)]="descrizione" #descrizioneInput="ngModel"></it-textarea>
-  <small *ngIf="formInvalid && !descrizione?.trim()" class="text-danger">La descrizione è obbligatoria</small>
+  <!-- <small *ngIf="formInvalid && !descrizione?.trim()" class="text-danger">La descrizione è obbligatoria</small> -->
 
   <ng-container footer>
     <button itButton="outline-primary" size="sm" type="button" data-bs-dismiss="modal" (click)="closeModal()">Annulla</button>

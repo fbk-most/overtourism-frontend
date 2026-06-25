@@ -4,10 +4,10 @@
     <div class="table-responsive mb-4">
       <table class="table table-borderless">
         <tbody>
-          <!-- Titolo -->
-          <tr>
+           <!-- Titolo -->
+           <tr>
             <td class="fw-bold w-25">
-              <label for="title">{{ 'problems.fields.title' | translate }}</label>
+              <label for="title">{{ 'problems.fields.title' | translate }} <span class="text-danger">*</span></label>
             </td>
             <td>
                 <it-input id="title" name="name" [(ngModel)]="model.name" required
@@ -21,7 +21,7 @@
               <label for="objective">{{ 'problems.fields.objective' | translate }}</label>
             </td>
             <td>
-                <it-textarea id="objective" name="objective" [(ngModel)]="model.objective" [rows]="4" required
+                <it-textarea id="objective" name="objective" [(ngModel)]="model.objective" [rows]="4" 
                              placeholder="{{ 'problems.fields.objectivePlaceholder' | translate }}"></it-textarea>
               
             </td>
@@ -33,7 +33,7 @@
               <label for="descriptionProblem">{{ 'problems.fields.descriptionProblem' | translate }}</label>
             </td>
             <td>
-                <it-textarea id="descriptionProblem" name="descriptionProblem" [(ngModel)]="model.descriptionProblem" required
+                <it-textarea id="descriptionProblem" name="descriptionProblem" [(ngModel)]="model.descriptionProblem" 
                              [rows]="4"
                              placeholder="{{ 'problems.fields.descriptionProblemPlaceholder' | translate }}"></it-textarea>
              

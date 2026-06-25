@@ -8,7 +8,7 @@
             <!-- Titolo -->
             <tr>
               <td class="fw-bold w-25">
-                <label>{{ 'problems.proposals.fields.title' | translate }}</label>
+                <label>{{ 'problems.proposals.fields.title' | translate }} <span class="text-danger">*</span></label>
               </td>
               <td>
                 <it-input [(ngModel)]="model.title" name="title"
@@ -16,6 +16,7 @@
                 </it-input>
               </td>
             </tr>
+  
   
             <!-- Descrizione -->
             <tr>
