@@ -4,6 +4,13 @@ import { ScatterMarker, ColorScale, PlotType } from "plotly.js-dist-min";
 import { DataFact } from "./data-fact.model";
 
 
+export interface SharedChartPayload {
+  type: 'mono' | 'bi';               
+  subsystem: string;                 
+  data: PlotInput;                   
+  themeOverrides?: any;             
+}
+
 export type Curve = {
   x: number[];
   y: number[];

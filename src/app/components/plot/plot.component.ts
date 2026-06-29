@@ -312,7 +312,7 @@ export class PlotComponent implements AfterViewInit {
             this.indexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
             
             this.kpisData = this.inputData.kpis;
-            this.renderPlot();
+            // this.renderPlot();
 
     } catch (err: any) {
       console.error('Errore aggiornamento dati di sessione:', err);
@@ -414,7 +414,7 @@ export class PlotComponent implements AfterViewInit {
         this.kpisData = this.inputData.kpis;
         
         this.setupSelectOptions();
-        this.renderPlot();
+        // this.renderPlot();
       } catch (error: any) {
         console.error('Errore nel caricamento dati evaluation', error);
         this.notificationService.showError(
@@ -455,7 +455,7 @@ export class PlotComponent implements AfterViewInit {
     );
   }
   onFunzioneChange() {
-    this.renderPlot();
+  //   this.renderPlot();
   }
   resetIndexDiffs(): void {
     // Ripristina widgets e indexDiffs allo stato originale
@@ -466,20 +466,20 @@ export class PlotComponent implements AfterViewInit {
     this.loadData();
     this.notificationService.showError('Modifiche ripristinate.');
   }
-  renderPlot() {
-    if (!this.chartLib || !this.inputData) return;
-    if (this.monoDimensionale) {
-      this.plotService.renderMonoDimensionale(this.sottosistemaSelezionato, this.chartLib.nativeElement, this.inputData);
-      return;
-    }
-    const input = JSON.parse(JSON.stringify(this.inputData)) as PlotInput;
-    this.plotService.renderBidimensionale(
-      this.sottosistemaSelezionato,
-      this.chartLib.nativeElement, this.inputData
-    );
+  // renderPlot() {
+  //   if (!this.chartLib || !this.inputData) return;
+  //   if (this.monoDimensionale) {
+  //     this.plotService.renderMonoDimensionale(this.sottosistemaSelezionato, this.chartLib.nativeElement, this.inputData);
+  //     return;
+  //   }
+  //   const input = JSON.parse(JSON.stringify(this.inputData)) as PlotInput;
+  //   this.plotService.renderBidimensionale(
+  //     this.sottosistemaSelezionato,
+  //     this.chartLib.nativeElement, this.inputData
+  //   );
 
 
-  }
+  // }
 
   canDeactivate(): Promise<boolean> | boolean {
     if (this.navigationAfterSave) {

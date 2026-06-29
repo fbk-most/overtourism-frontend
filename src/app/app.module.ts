@@ -66,6 +66,7 @@ import { ChatbotComponent } from './components/chatbot/chatbot-window/chatbot.co
 // Pipes
 import { EmptyFieldPipe } from './pipes/empty-field.pipe';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { SharedPlotComponent } from './components/shared/shared-plot/shared-plot.component';
 
 // Funzioni Factory
 export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
@@ -102,6 +103,7 @@ export function initializeAuth(authService: AuthenticationService) {
     HttpClientModule,
     MatDialogModule,
     ChatbotComponent,
+    SharedPlotComponent,
     OAuthModule.forRoot({
       resourceServer: {
         allowedUrls: [environment.apiBaseUrl],

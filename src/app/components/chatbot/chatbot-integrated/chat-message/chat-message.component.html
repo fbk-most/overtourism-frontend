@@ -2,7 +2,17 @@
 
 <div class="message assistant" *ngIf="msg.role === 'assistant'">
   <div class="message-content" [innerHTML]="msg.content | markdown"></div>
-  <app-chat-chart-panel *ngIf="msg.chartData" [figure]="msg.chartData"></app-chat-chart-panel>
+  <!-- <app-chat-chart-panel *ngIf="msg.chartData" [figure]="msg.chartData"></app-chat-chart-panel> -->
+  <!-- <app-shared-plot 
+  *ngIf="msg.chartDataAsPlotInput" 
+  [inputData]="msg.chartDataAsPlotInput"
+  [sottosistemaSelezionato]="msg.subsystem || 'default'"
+  [monoDimensionale]="msg.isMono || false"
+  [loading]="false"> -->
+    <app-shared-plot 
+    *ngIf="msg.chartData"
+    [payload]="msg.chartData">
+  </app-shared-plot>
   <app-chat-sliders-panel *ngIf="msg.slidersData" [slidersData]="msg.slidersData" [sessionId]="sessionId"
     (sliderSubmit)="sliderSubmit.emit($event)">
   </app-chat-sliders-panel>

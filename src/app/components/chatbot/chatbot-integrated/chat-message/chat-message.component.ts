@@ -1,16 +1,16 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ChatChartPanelComponent } from '../chat-chart-panel/chat-chart-panel.component';
 import { ChatSlidersPanelComponent } from '../chat-sliders-panel/chat-sliders-panel.component';
 import { ChatFeedbackBarComponent } from '../chat-feedback-bar/chat-feedback-bar.component';
 import { ChatFeedback, ChatMessage } from '../../../../models/chat.model';
 import { MarkdownPipe } from '../../../../pipes/markdown.pipe';
+import { SharedPlotComponent } from '../../../shared/shared-plot/shared-plot.component';
 
 
 @Component({
   selector: 'app-chat-message',
   standalone: true,
-  imports: [CommonModule, ChatChartPanelComponent, ChatSlidersPanelComponent, ChatFeedbackBarComponent, MarkdownPipe],
+  imports: [CommonModule, ChatSlidersPanelComponent, ChatFeedbackBarComponent,SharedPlotComponent,MarkdownPipe],
   templateUrl:'./chat-message.component.html'
 })
 export class ChatMessageComponent {

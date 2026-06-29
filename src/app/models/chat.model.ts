@@ -1,7 +1,9 @@
+import { SharedChartPayload } from "./plot.model";
+
 export interface ChatMessage {
     role: 'user' | 'assistant';
     content: string;
-    chartData?: any | null;
+    chartData?: SharedChartPayload | null; 
     slidersData?: SlidersData | null;
   }
   

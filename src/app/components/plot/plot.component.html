@@ -22,8 +22,25 @@
         (sottosistemaSelezionatoChange)="sottosistemaSelezionato = $event"
         (funzioneChange)="onFunzioneChange()"></app-plot-controls>
 
-      <div #chartLib style="max-width: 600px;height: 600px; position: relative;">
+      <!-- <div #chartLib style="max-width: 600px;height: 600px; position: relative;">
         <div *ngIf="loading" class="loading-spinner">Loading...</div>
+      </div> -->
+      <div style="max-width: 600px; height: 600px;">
+        <!-- <app-shared-plot 
+          [inputData]="inputData" 
+          [sottosistemaSelezionato]="sottosistemaSelezionato"
+          [monoDimensionale]="monoDimensionale"
+          [loading]="loading">
+        </app-shared-plot> -->
+        <app-shared-plot 
+        *ngIf="inputData"
+        [payload]="{
+          type: monoDimensionale ? 'mono' : 'bi',
+          subsystem: sottosistemaSelezionato,
+          data: inputData
+        }"
+        [loading]="loading">
+      </app-shared-plot>
       </div>
       <div class="d-flex flex-row gap-4">
         <button [itButton]="!isEditing ? 'primary' : 'secondary'"
