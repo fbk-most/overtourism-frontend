@@ -112,17 +112,19 @@ export class ChatbotComponent implements OnInit, OnDestroy {
 
     this.eventSource.addEventListener('done', async () => {
       this.closeEventSource();
-      try {
-        const data = await fetch(`${this.API_URL}/result/${this.sessionId}`)
-          .then(res => res.json());
-
-        if (data.session_id) this.sessionId = data.session_id;
-        this.pushBot(data.response ?? 'No response received.');
-      } catch {
-        this.pushBot('Error fetching result.');
-      }
-      this.isTyping = false;
-      this.statusMessage = '';
+      this.http.get<any>(`${this.API_URL}/result/${this.sessionId}`).subscribe({
+        next: (data) => {
+          if (data.session_id) this.sessionId = data.session_id;
+          this.pushBot(data.response ?? 'No response received.');
+          this.isTyping = false;
+          this.statusMessage = '';
+        },
+        error: () => {
+          this.pushBot('Error fetching result.');
+          this.isTyping = false;
+          this.statusMessage = '';
+        }
+      });
     });
 
     this.eventSource.onerror = () => {
@@ -191,13 +193,12 @@ export class ChatbotComponent implements OnInit, OnDestroy {
 
   private async submitFeedback(index: number): Promise<void> {
     const fb = this.getFeedback(index);
-    const params = new URLSearchParams({ session_id: this.sessionId, message_index: String(index) });
-    if (fb.vote) params.set('vote', fb.vote);
-    if (fb.comment) params.set('comment', fb.comment);
-    try {
-      await fetch(`${this.API_URL}/feedback?${params.toString()}`, { method: 'GET', credentials: 'include' });
-    } catch (err) {
-      console.error('Failed to submit feedback', err);
-    }
+    let params: any = { session_id: this.sessionId, message_index: String(index) };
+    if (fb.vote) params.vote = fb.vote;
+    if (fb.comment) params.comment = fb.comment;
+    
+    this.http.get(`${this.API_URL}/feedback`, { params, withCredentials: true }).subscribe({
+      error: (err) => console.error('Failed to submit feedback', err)
+    });
   }
 }

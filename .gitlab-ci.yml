@@ -46,7 +46,7 @@ frontend-container-build:
     - docker push $CONTAINER_IMAGE
     - docker push $CONTAINER_IMAGE_LATEST
   only:
-    - demo
+    - demo-luglio
 
 container_scanning:
   stage: test
@@ -73,4 +73,4 @@ deploy-prod:
     - kubectl -n overtourism set image deployments/overtourism-frontend overtourism-frontend=$CONTAINER_IMAGE --record=true
     - kubectl -n overtourism rollout status deployment overtourism-frontend
   only:
-    - demo
+    - demo-luglio

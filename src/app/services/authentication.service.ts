@@ -12,7 +12,7 @@ export const authConfig: AuthConfig = {
   redirectUri: environment.auth.redirectUri,
   postLogoutRedirectUri: window.location.origin + '/', 
   clearHashAfterLogin: true,
-    useSilentRefresh: false,
+    useSilentRefresh: true,
     timeoutFactor: 0.75,
     sessionChecksEnabled: false,
     showDebugInformation: true,

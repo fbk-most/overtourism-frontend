@@ -104,8 +104,8 @@ export function initializeAuth(authService: AuthenticationService) {
     ChatbotComponent,
     OAuthModule.forRoot({
       resourceServer: {
-        allowedUrls: [environment.apiBaseUrl],
-        sendAccessToken: true
+        allowedUrls: [environment.apiBaseUrl, environment.agentApiUrl],
+                sendAccessToken: true
       }
     }), 
     TranslateModule.forRoot({
