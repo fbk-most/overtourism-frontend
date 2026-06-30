@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-shared-plot',
   standalone: true,
-  imports: [CommonModule], 
+  imports: [CommonModule],
   templateUrl: './shared-plot.component.html',
 })
 export class SharedPlotComponent implements OnChanges, AfterViewInit {
@@ -15,7 +15,7 @@ export class SharedPlotComponent implements OnChanges, AfterViewInit {
 
   @ViewChild('chartContainer', { static: false }) chartContainer!: ElementRef<HTMLElement>;
 
-  constructor(private plotService: PlotService) {}
+  constructor(private plotService: PlotService) { }
 
   ngAfterViewInit() { this.renderGraph(); }
 
@@ -26,15 +26,15 @@ export class SharedPlotComponent implements OnChanges, AfterViewInit {
 
     if (this.payload.type === 'mono') {
       this.plotService.renderMonoDimensionale(
-        this.payload.subsystem, 
-        this.chartContainer.nativeElement, 
+        this.payload.subsystem,
+        this.chartContainer.nativeElement,
         this.payload.data
       );
     } else {
-      const cloned = JSON.parse(JSON.stringify(this.payload.data)); 
+      const cloned = JSON.parse(JSON.stringify(this.payload.data));
       this.plotService.renderBidimensionale(
-        this.payload.subsystem, 
-        this.chartContainer.nativeElement, 
+        this.payload.subsystem,
+        this.chartContainer.nativeElement,
         cloned
       );
     }
