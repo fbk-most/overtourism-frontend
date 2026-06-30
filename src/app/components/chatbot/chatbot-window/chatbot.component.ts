@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { marked } from 'marked';
+import { environment } from '../../../../environments/environment';
 
 interface Feedback {
   vote?: 'up' | 'down' | null;
@@ -47,7 +48,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   sessionId!: string;
   language = 'Italian';
 
-  private readonly API_URL = 'http://localhost:9000/agent';
+  // private readonly API_URL = 'http://localhost:9000/agent';
   private eventSource: EventSource | null = null;
 
   private parseMarkdown(text: string): string {
@@ -104,7 +105,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     this.statusMessage = '';
 
     this.closeEventSource();
-    this.eventSource = new EventSource(`${this.API_URL}/stream/${this.sessionId}`);
+    this.eventSource = new EventSource(`${environment.agentApiUrl}/stream/${this.sessionId}`);
 
     this.eventSource.addEventListener('status', (e: MessageEvent) => {
       this.statusMessage = e.data;
@@ -112,7 +113,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
 
     this.eventSource.addEventListener('done', async () => {
       this.closeEventSource();
-      this.http.get<any>(`${this.API_URL}/result/${this.sessionId}`).subscribe({
+      this.http.get<any>(`${environment.agentApiUrl}/result/${this.sessionId}`).subscribe({
         next: (data) => {
           if (data.session_id) this.sessionId = data.session_id;
           this.pushBot(data.response ?? 'No response received.');
@@ -147,7 +148,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
       validScenarioIds.forEach(id => formData.append('context', id));
     }
 
-    this.http.post(this.API_URL, formData).subscribe({
+    this.http.post(environment.agentApiUrl, formData).subscribe({
       error: () => {
         this.closeEventSource();
         this.pushBot('Sorry, something went wrong.');
@@ -197,7 +198,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     if (fb.vote) params.vote = fb.vote;
     if (fb.comment) params.comment = fb.comment;
     
-    this.http.get(`${this.API_URL}/feedback`, { params, withCredentials: true }).subscribe({
+    this.http.get(`${environment.agentApiUrl}/feedback`, { params, withCredentials: true }).subscribe({
       error: (err) => console.error('Failed to submit feedback', err)
     });
   }
