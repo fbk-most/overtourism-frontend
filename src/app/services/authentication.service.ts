@@ -62,15 +62,16 @@ export class AuthenticationService {
 
       await this.oauthService.loadDiscoveryDocumentAndTryLogin();
       
-      // if (this.isLoggedIn && this.availableTenants.length === 0) {
-      //   localStorage.setItem('auth_error', 'Utente non abilitato: nessun contesto associato al profilo.');
-      //   this.oauthService.logOut(); 
-      //   return; 
-      // }
+      if (this.isLoggedIn && this.availableTenants.length === 0) {
+        localStorage.setItem('auth_error', 'Utente non abilitato: nessun contesto associato al profilo.');
+        console.log('Utente non abilitato: nessun contesto associato al profilo. Logout forzato.');
+        // this.oauthService.logOut(); 
+        return; 
+      }
     } catch (e: any) {
       if (e?.type === 'invalid_nonce_in_state') {
         console.warn('Ignorato errore di stato disallineato post-logout');
-        this.oauthService.logOut(true); 
+        // this.oauthService.logOut(true); 
       
       }
     }
@@ -99,7 +100,7 @@ export class AuthenticationService {
     });
   }
   forceLocalLogout() {
-    this.oauthService.logOut(true);
+    // this.oauthService.logOut(true);
     this.router.navigate(['/login']);
   }
   get availableTenants(): string[] {

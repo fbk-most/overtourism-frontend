@@ -17,7 +17,7 @@ export class AuthInterceptor implements HttpInterceptor {
       catchError((error: HttpErrorResponse) => {
         if (error.status === 401) {
           console.warn('HTTP 401 ricevuto, sessione non valida. Redirect al login.');
-          this.authService.forceLocalLogout();
+          // this.authService.forceLocalLogout();
         }
         return throwError(() => error);
       })
