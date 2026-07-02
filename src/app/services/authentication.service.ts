@@ -62,11 +62,11 @@ export class AuthenticationService {
 
       await this.oauthService.loadDiscoveryDocumentAndTryLogin();
       
-      if (this.isLoggedIn && this.availableTenants.length === 0) {
-        localStorage.setItem('auth_error', 'Utente non abilitato: nessun contesto associato al profilo.');
-        this.oauthService.logOut(); 
-        return; 
-      }
+      // if (this.isLoggedIn && this.availableTenants.length === 0) {
+      //   localStorage.setItem('auth_error', 'Utente non abilitato: nessun contesto associato al profilo.');
+      //   this.oauthService.logOut(); 
+      //   return; 
+      // }
     } catch (e: any) {
       if (e?.type === 'invalid_nonce_in_state') {
         console.warn('Ignorato errore di stato disallineato post-logout');
