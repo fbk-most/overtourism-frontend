@@ -27,7 +27,7 @@ export class HttpErrorInterceptor implements HttpInterceptor {
               break;
            case 401:
                 message = 'Sessione scaduta o non autorizzata. Effettua nuovamente il login.';
-                // this.authService.logout();
+                this.authService.logout();
                 break;
             case 404:
               message = 'Risorsa non trovata.';
