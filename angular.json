@@ -73,6 +73,11 @@
               ],
               "outputHashing": "all"
             },
+            "local": {
+              "optimization": false,
+              "sourceMap": true,
+              "extractLicenses": false
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
@@ -86,6 +91,9 @@
           "configurations": {
             "production": {
               "buildTarget": "frontend:build:production"
+            },
+            "local": {
+              "buildTarget": "frontend:build:local"
             },
             "development": {
               "buildTarget": "frontend:build:development"

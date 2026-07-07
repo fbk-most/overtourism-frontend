@@ -1,10 +1,10 @@
 export const environment = {
   production: false,
-  apiBaseUrl: 'http://127.0.0.1:8000/api/v2',
-  agentApiUrl: 'http://localhost:9000/agent',
+  apiBaseUrl: (window as any)['env']?.['apiBaseUrl'] ?? 'http://localhost:8000/api/v2',
+  agentApiUrl: (window as any)['env']?.['agentApiUrl'] ?? 'http://localhost:9000/agent',
   auth: {
-    issuer: 'https://aac.platform.smartcommunitylab.it', 
-    clientId: 'c_50e8e205e30243588df8f1ad9425831a',
+    issuer: (window as any)['env']?.['issuer'] ?? 'https://aac.platform.smartcommunitylab.it',
+    clientId: (window as any)['env']?.['clientId'] ?? 'c_50e8e205e30243588df8f1ad9425831a',
     responseType: 'code',
     scope: 'openid profile offline_access email',
     redirectUri: window.location.origin + '/'

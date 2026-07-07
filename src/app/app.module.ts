@@ -44,7 +44,7 @@ import { ConfrontoScenariComponent } from './pages/problems/confronto-scenari/co
 import { BackButtonComponent } from './components/back-button/back-button.component';
 import { KpiComparisonComponent } from './components/kpi-comparison/kpi-comparison.component';
 import { ProblemCreateComponent } from './pages/problems/problem-create/problem-create.component';
-import { HistogramComparisonComponent } from './components/histogram-comparison/histogram-comparison.component';
+import { HistogramComparisonComponent } from './components/shared/histogram-comparison/histogram-comparison.component';
 import { ReadingComponent } from './components/plot/reading/reading.component';
 import { ProposalCreateComponent } from "./components/app-proposal-create/app-proposal-create.component";
 import { ProblemDetailComponent } from './pages/problems/problem-detail/problem-detail.component';
