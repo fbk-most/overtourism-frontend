@@ -44,6 +44,8 @@ export class ConfrontoScenariComponent {
   @ViewChild('chartRight', { static: true }) chartRight!: ElementRef<HTMLElement>;
   showControls: boolean = false; // per 'settings'
   isDownloading = false;
+  isLoading = false;
+  histogramPayload: any = null; 
   baseWidgets: Record<string, Widget[]> = {};
 
   
@@ -94,6 +96,19 @@ export class ConfrontoScenariComponent {
       }
     }
     return clone;
+  }
+  private updateHistogramPayload() {
+    // Basta che almeno uno dei due scenari sia selezionato (e abbia dati)
+    if ((this.selectedScenario1Id && this.kpisLeft) || (this.selectedScenario2Id && this.kpisRight)) {
+      this.histogramPayload = {
+        dataLeft: this.kpisLeft || {},
+        dataRight: this.kpisRight || {},
+        labelLeft: this.selectedScenario1Id ? (this.getScenarioName(this.selectedScenario1Id) || '') : '',
+        labelRight: this.selectedScenario2Id ? (this.getScenarioName(this.selectedScenario2Id) || '') : ''
+      };
+    } else {
+      this.histogramPayload = null;
+    }
   }
   // private arrayToDict(values: any[]): Record<string, any> {
   //   const dict: Record<string, any> = {};
@@ -183,7 +198,7 @@ export class ConfrontoScenariComponent {
   async loadScenario(slot: 1 | 2) {
     const id = slot === 1 ? this.selectedScenario1Id : this.selectedScenario2Id;
     if (!id) return;
-
+    this.isLoading = true;
     try {
       const scenarioRes = await firstValueFrom(this.scenarioService.getScenarioData(id, this.problemId));
       const indexArray = scenarioRes.index_values || [];
@@ -216,9 +231,12 @@ export class ConfrontoScenariComponent {
 
       this.renderChart(container, input);
       this.updateDiffs(); // Ricalcola le differenze dopo il fetch
-
+      this.updateHistogramPayload();
     } catch (err) {
       console.error(`Errore durante il caricamento dello scenario ${slot}:`, err);
+    }
+    finally {
+      this.isLoading = false; 
     }
   }
 

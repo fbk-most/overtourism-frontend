@@ -56,9 +56,9 @@
       </div>
     </div>
     <div class="col-md-2 d-flex align-items-center">
-        <button itButton="secondary" (click)="openChatbot()">
-          Apri Chatbot
-        </button>
+      <button itButton="secondary" (click)="openChatbot()">
+        Apri Chatbot
+      </button>
       <button itButton="primary" (click)="downloadPdf()" [disabled]="isDownloading">
         <ng-container *ngIf="!isDownloading; else loading">
           Scarica PDF
@@ -72,11 +72,15 @@
   </div>
   <div class="row mb-4">
     <div class="col-12">
-      <app-histogram-comparison
-        [dataLeft]="kpisLeft ?? {}"
-        [dataRight]="kpisRight??{}"
-        [labelLeft]="getScenarioName(selectedScenario1Id)||''"
-        [labelRight]="getScenarioName(selectedScenario2Id)||''">
+      <div *ngIf="!selectedScenario1Id && !selectedScenario2Id" class="text-muted text-center p-4">
+        <span class="material-icons" style="font-size: 48px; color: #ccc;">compare</span>
+        <h4 class="mt-3">Confronto Scenari</h4>
+        <p>Seleziona due scenari dai menu a tendina in alto per visualizzare il confronto dei KPI e i grafici.</p>
+      </div>
+      <app-histogram-comparison 
+        *ngIf="selectedScenario1Id || selectedScenario2Id" 
+        [payload]="histogramPayload"
+        [loading]="isLoading">
       </app-histogram-comparison>
     </div>
   </div>
@@ -95,9 +99,11 @@
             </span> {{('plot.visualizza' | translate) }}
           </button>
         </div>
-        <app-plot-controls class="exclude-from-pdf" *ngIf="showControls" [monoDimensionale]="monoDimensionale" [sottosistemi]="sottosistemi"
-          [sottosistemaSelezionato]="sottosistemaSelezionato" (monoDimensionaleChange)="onMonoDimensionaleChange($event)"
-          (sottosistemaSelezionatoChange)="onSottosistemaSelezionatoChange($event)" (funzioneChange)="onFunzioneChange()">
+        <app-plot-controls class="exclude-from-pdf" *ngIf="showControls" [monoDimensionale]="monoDimensionale"
+          [sottosistemi]="sottosistemi" [sottosistemaSelezionato]="sottosistemaSelezionato"
+          (monoDimensionaleChange)="onMonoDimensionaleChange($event)"
+          (sottosistemaSelezionatoChange)="onSottosistemaSelezionatoChange($event)"
+          (funzioneChange)="onFunzioneChange()">
         </app-plot-controls>
       </div>
     </div>
@@ -144,9 +150,5 @@
   <app-back-button class="exclude-from-pdf"></app-back-button>
 </div>
 
-<app-chatbot
-  [scenarioId1]="selectedScenario1Id"
-  [scenarioId2]="selectedScenario2Id"
-  [problemId]="problemId"
->
+<app-chatbot [scenarioId1]="selectedScenario1Id" [scenarioId2]="selectedScenario2Id" [problemId]="problemId">
 </app-chatbot>

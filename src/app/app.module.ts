@@ -66,7 +66,7 @@ import { ChatbotComponent } from './components/chatbot/chatbot-window/chatbot.co
 import { EmptyFieldPipe } from './pipes/empty-field.pipe';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { SharedPlotComponent } from './components/shared/shared-plot/shared-plot.component';
-import { HistogramComparisonComponent } from './components/histogram-comparison/histogram-comparison.component';
+import { HistogramComparisonComponent } from './components/shared/histogram-comparison/histogram-comparison.component';
 
 // Funzioni Factory
 export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
@@ -86,7 +86,7 @@ export function initializeAuth(authService: AuthenticationService) {
     FaqsComponent, TermsComponent, SettingsComponent, ScenarioDetailComponent, PlotComponent,
     KpiBoxComponent, PlotControlsComponent, AppPlotEditorWidgetComponent, BreadcrumbsComponent,
     ConfrontoScenariComponent, BackButtonComponent, KpiComparisonComponent, ProblemCreateComponent,
-    HistogramComparisonComponent, ReadingComponent, ProposalCreateComponent, ProblemDetailComponent,
+     ReadingComponent, ProposalCreateComponent, ProblemDetailComponent,
     ProposalDetailComponent, ProposalDetailPageComponent, OvertourismComponent, OvertourismChartsComponent, 
     OvertourismMapComponent, ToastComponent, AutocompleteComponent, CapacityComponent, FlowsComponent, 
     RedistributionComponent, HiddenComponent, ProposalListPageComponent, EmptyFieldPipe, LoginComponent
@@ -104,6 +104,7 @@ export function initializeAuth(authService: AuthenticationService) {
     MatDialogModule,
     ChatbotComponent,
     SharedPlotComponent,
+    HistogramComparisonComponent,
     OAuthModule.forRoot({
       resourceServer: {
         allowedUrls: [environment.apiBaseUrl],

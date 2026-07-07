@@ -68,5 +68,12 @@ export interface PlotInput {
   dataFacts?: DataFact[];
 }
 
+export interface HistogramComparisonPayload {
+  dataLeft: Record<string, { level: number; confidence: number }>;
+  dataRight: Record<string, { level: number; confidence: number }>;
+  labelLeft: string;
+  labelRight: string;
+}
+
 
 
