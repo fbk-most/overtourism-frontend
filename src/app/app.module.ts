@@ -44,7 +44,6 @@ import { ConfrontoScenariComponent } from './pages/problems/confronto-scenari/co
 import { BackButtonComponent } from './components/back-button/back-button.component';
 import { KpiComparisonComponent } from './components/kpi-comparison/kpi-comparison.component';
 import { ProblemCreateComponent } from './pages/problems/problem-create/problem-create.component';
-import { HistogramComparisonComponent } from './components/shared/histogram-comparison/histogram-comparison.component';
 import { ReadingComponent } from './components/plot/reading/reading.component';
 import { ProposalCreateComponent } from "./components/app-proposal-create/app-proposal-create.component";
 import { ProblemDetailComponent } from './pages/problems/problem-detail/problem-detail.component';
@@ -67,6 +66,7 @@ import { ChatbotComponent } from './components/chatbot/chatbot-window/chatbot.co
 import { EmptyFieldPipe } from './pipes/empty-field.pipe';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { SharedPlotComponent } from './components/shared/shared-plot/shared-plot.component';
+import { HistogramComparisonComponent } from './components/histogram-comparison/histogram-comparison.component';
 
 // Funzioni Factory
 export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
