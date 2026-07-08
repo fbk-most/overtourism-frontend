@@ -77,15 +77,19 @@
         <h4 class="mt-3">Confronto Scenari</h4>
         <p>Seleziona due scenari dai menu a tendina in alto per visualizzare il confronto dei KPI e i grafici.</p>
       </div>
-      <app-histogram-comparison 
+      <app-shared-histogram
         *ngIf="selectedScenario1Id || selectedScenario2Id" 
         [payload]="histogramPayload"
         [loading]="isLoading">
-      </app-histogram-comparison>
+      </app-shared-histogram>
     </div>
   </div>
   <div class="row">
-    <app-kpi-comparison [kpisLeft]="kpisLeft ?? {}" [kpisRight]="kpisRight ?? {}"></app-kpi-comparison>
+    <!-- <app-kpi-comparison [kpisLeft]="kpisLeft ?? {}" [kpisRight]="kpisRight ?? {}"></app-kpi-comparison> -->
+    <app-shared-kpis 
+    [kpisMain]="kpisLeft" 
+    [kpisCompare]="kpisRight">
+</app-shared-kpis>
   </div>
   <div class="row">
     <h3 class="mb-3 p-3 h3">Grafici</h3>

@@ -1,16 +1,16 @@
 import { Component, ElementRef, Input, OnChanges, SimpleChanges, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import Plotly from 'plotly.js-dist-min';
-import { HistogramComparisonPayload } from '../../../models/plot.model'; // Adatta il percorso se necessario
+import { SharedHistogramPayload } from '../../../models/plot.model'; 
 
 @Component({
-  selector: 'app-histogram-comparison',
+  selector: 'app-shared-histogram',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './histogram-comparison.component.html'
+  templateUrl: './shared-histogram.component.html'
 })
-export class HistogramComparisonComponent implements AfterViewInit, OnChanges {
-  @Input() payload!: HistogramComparisonPayload | null;
+export class SharedHistogramComponent implements AfterViewInit, OnChanges {
+  @Input() payload!: SharedHistogramPayload | null;
   @Input() loading: boolean = false;
 
   @ViewChild('histogramChart', { static: false }) chartEl!: ElementRef<HTMLElement>;

@@ -66,8 +66,8 @@ import { ChatbotComponent } from './components/chatbot/chatbot-window/chatbot.co
 import { EmptyFieldPipe } from './pipes/empty-field.pipe';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { SharedPlotComponent } from './components/shared/shared-plot/shared-plot.component';
-import { HistogramComparisonComponent } from './components/shared/histogram-comparison/histogram-comparison.component';
-
+import { SharedHistogramComponent } from './components/shared/shared-histogram/shared-histogram.component';
+import {SharedKpisComponent  } from './components/shared/shared-kpis/shared-kpis.component';
 // Funzioni Factory
 export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
   return new MultiTranslateHttpLoader(httpBackend, [
@@ -89,7 +89,9 @@ export function initializeAuth(authService: AuthenticationService) {
      ReadingComponent, ProposalCreateComponent, ProblemDetailComponent,
     ProposalDetailComponent, ProposalDetailPageComponent, OvertourismComponent, OvertourismChartsComponent, 
     OvertourismMapComponent, ToastComponent, AutocompleteComponent, CapacityComponent, FlowsComponent, 
-    RedistributionComponent, HiddenComponent, ProposalListPageComponent, EmptyFieldPipe, LoginComponent
+    RedistributionComponent, HiddenComponent, ProposalListPageComponent, EmptyFieldPipe, LoginComponent,
+    SharedKpisComponent,
+
   ],
   imports: [
     BrowserModule,
@@ -104,7 +106,7 @@ export function initializeAuth(authService: AuthenticationService) {
     MatDialogModule,
     ChatbotComponent,
     SharedPlotComponent,
-    HistogramComparisonComponent,
+    SharedHistogramComponent,
     OAuthModule.forRoot({
       resourceServer: {
         allowedUrls: [environment.apiBaseUrl],

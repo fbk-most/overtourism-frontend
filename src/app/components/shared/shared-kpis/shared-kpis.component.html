@@ -1,0 +1,75 @@
+<div class="card-wrapper" *ngIf="kpisMain">
+  <!-- Sostituisci <it-card background="true"> se non hai it-card nel modulo standalone -->
+  <!-- <div class="card p-3 shadow-sm align-items-stretch" style="background-color: #f8f9fa;"> -->
+    <it-card background="true">
+
+    <h3 class="mb-3 h3">{{ isComparison ? 'Comparazione indici' : ('kpi.title' | translate) }}</h3>
+
+    <!-- ============================================== -->
+    <!-- MODALITÀ SINGOLA -->
+    <!-- ============================================== -->
+    <ng-container *ngIf="!isComparison">
+      <div class="mb-3 p-3" *ngFor="let key of kpiKeys">
+        <h6 class="mb-1 text-primary d-flex align-items-center gap-2">
+          {{ ('kpi.' + key | translate) === ('kpi.' + key) ? key : ('kpi.' + key | translate) }}
+          <span *ngIf="key === criticalConstraintKey" class="badge bg-danger text-white" style="font-size: 0.75rem;">
+            ⚠️ Critico
+          </span>
+        </h6>
+        <p class="h3 text-secondary d-flex align-items-baseline gap-1">
+          <span class="fw-bold fs-3">{{ getLevel(kpisMain[key]) | number:'1.1-1' }}%</span>
+          <span *ngIf="getConfidence(kpisMain[key]) !== null" class="text-muted ms-2 fs-3">
+            ± {{ getConfidence(kpisMain[key]) | number:'1.1-1' }}%
+          </span>
+        </p>
+      </div>
+    </ng-container>
+
+    <!-- ============================================== -->
+    <!-- MODALITÀ COMPARAZIONE -->
+    <!-- ============================================== -->
+    <ng-container *ngIf="isComparison">
+      <div class="row w-100 m-0">
+        
+        <!-- Colonna Sinistra -->
+        <div class="col-6 border-end pe-3">
+          <div *ngFor="let key of kpiKeys" class="mb-4 pb-3">
+            <h6 class="text-primary mb-2">
+              {{ ('kpi.' + key | translate) === ('kpi.' + key) ? key : ('kpi.' + key | translate) }}
+            </h6>
+            <div class="d-flex justify-content-end align-items-baseline text-secondary">
+              <p class="h3 text-secondary d-flex align-items-baseline gap-2 me-5">
+                <span class="fw-bold fs-3">{{ getLevel(kpisMain[key]) | number:'1.1-1' }}%</span>
+                <span *ngIf="getConfidence(kpisMain[key]) !== null" class="text-muted ms-2 fs-3">
+                  ± {{ getConfidence(kpisMain[key]) | number:'1.1-1' }}%
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Colonna Destra + Badge Delta -->
+        <div class="col-6 ps-3">
+          <div *ngFor="let key of kpiKeys" class="mb-4 pb-3">
+            <h6 class="text-primary mb-2">&nbsp;</h6>
+            <div class="d-flex justify-content-between align-items-baseline text-secondary">
+              <p class="h3 text-secondary d-flex align-items-baseline gap-2 ms-5">
+                <span class="fw-bold fs-3">{{ getLevel(kpisCompare[key]) | number:'1.1-1' }}%</span>
+                <span *ngIf="getConfidence(kpisCompare[key]) !== null" class="text-muted ms-2 fs-3">
+                  ± {{ getConfidence(kpisCompare[key]) | number:'1.1-1' }}%
+                </span>
+              </p>
+              
+              <span class="btn ms-2 border" [ngClass]="getDeltaClass(kpisMain[key], kpisCompare[key])">
+                {{ getDeltaPerc(kpisMain[key], kpisCompare[key]) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </ng-container>
+
+  <!-- </div> -->
+    </it-card>
+</div>
