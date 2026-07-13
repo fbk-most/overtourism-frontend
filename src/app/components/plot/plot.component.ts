@@ -182,19 +182,7 @@ export class PlotComponent implements AfterViewInit {
   closeModal() {
     this.saveModal.toggle();
   }
-  // loadWidgets() {
-  //   this.scenarioService.getWidgets().subscribe({
-  //     next: (data) => {
-  //       const initialized = this.initializeWidgetBounds(data);
-  //       this.originalWidgets = JSON.parse(JSON.stringify(initialized)); // copia profonda per reset
-  //       this.widgets = initialized;
-  //     },
-  //     error: (err) => {
-  //       console.error('Errore caricamento widget', err);
-  //       this.notificationService.showError('Errore nel caricamento dei widget.');
-  //     }
-  //   });
-  // }
+
   async loadWidgetsAsync(): Promise<void> {
     try {
       const data = await firstValueFrom(this.scenarioService.getWidgets());
@@ -292,7 +280,7 @@ export class PlotComponent implements AfterViewInit {
         )
       );
 
-      const evaluationId = evaluationRes.evaluation_id || evaluationRes.id; // Verifica il nome esatto della property sulla response
+      const evaluationId = evaluationRes.evaluation_id || evaluationRes.id; 
       const rawResponse = await firstValueFrom(
         this.scenarioService.getSessionEvaluationData(
           this.sessionId,
@@ -303,10 +291,11 @@ export class PlotComponent implements AfterViewInit {
 
       const scenarioData = rawResponse.extras?.data || rawResponse.data || rawResponse; 
       this.inputData = this.plotService.preparePlotInput(scenarioData);
-            this.indexDiffs = this.arrayToDict(sessionScenario.index_values || []);
+            
+            const actualNumericalValues = this.arrayToDict(sessionScenario.index_values || []);
             let diffsValues = sessionScenario.extras?.index_diffs;
             if (!diffsValues && sessionScenario.index_values) {
-                diffsValues = this.arrayToDict(sessionScenario.index_values);
+                diffsValues = actualNumericalValues;
             }
       
             this.indexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
@@ -374,20 +363,16 @@ export class PlotComponent implements AfterViewInit {
         this.editableIndexes = problemData?.extras?.editable_indexes || [];
         const scenarioMetadata = await firstValueFrom(this.scenarioService.getScenarioData(this.scenarioId, this.problemId));
         
+        const actualNumericalValues = this.arrayToDict(scenarioMetadata.index_values || []);
+
         let diffsValues = scenarioMetadata.extras?.index_diffs;
         
-        // Se non trovi index_diffs, fallback su index_values dello scenario
         if (!diffsValues && scenarioMetadata.index_values) {
-            diffsValues = this.arrayToDict(scenarioMetadata.index_values);
-        }        
-        
+            diffsValues = actualNumericalValues;
+        }         
         this.originalIndexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
         this.indexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
-        
-        // Applica i widget basandoti sui dati dello scenario
-        this.widgets = this.applyIndexDiffsToWidgets(this.originalWidgets, this.indexDiffs);
-
-        // 2. RECUPERA LE EVALUATIONS PER DISEGNARE LE CURVE DEL GRAFICO
+        this.widgets = this.applyIndexDiffsToWidgets(this.originalWidgets, actualNumericalValues);
         const evaluations = await firstValueFrom(this.scenarioService.getEvaluations(this.problemId, this.scenarioId));
         const completedEvals = evaluations.filter(e => 
           e.scenario_id === this.scenarioId && e.state === 'COMPLETED'
