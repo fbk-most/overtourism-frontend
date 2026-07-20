@@ -18,7 +18,24 @@
 
       <div *ngIf="msg.sender === 'bot'">
         <div class="message-text markdown-body" [innerHTML]="msg.html"></div>
-
+        <div *ngIf="msg.inlineActions" class="mt-3">
+          <div *ngIf="msg.inlineActions" class="mt-3">
+            <ng-container *ngFor="let action of msg.inlineActions">
+              
+              <ng-container *ngIf="action.type === 'SHOW_WIDGET'">
+                <!-- Container per i Widget inline della chat -->
+                <div class="p-2 bg-white rounded shadow-sm w-100 mb-3" style="min-height: 250px;">
+                  
+                  <!-- ngComponentOutlet inietta il Component dinamicamente! -->
+                  <ng-container 
+                    *ngComponentOutlet="widgetRegistry[action.payload.widgetName!]; inputs: action.payload.data">
+                  </ng-container>
+  
+                </div>
+              </ng-container>
+  
+            </ng-container>
+          </div>
         <!-- Feedback bar -->
         <!-- Only show feedback for real agent responses, not the greeting -->
         <div class="feedback-bar" *ngIf="msg.index! > 0">

@@ -3,7 +3,8 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ChartSeriesSummary, ChartSummary } from '../../../../models/chart-summary.model';
-import { ChatbotService, ChatMessage } from '../../../../services/chatbot.service';
+import { ChatMessage } from '../../../../models/chat.model';
+import { ChatbotService } from '../../../../services/chatbot/chatbot.service';
 
 @Component({
   selector: 'app-chatbot-dialog',

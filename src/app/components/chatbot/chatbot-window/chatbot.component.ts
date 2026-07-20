@@ -3,6 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { marked } from 'marked';
+import { ChatbotAction, ChatbotActionService } from '../../../services/chatbot/chatbotAction.service';
+import { ChatbotContextService } from '../../../services/chatbot/chatbotContext.service';
+import { SharedHistogramComponent } from '../../shared/shared-histogram/shared-histogram.component';
+import { SharedKpisComponent } from '../../shared/shared-kpis/shared-kpis.component';
 
 interface Feedback {
   vote?: 'up' | 'down' | null;
@@ -14,6 +18,7 @@ interface Message {
   text: string;
   html?: string;
   index?: number; // assigned when pushed, for feedback keying
+  inlineActions?: ChatbotAction[]; 
 }
 
 @Component({
@@ -25,11 +30,15 @@ interface Message {
 })
 export class ChatbotComponent implements OnInit, OnDestroy {
 
+  readonly widgetRegistry: Record<string, any> = {
+    'histogramComparison': SharedHistogramComponent,
+    'kpiList': SharedKpisComponent,
+    //altri widget slider con widget
+  };
   private http = inject(HttpClient);
+  private contextService = inject(ChatbotContextService);
+  private actionService = inject(ChatbotActionService);
 
-  @Input() scenarioId1!: string;
-  @Input() scenarioId2!: string;
-  @Input() problemId!: string;
 
   isOpen = false;
   isTyping = false;
@@ -102,7 +111,10 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     this.inputText = '';
     this.isTyping = true;
     this.statusMessage = '';
-
+    if (this.checkSimulatedFlows(text)) {
+      this.isTyping = false;
+      return;
+    }
     this.closeEventSource();
     this.eventSource = new EventSource(`${this.API_URL}/stream/${this.sessionId}`);
 
@@ -137,14 +149,21 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     formData.append('session_id', this.sessionId);
     formData.append('user_lang', this.language);
 
-    const validScenarioIds = [this.scenarioId1, this.scenarioId2].filter(
-      id => typeof id === 'string' && id.trim().length > 0
-    );
-    if (validScenarioIds.length > 0) {
-      formData.append('integrated_mode', 'true');
-      validScenarioIds.forEach(id => formData.append('context', id));
-    }
+    // const validScenarioIds = [this.scenarioId1, this.scenarioId2].filter(
+    //   id => typeof id === 'string' && id.trim().length > 0
+    // );
+    // if (validScenarioIds.length > 0) {
+    //   formData.append('integrated_mode', 'true');
+    //   validScenarioIds.forEach(id => formData.append('context', id));
+    // }
+    const problemId = this.contextService.problemId$.getValue();
+    const scenarios = this.contextService.scenarioIds$.getValue();
 
+    if (problemId) formData.append('problem_id', problemId);
+    if (scenarios.length) {
+      formData.append('integrated_mode', 'true');
+      scenarios.forEach(id => formData.append('context', id));
+    }
     this.http.post(this.API_URL, formData).subscribe({
       error: () => {
         this.closeEventSource();
@@ -199,5 +218,113 @@ export class ChatbotComponent implements OnInit, OnDestroy {
     } catch (err) {
       console.error('Failed to submit feedback', err);
     }
+  }
+    /** Parsing della risposta strutturata dal backend (o dalla simulazione) */
+    private handleBotResponse(data: { response: string, actions?: ChatbotAction[] }): void {
+      const inlineActions: ChatbotAction[] = [];
+  
+      if (data.actions && Array.isArray(data.actions)) {
+        data.actions.forEach(action => {
+          if (action.type === 'SHOW_WIDGET') {
+            inlineActions.push(action);
+          } else {
+            this.actionService.dispatch(action);
+          }
+        });
+      }
+  
+      // Aggiunge il messaggio in chat con le eventuali azioni visuali
+      const index = this.messages.length;
+      this.messages.push({
+        sender: 'bot',
+        text: data.response,
+        html: this.parseMarkdown(data.response),
+        index,
+        inlineActions: inlineActions.length > 0 ? inlineActions : undefined
+      });
+    }
+     // --- MOTORE DI SIMULAZIONE (MOCK BACKEND) ---
+  private checkSimulatedFlows(text: string): boolean {
+    const input = text.trim().toLowerCase();
+
+    // Dizionario dei Payload JSON che il vero backend potrebbe inviare
+    const MOCK_RESPONSES: Record<string, { response: string, actions?: ChatbotAction[] }> = {
+      
+      // 1. NAVIGAZIONE SEMPLICE
+      'mostrami i problemi': {
+        response: 'Certamente, ti riporto alla lista dei problemi per selezionarne un altro.',
+        actions: [
+          { type: 'NAVIGATE', payload: { path: '/problems' } }
+        ]
+      },
+
+      // 2. AZIONE GLOBALE (Creazione backend + Navigazione)
+      'crea scenario ecologico': {
+        response: 'Ho creato il nuovo scenario "Ecologico" impostando i posteggi al 20%. Ti ci porto subito.',
+        actions: [
+          { 
+            type: 'CREATE_SCENARIO', 
+            payload: { 
+              name: 'Scenario Ecologico Automatico', 
+              params: { tourists_parking_percentage: 20 } 
+            } 
+          },
+          { type: 'NAVIGATE', payload: { path: '/problems' } 
+          }
+        ]
+      },
+
+      // 3. WIDGET INLINE: ISTOGRAMMA
+      'confronta gli indici': {
+        response: 'Ecco il grafico con la comparazione tra lo Scenario Attuale e la mia Proposta:',
+        actions: [
+          { 
+            type: 'SHOW_WIDGET', 
+            payload: { 
+              widgetName: 'histogramComparison', 
+              data: { 
+                payload: { 
+                  labelLeft: 'Attuale', 
+                  labelRight: 'Proposta', 
+                  dataLeft: { "Soddisfazione": { level: 60, confidence: 2 }, "Traffico": { level: 80, confidence: 5 } }, 
+                  dataRight: { "Soddisfazione": { level: 85, confidence: 3 }, "Traffico": { level: 40, confidence: 4 } } 
+                }, 
+                loading: false 
+              }
+            } 
+          }
+        ]
+      },
+
+      // 4. WIDGET INLINE: KPI LIST (Usando SharedKpisComponent)
+      'dimmi i kpi base': {
+        response: 'Questi sono gli indici di criticità calcolati per la situazione di default:',
+        actions: [
+          {
+            type: 'SHOW_WIDGET',
+            payload: {
+              widgetName: 'kpiList',
+              data: {
+                kpisMain: {
+                  'overtourism_level': { level: 88, confidence: 2 },
+                  'Giorni di blocco': { level: 12, confidence: 0 }
+                }
+              }
+            }
+          }
+        ]
+      }
+    };
+
+    // Se l'utente digita una delle chiavi magiche, eseguiamo la simulazione
+    if (MOCK_RESPONSES[input]) {
+      setTimeout(() => {
+        this.handleBotResponse(MOCK_RESPONSES[input]);
+        this.isTyping = false;
+      }, 1000); // Finge 1 secondo di caricamento rete
+      return true;
+    }
+
+    return false;
   }
 }
