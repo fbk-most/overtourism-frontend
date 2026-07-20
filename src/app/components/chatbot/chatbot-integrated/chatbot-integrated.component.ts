@@ -1,180 +1,224 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
-import { ChatMessageComponent } from './chat-message/chat-message.component';
-import { DesignAngularKitModule } from 'design-angular-kit';
-import { ChatFeedback, ChatMessage } from '../../../models/chat.model';
-import { AgentService } from '../../../services/agent.service';
+import { HttpClient } from '@angular/common/http';
+import { marked } from 'marked';
+import { ChatbotContextService } from '../../../services/chatbot/chatbotContext.service';
+import { SharedHistogramComponent } from '../../shared/shared-histogram/shared-histogram.component';
+import { SharedKpisComponent } from '../../shared/shared-kpis/shared-kpis.component';
+import { ChatbotActionTranslatorService } from '../../../services/chatbot/chatbot-action-translator.service';
+import { ChatbotActionService } from '../../../services/chatbot/chatbotAction.service';
+import { ChatMockService } from '../../../services/chatbot/chat-mock.service';
+import { AgentResponse, ChatFeedback, ChatMessage } from '../../../models/chat.model';
+
+
 
 @Component({
-  selector: 'app-chatbot',
+  selector: 'app-chatbot-integrated',
   standalone: true,
-  imports: [CommonModule, FormsModule, ChatMessageComponent,DesignAngularKitModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './chatbot-integrated.component.html',
   styleUrls: ['./chatbot-integrated.component.scss']
 })
-export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked {
+export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
+  private translator = inject(ChatbotActionTranslatorService);
+  private actionService = inject(ChatbotActionService);
+  private mockService = inject(ChatMockService);
+  private http = inject(HttpClient);
+  private contextService = inject(ChatbotContextService);
+
+
+  isOpen = false;
+  isTyping = false;
+  inputText = '';
+  statusMessage = '';
+
   messages: ChatMessage[] = [];
-  input = '';
-  loading = false;
-  attachments: File[] = [];
-  activeContext = '-';
-  statusMessage: string | null = null;
   feedbacks: Record<number, ChatFeedback> = {};
-  sessionId: string;
 
-  @ViewChild('chatRef') chatRef!: ElementRef;
-  @ViewChild('textareaRef') textareaRef!: ElementRef;
-  @ViewChild('fileInputRef') fileInputRef!: ElementRef;
+  // Modal state
+  showFeedbackModal = false;
+  modalMsgIndex = -1;
+  modalDraft = '';
 
-  private shouldScroll = false;
+  sessionId!: string;
+  language = 'Italian';
 
-  constructor(private agentSvc: AgentService) {
-    this.sessionId = this.agentSvc.generateSessionId();
+  private readonly API_URL = 'http://localhost:9000/agent';
+  private eventSource: EventSource | null = null;
+
+  private parseMarkdown(text: string): string {
+    return marked.parse(text) as string;
   }
 
-  ngOnInit() {}
+  ngOnInit(): void {
+    this.sessionId = this.generateSessionId();
+    this.pushBot('Ciao! Come posso aiutarti?');
+  }
 
-  ngAfterViewChecked() {
-    if (this.shouldScroll && this.chatRef) {
-      this.chatRef.nativeElement.scrollTop = this.chatRef.nativeElement.scrollHeight;
-      this.shouldScroll = false;
+  ngOnDestroy(): void {
+    this.closeEventSource();
+  }
+
+  private generateSessionId(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    return Array.from({ length: 8 }, () =>
+      chars.charAt(Math.floor(Math.random() * chars.length))
+    ).join('');
+  }
+
+  private closeEventSource(): void {
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
     }
   }
 
-  onInputChange(event: Event) {
-    const el = event.target as HTMLTextAreaElement;
-    el.style.height = 'auto';
-    el.style.height = `${Math.max(el.scrollHeight, 24)}px`;
+  /** Push a bot message and assign it a stable index for feedback. */
+  private pushBot(text: string): void {
+    const index = this.messages.length - 1;
+    this.messages.push({
+      role: 'assistant',        
+      content: text,           
+      html: this.parseMarkdown(text),
+      index
+    });
   }
 
-  handleKeyDown(event: KeyboardEvent) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      this.sendMessage();
+  toggle(): void {
+    this.isOpen = !this.isOpen;
+  }
+  private handleAgentResponse(data: AgentResponse): void {
+    this.pushBot(data.response ?? 'Nessuna risposta.');
+
+    if (data.events?.length) {
+      data.events
+        .flatMap(e => this.translator.translateForIntegrated(e))
+        .forEach(action => this.actionService.execute(action));
     }
   }
+  // ─── Send ──────────────────────────────────────────────────────────────────
 
-  onFileChange(event: Event) {
-    const files = Array.from((event.target as HTMLInputElement).files || []);
-    const existing = new Set(this.attachments.map(f => f.name));
-    this.attachments = [...this.attachments, ...files.filter(f => !existing.has(f.name))];
-    (event.target as HTMLInputElement).value = '';
-  }
+  send(): void {
+    const text = this.inputText.trim();
+    if (!text || this.isTyping) return;
 
-  removeAttachment(idx: number) {
-    this.attachments = this.attachments.filter((_, i) => i !== idx);
-  }
-
-  async sendMessage() {
-    if (!this.input.trim() && this.attachments.length === 0) return;
-
-    const currentInput = this.input;
-    const newMessages: ChatMessage[] = [...this.messages, { role: 'user', content: currentInput || '[Attachment]' }];
-    this.messages = newMessages;
-    this.input = '';
-    if (this.textareaRef) this.textareaRef.nativeElement.style.height = 'auto';
-    this.loading = true;
+    this.messages.push({ role: 'user', content: text });
+        this.inputText = '';
+    this.isTyping = true;
     this.statusMessage = '';
-    this.shouldScroll = true;
+    const mock = this.mockService.find(text);
+    if (mock) {
+      setTimeout(() => {
+        this.handleAgentResponse(mock);
+        this.isTyping = false;
+      }, 800);
+      return;
+    }
 
-    const eventSource = this.agentSvc.createEventSource(this.sessionId);
+    this.closeEventSource();
+    this.eventSource = new EventSource(`${this.API_URL}/stream/${this.sessionId}`);
 
-    eventSource.addEventListener('status', (e: MessageEvent) => {
+    this.eventSource.addEventListener('status', (e: MessageEvent) => {
       this.statusMessage = e.data;
-      this.shouldScroll = true;
     });
 
-    eventSource.addEventListener('done', async () => {
-      eventSource.close();
+    this.eventSource.addEventListener('done', async () => {
+      this.closeEventSource();
       try {
-        const data = await firstValueFrom(this.agentSvc.getResult(this.sessionId));
-        this.activeContext = data.active_context || '-';
-        this.messages = [...newMessages, {
-          role: 'assistant',
-          content: data.response,
-          chartData: data.chart_data ?? null,
-          slidersData: data.sliders_data ?? null
-        }];
+        const data = await fetch(`${this.API_URL}/result/${this.sessionId}`)
+          .then(res => res.json());
+
+        if (data.session_id) this.sessionId = data.session_id;
+        this.pushBot(data.response ?? 'No response received.');
       } catch {
-        this.messages = [...newMessages, { role: 'assistant', content: 'Errore nel recuperare la risposta.' }];
+        this.pushBot('Error fetching result.');
       }
-      this.loading = false;
-      this.statusMessage = null;
-      this.shouldScroll = true;
+      this.isTyping = false;
+      this.statusMessage = '';
     });
 
-    eventSource.onerror = () => {
-      eventSource.close();
-      this.loading = false;
-      this.statusMessage = null;
+    this.eventSource.onerror = () => {
+      this.closeEventSource();
+      this.pushBot('Connection error. Please try again.');
+      this.isTyping = false;
+      this.statusMessage = '';
     };
 
-    const files = [...this.attachments];
-    this.attachments = [];
-    if (this.fileInputRef) this.fileInputRef.nativeElement.value = '';
+    const formData = new FormData();
+    formData.append('message', text);
+    formData.append('session_id', this.sessionId);
+    formData.append('user_lang', this.language);
 
-    this.agentSvc.sendMessage(this.sessionId, currentInput, 'Italiano', files).subscribe({
+    // const validScenarioIds = [this.scenarioId1, this.scenarioId2].filter(
+    //   id => typeof id === 'string' && id.trim().length > 0
+    // );
+    // if (validScenarioIds.length > 0) {
+    //   formData.append('integrated_mode', 'true');
+    //   validScenarioIds.forEach(id => formData.append('context', id));
+    // }
+    const problemId = this.contextService.problemId$.getValue();
+    const scenarios = this.contextService.scenarioIds$.getValue();
+
+    if (problemId) formData.append('problem_id', problemId);
+    if (scenarios.length) {
+      formData.append('integrated_mode', 'true');
+      scenarios.forEach(id => formData.append('context', id));
+    }
+    this.http.post(this.API_URL, formData).subscribe({
       error: () => {
-        eventSource.close();
-        this.messages = [...newMessages, { role: 'assistant', content: 'Errore nel contattare il server.' }];
-        this.loading = false;
+        this.closeEventSource();
+        this.pushBot('Sorry, something went wrong.');
+        this.isTyping = false;
+        this.statusMessage = '';
       }
     });
   }
 
-  onSliderSubmit(sessionId: string) {
-    this.loading = true;
-    this.statusMessage = '';
-    const currentMessages = [...this.messages];
+  // ─── Feedback ──────────────────────────────────────────────────────────────
 
-    const eventSource = this.agentSvc.createEventSource(sessionId);
-    const timeout = setTimeout(() => {
-      eventSource.close();
-      this.loading = false;
-      this.statusMessage = null;
-    }, 30000);
-
-    eventSource.addEventListener('status', (e: MessageEvent) => { this.statusMessage = e.data; });
-
-    eventSource.addEventListener('done', async () => {
-      clearTimeout(timeout);
-      eventSource.close();
-      try {
-        const data = await firstValueFrom(this.agentSvc.getResult(sessionId));
-        this.activeContext = data.active_context || '-';
-        this.messages = [...currentMessages, {
-          role: 'assistant',
-          content: data.response,
-          chartData: data.chart_data ?? null,
-          slidersData: data.sliders_data ?? null
-        }];
-      } catch {
-        this.messages = [...currentMessages, { role: 'assistant', content: 'Errore nel recuperare la risposta.' }];
-      }
-      this.loading = false;
-      this.statusMessage = null;
-      this.shouldScroll = true;
-    });
-
-    eventSource.onerror = () => {
-      clearTimeout(timeout);
-      eventSource.close();
-      this.loading = false;
-      this.statusMessage = null;
-    };
+  getFeedback(index: number): ChatFeedback {
+    return this.feedbacks[index] ?? {};
   }
 
-  onVote(index: number, vote: string | null) {
-    const updated = { ...this.feedbacks[index], vote: vote as any };
-    this.feedbacks = { ...this.feedbacks, [index]: updated };
-    this.agentSvc.submitFeedback(this.sessionId, index, vote || undefined, updated.comment).subscribe();
+  handleVote(index: number, vote: 'up' | 'down'): void {
+    const current = this.getFeedback(index);
+    const newVote = current.vote === vote ? null : vote;
+    this.feedbacks[index] = { ...current, vote: newVote };
+    this.submitFeedback(index);
   }
 
-  onComment(index: number, comment: string) {
-    const updated = { ...this.feedbacks[index], comment };
-    this.feedbacks = { ...this.feedbacks, [index]: updated };
-    this.agentSvc.submitFeedback(this.sessionId, index, updated.vote || undefined, comment).subscribe();
+  private cdr = inject(ChangeDetectorRef);
+
+  openCommentModal(index: number): void {
+    this.modalMsgIndex = index;
+    this.modalDraft = this.getFeedback(index).comment ?? '';
+    this.showFeedbackModal = true;
+    this.cdr.detectChanges(); // force Angular to pick up the change
   }
+
+  closeCommentModal(): void {
+    this.showFeedbackModal = false;
+    this.modalMsgIndex = -1;
+  }
+
+  saveComment(): void {
+    const index = this.modalMsgIndex;
+    this.feedbacks[index] = { ...this.getFeedback(index), comment: this.modalDraft.trim() };
+    this.submitFeedback(index);
+    this.closeCommentModal();
+  }
+
+  private async submitFeedback(index: number): Promise<void> {
+    const fb = this.getFeedback(index);
+    const params = new URLSearchParams({ session_id: this.sessionId, message_index: String(index) });
+    if (fb.vote) params.set('vote', fb.vote);
+    if (fb.comment) params.set('comment', fb.comment);
+    try {
+      await fetch(`${this.API_URL}/feedback?${params.toString()}`, { method: 'GET', credentials: 'include' });
+    } catch (err) {
+      console.error('Failed to submit feedback', err);
+    }
+  }
+   
 }

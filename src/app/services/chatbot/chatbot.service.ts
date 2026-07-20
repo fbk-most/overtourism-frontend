@@ -2,11 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-
-export interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { ChatMessage } from '../../models/chat.model';  
 
 export interface ChatRequest {
   messages: ChatMessage[];
@@ -16,9 +12,7 @@ export interface ChatResponse {
   reply: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class ChatbotService {
   private baseUrl: string;
 

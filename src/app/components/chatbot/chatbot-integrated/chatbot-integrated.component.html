@@ -1,73 +1,102 @@
-<div class="chatbot-app">
-      <!-- COMMENTATO PER LA DEMO
+<!-- Floating button -->
+<div class="chatbot-button" (click)="toggle()">💬</div>
 
-  <div class="context-bar shadow-sm">
-    <span>Contesto attivo: <strong>{{ activeContext }}</strong></span>
-    <span class="session-id text-muted" title="ID Sessione">#{{ sessionId | slice:0:8 }}</span> 
-  </div>-->
-
-  <div class="chat-wrapper" #chatRef>
-    <div class="chat-container">
-      
-      <!-- Welcome message se vuoto -->
-      <div class="empty-state text-muted text-center mt-5" *ngIf="messages.length === 0">
-        <it-icon name="comment" size="lg" class="mb-3"></it-icon>
-        <h5>Come posso aiutarti oggi?</h5>
-        <p>Invia un messaggio o allega un file per iniziare.</p>
-      </div>
-
-      <app-chat-message
-        *ngFor="let msg of messages; let i = index"
-        [msg]="msg"
-        [sessionId]="sessionId"
-        [feedback]="feedbacks[i] || {}"
-        (sliderSubmit)="onSliderSubmit($event)"
-        (voteChange)="onVote(i, $event)"
-        (commentChange)="onComment(i, $event)">
-      </app-chat-message>
-
-      <!-- Loading bubble -->
-      <div class="message assistant loading-bubble" *ngIf="loading">
-        <div class="dots"><span></span><span></span><span></span></div>
-        <span class="status-msg" *ngIf="statusMessage">{{ statusMessage }}</span>
-      </div>
-    </div>
+<!-- Chat window -->
+<div class="chatbot-window" *ngIf="isOpen">
+  <div class="chatbot-header">
+    Chatbot
+    <span class="close" (click)="toggle()">✕</span>
   </div>
 
-  <div class="input-container">
-    <div class="input-wrapper">
-      
-      <div *ngIf="attachments.length > 0" class="attachments-preview mb-2">
-        <div *ngFor="let file of attachments; let i = index" class="attachment-badge">
-          <it-icon name="clip" size="xs"></it-icon>
-          <span class="file-name text-truncate">{{ file.name }}</span>
-          <it-icon name="close" size="xs" class="remove-attachment" (click)="removeAttachment(i)"></it-icon>
+  <div class="chatbot-messages">
+    <div *ngFor="let msg of messages"
+    [ngClass]="{ 'message-user': msg.role === 'user', 'message-bot': msg.role === 'assistant' }">
+ 
+      <div class="message-text" *ngIf="msg.role === 'user'">{{ msg.content }}</div>
+
+      <div *ngIf="msg.role === 'assistant'">
+        <div class="message-text markdown-body" [innerHTML]="msg.html"></div>
+        <div class="feedback-bar" *ngIf="msg.index! > 0">
+          <button class="fb-btn"
+            [class.fb-active-up]="getFeedback(msg.index!).vote === 'up'"
+            title="Good response"
+            (click)="handleVote(msg.index!, 'up')">👍</button>
+          <button class="fb-btn"
+            [class.fb-active-down]="getFeedback(msg.index!).vote === 'down'"
+            title="Bad response"
+            (click)="handleVote(msg.index!, 'down')">👎</button>
+          <button class="fb-btn"
+            [class.fb-has-comment]="getFeedback(msg.index!).comment"
+            title="Add comment"
+            (click)="$event.stopPropagation(); openCommentModal(msg.index!)">💬</button>
+          <span class="fb-comment-label" *ngIf="getFeedback(msg.index!).comment">
+            "{{ getFeedback(msg.index!).comment }}"
+          </span>
+        </div>
+        <!-- Feedback bar -->
+        <!-- Only show feedback for real agent responses, not the greeting -->
+        <div class="feedback-bar" *ngIf="msg.index! > 0">
+          <button
+            class="fb-btn"
+            [class.fb-active-up]="getFeedback(msg.index!).vote === 'up'"
+            title="Good response"
+            (click)="handleVote(msg.index!, 'up')"
+          >👍</button>
+
+          <button
+            class="fb-btn"
+            [class.fb-active-down]="getFeedback(msg.index!).vote === 'down'"
+            title="Bad response"
+            (click)="handleVote(msg.index!, 'down')"
+          >👎</button>
+
+          <button
+            class="fb-btn"
+            [class.fb-has-comment]="getFeedback(msg.index!).comment"
+            title="Add comment"
+            (click)="$event.stopPropagation(); openCommentModal(msg.index!)"
+          >💬</button>
+
+          <span class="fb-comment-label" *ngIf="getFeedback(msg.index!).comment">
+            "{{ getFeedback(msg.index!).comment }}"
+          </span>
         </div>
       </div>
+    </div>
 
-      <div class="input-inner shadow-sm focus-ring">
-        <button class="icon-btn attach-btn" (click)="fileInputRef.click()" title="Allega file">
-           <it-icon name="plus" size="sm"></it-icon>
-        </button>
-        <input type="file" multiple (change)="onFileChange($event)" #fileInputRef style="display:none" />
-        
-        <textarea
-          #textareaRef
-          [(ngModel)]="input"
-          (input)="onInputChange($event)"
-          (keydown)="handleKeyDown($event)"
-          placeholder="Scrivi al Digital Twin Agent..."
-          [disabled]="loading"
-          rows="1"
-          spellcheck="false">
-        </textarea>
-        
-        <button class="icon-btn send-btn" [class.active]="input.trim().length > 0 || attachments.length > 0" (click)="sendMessage()" [disabled]="loading || (!input.trim() && attachments.length === 0)">
-          <it-icon name="arrow-right" class="icon-white bg-white" size="sm"></it-icon>
-        </button>
+    <!-- Typing indicator -->
+    <div *ngIf="isTyping" class="bot typing">
+      <div class="message-text">
+        <span></span><span></span><span></span>
       </div>
-      
+      <div class="status-text" *ngIf="statusMessage">{{ statusMessage }}</div>
     </div>
   </div>
 
+  <div class="chatbot-input">
+    <input
+      type="text"
+      [(ngModel)]="inputText"
+      (keydown.enter)="send()"
+      spellcheck="false"
+      placeholder="Scrivi qui il tuo messaggio"
+    />
+    <button (click)="send()">Invia</button>
+  </div>
+</div>
+
+<!-- Comment modal -->
+<div class="fb-overlay" *ngIf="showFeedbackModal" (click)="closeCommentModal()">
+  <div class="fb-modal" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+    <h3>Add feedback</h3>
+    <textarea
+      [(ngModel)]="modalDraft"
+      placeholder="What could be improved? (optional)"
+      rows="4"
+    ></textarea>
+    <div class="fb-modal-actions">
+      <button class="fb-btn-cancel" (click)="closeCommentModal()">Cancel</button>
+      <button class="fb-btn-save" (click)="saveComment()">Save</button>
+    </div>
+  </div>
 </div>

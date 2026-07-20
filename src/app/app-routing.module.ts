@@ -21,7 +21,7 @@ import { OvertourismComponent } from './pages/overtourism/overtourism/overtouris
 import { UnsavedChangesGuard } from './guards/plot-unsaved-changes.guard';
 import { LoginComponent } from './pages/login/login.component';
 import { AuthGuard } from './guards/auth.guard';
-import { ChatbotIntegratedComponent } from './components/chatbot/chatbot-integrated/chatbot-integrated.component';
+import { ChatbotStandaloneComponent } from './components/chatbot/chatbot-standalone/chatbot-standalone.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -119,7 +119,7 @@ const routes: Routes = [
   }
   ,
   { path: 'agent', 
-    component: ChatbotIntegratedComponent, 
+    component: ChatbotStandaloneComponent, 
     canActivate: [AuthGuard] },
   // 🔹 Altre sezioni del portale
   { path: 'capacity', component: CapacityComponent, canActivate: [AuthGuard] },

@@ -1,11 +1,12 @@
 import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
+import { DesignAngularKitModule } from 'design-angular-kit';
 
 @Component({
   selector: 'app-shared-kpis',
-  standalone: false,
-  templateUrl: './shared-kpis.component.html',
+  standalone: true,  
+  imports: [CommonModule, TranslateModule,DesignAngularKitModule],   templateUrl: './shared-kpis.component.html',
   styleUrls: ['./shared-kpis.component.scss']
 })
 export class SharedKpisComponent implements OnChanges {

@@ -60,7 +60,6 @@ import { OvertourismComponent } from './pages/overtourism/overtourism/overtouris
 import { ProposalDetailPageComponent } from './pages/problems/proposal-detail-page/proposal-detail-page.component';
 import { ProposalListPageComponent } from './pages/problems/proposal-list-page/proposal-list-page.component';
 import { LoginComponent } from './pages/login/login.component';
-import { ChatbotComponent } from './components/chatbot/chatbot-window/chatbot.component';
 
 // Pipes
 import { EmptyFieldPipe } from './pipes/empty-field.pipe';
@@ -68,6 +67,7 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { SharedPlotComponent } from './components/shared/shared-plot/shared-plot.component';
 import { SharedHistogramComponent } from './components/shared/shared-histogram/shared-histogram.component';
 import {SharedKpisComponent  } from './components/shared/shared-kpis/shared-kpis.component';
+import { ChatbotIntegratedComponent } from './components/chatbot/chatbot-integrated/chatbot-integrated.component';
 // Funzioni Factory
 export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
   return new MultiTranslateHttpLoader(httpBackend, [
@@ -90,7 +90,6 @@ export function initializeAuth(authService: AuthenticationService) {
     ProposalDetailComponent, ProposalDetailPageComponent, OvertourismComponent, OvertourismChartsComponent, 
     OvertourismMapComponent, ToastComponent, AutocompleteComponent, CapacityComponent, FlowsComponent, 
     RedistributionComponent, HiddenComponent, ProposalListPageComponent, EmptyFieldPipe, LoginComponent,
-    SharedKpisComponent,
 
   ],
   imports: [
@@ -104,9 +103,10 @@ export function initializeAuth(authService: AuthenticationService) {
     NgxSliderModule,
     HttpClientModule,
     MatDialogModule,
-    ChatbotComponent,
+    ChatbotIntegratedComponent,
     SharedPlotComponent,
     SharedHistogramComponent,
+    SharedKpisComponent,
     OAuthModule.forRoot({
       resourceServer: {
         allowedUrls: [environment.apiBaseUrl],
