@@ -9,58 +9,21 @@
   </div>
 
   <div class="chatbot-messages">
-    <div *ngFor="let msg of messages"
-    [ngClass]="{ 'message-user': msg.role === 'user', 'message-bot': msg.role === 'assistant' }">
+    <div *ngFor="let msg of messages; let i = index"
+         [ngClass]="{ 'user': msg.role === 'user', 'bot': msg.role === 'assistant' }">
  
       <div class="message-text" *ngIf="msg.role === 'user'">{{ msg.content }}</div>
 
       <div *ngIf="msg.role === 'assistant'">
-        <div class="message-text markdown-body" [innerHTML]="msg.html"></div>
-        <div class="feedback-bar" *ngIf="msg.index! > 0">
-          <button class="fb-btn"
-            [class.fb-active-up]="getFeedback(msg.index!).vote === 'up'"
-            title="Good response"
-            (click)="handleVote(msg.index!, 'up')">👍</button>
-          <button class="fb-btn"
-            [class.fb-active-down]="getFeedback(msg.index!).vote === 'down'"
-            title="Bad response"
-            (click)="handleVote(msg.index!, 'down')">👎</button>
-          <button class="fb-btn"
-            [class.fb-has-comment]="getFeedback(msg.index!).comment"
-            title="Add comment"
-            (click)="$event.stopPropagation(); openCommentModal(msg.index!)">💬</button>
-          <span class="fb-comment-label" *ngIf="getFeedback(msg.index!).comment">
-            "{{ getFeedback(msg.index!).comment }}"
-          </span>
-        </div>
-        <!-- Feedback bar -->
-        <!-- Only show feedback for real agent responses, not the greeting -->
-        <div class="feedback-bar" *ngIf="msg.index! > 0">
-          <button
-            class="fb-btn"
-            [class.fb-active-up]="getFeedback(msg.index!).vote === 'up'"
-            title="Good response"
-            (click)="handleVote(msg.index!, 'up')"
-          >👍</button>
-
-          <button
-            class="fb-btn"
-            [class.fb-active-down]="getFeedback(msg.index!).vote === 'down'"
-            title="Bad response"
-            (click)="handleVote(msg.index!, 'down')"
-          >👎</button>
-
-          <button
-            class="fb-btn"
-            [class.fb-has-comment]="getFeedback(msg.index!).comment"
-            title="Add comment"
-            (click)="$event.stopPropagation(); openCommentModal(msg.index!)"
-          >💬</button>
-
-          <span class="fb-comment-label" *ngIf="getFeedback(msg.index!).comment">
-            "{{ getFeedback(msg.index!).comment }}"
-          </span>
-        </div>
+        <div class="message-text markdown-body" [innerHTML]="msg.html ?? msg.content"></div>
+        
+        <!-- Usa il componente condiviso e passa l'indice reale (i) e non msg.index se non necessario -->
+        <app-chat-feedback-bar
+          *ngIf="i > 0"
+          [feedback]="getFeedback(i)"
+          (voteChange)="handleVote(i, $any($event))"
+          (commentChange)="handleComment(i, $event)">
+        </app-chat-feedback-bar>
       </div>
     </div>
 
@@ -85,18 +48,3 @@
   </div>
 </div>
 
-<!-- Comment modal -->
-<div class="fb-overlay" *ngIf="showFeedbackModal" (click)="closeCommentModal()">
-  <div class="fb-modal" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
-    <h3>Add feedback</h3>
-    <textarea
-      [(ngModel)]="modalDraft"
-      placeholder="What could be improved? (optional)"
-      rows="4"
-    ></textarea>
-    <div class="fb-modal-actions">
-      <button class="fb-btn-cancel" (click)="closeCommentModal()">Cancel</button>
-      <button class="fb-btn-save" (click)="saveComment()">Save</button>
-    </div>
-  </div>
-</div>

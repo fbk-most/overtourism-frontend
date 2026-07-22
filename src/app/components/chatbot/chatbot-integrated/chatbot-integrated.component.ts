@@ -10,13 +10,14 @@ import { ChatbotActionTranslatorService } from '../../../services/chatbot/chatbo
 import { ChatbotActionService } from '../../../services/chatbot/chatbotAction.service';
 import { ChatMockService } from '../../../services/chatbot/chat-mock.service';
 import { AgentResponse, ChatFeedback, ChatMessage } from '../../../models/chat.model';
+import { ChatFeedbackBarComponent } from '../chatbot-standalone/chat-feedback-bar/chat-feedback-bar.component';
 
 
 
 @Component({
   selector: 'app-chatbot-integrated',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,ChatFeedbackBarComponent],
   templateUrl: './chatbot-integrated.component.html',
   styleUrls: ['./chatbot-integrated.component.scss']
 })
@@ -175,38 +176,22 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ─── Feedback ──────────────────────────────────────────────────────────────
-
+  
   getFeedback(index: number): ChatFeedback {
     return this.feedbacks[index] ?? {};
   }
 
   handleVote(index: number, vote: 'up' | 'down'): void {
     const current = this.getFeedback(index);
-    const newVote = current.vote === vote ? null : vote;
-    this.feedbacks[index] = { ...current, vote: newVote };
+    // Se non serve il toggle deseleziona, basta assegnare il nuovo voto
+    this.feedbacks[index] = { ...current, vote };
     this.submitFeedback(index);
   }
 
-  private cdr = inject(ChangeDetectorRef);
-
-  openCommentModal(index: number): void {
-    this.modalMsgIndex = index;
-    this.modalDraft = this.getFeedback(index).comment ?? '';
-    this.showFeedbackModal = true;
-    this.cdr.detectChanges(); // force Angular to pick up the change
-  }
-
-  closeCommentModal(): void {
-    this.showFeedbackModal = false;
-    this.modalMsgIndex = -1;
-  }
-
-  saveComment(): void {
-    const index = this.modalMsgIndex;
-    this.feedbacks[index] = { ...this.getFeedback(index), comment: this.modalDraft.trim() };
+  handleComment(index: number, comment: string): void {
+    const current = this.getFeedback(index);
+    this.feedbacks[index] = { ...current, comment };
     this.submitFeedback(index);
-    this.closeCommentModal();
   }
 
   private async submitFeedback(index: number): Promise<void> {
@@ -220,5 +205,7 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
       console.error('Failed to submit feedback', err);
     }
   }
+
+
    
 }
