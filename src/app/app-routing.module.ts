@@ -22,6 +22,7 @@ import { UnsavedChangesGuard } from './guards/plot-unsaved-changes.guard';
 import { LoginComponent } from './pages/login/login.component';
 import { AuthGuard } from './guards/auth.guard';
 import { ChatbotStandaloneComponent } from './components/chatbot/chatbot-standalone/chatbot-standalone.component';
+import { IndiciComponent } from './pages/indici/indici.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -121,12 +122,10 @@ const routes: Routes = [
   { path: 'agent', 
     component: ChatbotStandaloneComponent, 
     canActivate: [AuthGuard] },
-  // 🔹 Altre sezioni del portale
-  { path: 'capacity', component: CapacityComponent, canActivate: [AuthGuard] },
-  { path: 'overtourism', component: OvertourismComponent, canActivate: [AuthGuard] },
-  { path: 'flows', component: FlowsComponent, canActivate: [AuthGuard] },
-  { path: 'redistribution', component: RedistributionComponent, canActivate: [AuthGuard] },
-  { path: 'hidden', component: HiddenComponent, canActivate: [AuthGuard] },
+    //indici
+  { path: 'indici', component: IndiciComponent, canActivate: [AuthGuard] },
+  // 🔹 Altre sezioni del portale ()
+
   { path: 'faqs', component: FaqsComponent, data: { breadcrumb: 'FAQ' }, canActivate: [AuthGuard] },
   { path: '', redirectTo: 'problems', pathMatch: 'full' },
   { path: '**', redirectTo: 'problems' }

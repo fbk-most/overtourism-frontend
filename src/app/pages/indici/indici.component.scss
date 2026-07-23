@@ -1,0 +1,91 @@
+// ── Pannello filtri ────────────────────────────────────────────────────────
+.filtri-panel {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 16px 20px 12px;
+    margin-bottom: 24px;
+  
+    .filtri-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+    }
+  
+    .filtri-field {
+      display: flex;
+      flex-direction: column;
+      min-width: 160px;
+      flex: 1 1 160px;
+      max-width: 240px;
+  
+      label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 4px;
+      }
+    }
+  
+    .filtri-field--wide {
+      min-width: 260px;
+      max-width: 360px;
+    }
+  
+    // Il bottone occupa sempre l'ultima posizione a destra
+    .filtri-apply {
+      margin-left: auto;
+      align-self: flex-end;
+      flex: 0 0 auto;
+  
+      button {
+        min-width: 140px;
+        white-space: nowrap;
+      }
+    }
+  }
+  
+  // ── Separatore contenuto ───────────────────────────────────────────────────
+  .indici-content {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    min-width: 0;          
+    overflow: hidden;      
+  
+    .empty-hint {
+      padding: 48px 0;
+      text-align: center;
+      color: #868e96;
+    }
+  }
+  
+  // ── Comuni widget ──────────────────────────────────────────────────────────
+  .comuni-widget {
+    position: relative;
+  }
+  
+  .comuni-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 200;
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  
+    .comuni-item {
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 14px;
+      &:hover   { background: #f0f0f0; }
+      &.selected { background: #e7f0ff; font-weight: 500; }
+    }
+  }

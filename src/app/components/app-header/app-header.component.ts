@@ -19,11 +19,12 @@ constructor(public router: Router,    public authService: AuthenticationService
   }
   links = [
     { label: 'Analisi', route: '/problems' },
-    { label: 'Indici di Capacità', route: '/capacity' },
-    { label: 'Flussi', route: '/flows' },
-    { label: 'Livello di Affollamento', route: '/overtourism' },
-    { label: 'Ridistribuzione dei turisti', route: '/redistribution' },
-    { label: 'Turismo Sommerso', route: '/hidden' },
+    { label: 'Indici', route: '/indici' },
+    // { label: 'Indici di Capacità', route: '/capacity' },
+    // { label: 'Flussi', route: '/flows' },
+    // { label: 'Livello di Affollamento', route: '/overtourism' },
+    // { label: 'Ridistribuzione dei turisti', route: '/redistribution' },
+    // { label: 'Turismo Sommerso', route: '/hidden' },
     { label: 'Assistente AI', route: '/agent' }
   ];
   doLogout() {

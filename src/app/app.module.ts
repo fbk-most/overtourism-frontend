@@ -68,6 +68,11 @@ import { SharedPlotComponent } from './components/shared/shared-plot/shared-plot
 import { SharedHistogramComponent } from './components/shared/shared-histogram/shared-histogram.component';
 import {SharedKpisComponent  } from './components/shared/shared-kpis/shared-kpis.component';
 import { ChatbotIntegratedComponent } from './components/chatbot/chatbot-integrated/chatbot-integrated.component';
+
+//Indici
+import { IndiciComponent } from './pages/indici/indici.component';
+import { IndiciMapComponent } from './components/indici-map/indici-map.component';
+
 // Funzioni Factory
 export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
   return new MultiTranslateHttpLoader(httpBackend, [
@@ -89,7 +94,8 @@ export function initializeAuth(authService: AuthenticationService) {
      ReadingComponent, ProposalCreateComponent, ProblemDetailComponent,
     ProposalDetailComponent, ProposalDetailPageComponent, OvertourismComponent, OvertourismChartsComponent, 
     OvertourismMapComponent, ToastComponent, AutocompleteComponent, CapacityComponent, FlowsComponent, 
-    RedistributionComponent, HiddenComponent, ProposalListPageComponent, EmptyFieldPipe, LoginComponent,
+    RedistributionComponent, HiddenComponent, ProposalListPageComponent, EmptyFieldPipe, LoginComponent,IndiciComponent,
+    IndiciMapComponent, 
 
   ],
   imports: [

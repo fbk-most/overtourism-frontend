@@ -1,0 +1,162 @@
+<div class="container-fluid my-4">
+
+  <!-- ── Pannello filtri ────────────────────────────────────────────────── -->
+  <div class="filtri-panel">
+    <div class="filtri-row">
+
+      <!-- Cosa mostrare -->
+      <div class="filtri-field">
+        <label>Cosa mostrare</label>
+        <select class="form-select form-select-sm"
+          [(ngModel)]="showOption"
+          (ngModelChange)="onShowOptionChange()">
+          <option value="map">Mappa</option>
+          <option value="variation-chart">Tasso variazione – grafico</option>
+          <option value="variation-map">Tasso variazione – mappa</option>
+        </select>
+      </div>
+
+      <!-- Granularità territoriale -->
+      <div class="filtri-field">
+        <label>Granularità territoriale</label>
+        <select class="form-select form-select-sm" [(ngModel)]="spatialGranularity">
+          <option value="comune">Comunale</option>
+          <option value="macro_area">Macro area</option>
+        </select>
+      </div>
+
+      <!-- Indicatore -->
+      <div class="filtri-field">
+        <label>Indicatore</label>
+        <select class="form-select form-select-sm"
+          [(ngModel)]="selectedIndicator"
+          (ngModelChange)="onIndicatorChange()">
+          <option *ngFor="let ind of visibleIndicators" [value]="ind.value">
+            {{ ind.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Inizio periodo -->
+      <div class="filtri-field">
+        <label>Inizio periodo</label>
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="startDate">
+      </div>
+
+      <!-- Fine periodo -->
+      <div class="filtri-field">
+        <label>Fine periodo</label>
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="endDate">
+      </div>
+
+      <!-- Stagionalità (condizionale) -->
+      <div class="filtri-field" *ngIf="showSeasonality">
+        <label>Stagionalità</label>
+        <select class="form-select form-select-sm" [(ngModel)]="seasonality">
+          <option value="high">Alta stagione (lug–ago)</option>
+          <option value="shoulder">Stagioni spalla</option>
+          <option value="weekend">Weekend</option>
+        </select>
+      </div>
+
+      <!-- Granularità temporale (condizionale) -->
+      <div class="filtri-field" *ngIf="showGranularity">
+        <label>Granularità temporale</label>
+        <select class="form-select form-select-sm" [(ngModel)]="granularity">
+          <option value="annuale">Annuale</option>
+          <option value="mensile">Mensile</option>
+          <option value="giornaliero">Giornaliero</option>
+        </select>
+      </div>
+
+      <!-- Date confronto (condizionale) -->
+      <ng-container *ngIf="showComparisonDates">
+        <div class="filtri-field">
+          <label>Inizio confronto</label>
+          <input type="date" class="form-control form-control-sm" [(ngModel)]="startDateComparison">
+        </div>
+        <div class="filtri-field">
+          <label>Fine confronto</label>
+          <input type="date" class="form-control form-control-sm" [(ngModel)]="endDateComparison">
+        </div>
+      </ng-container>
+
+      <!-- Comuni (condizionale) -->
+      <div class="filtri-field filtri-field--wide" *ngIf="showComuni">
+        <label>Comuni selezionati</label>
+        <div class="comuni-widget">
+          <div class="position-relative">
+            <input type="text" class="form-control form-control-sm"
+              placeholder="Cerca un comune..."
+              [(ngModel)]="comuniQuery"
+              (input)="onComuniInput()"
+              (focus)="comuniDropdownOpen = true"
+              (blur)="comuniDropdownOpen = false"
+              autocomplete="off">
+            <div class="comuni-dropdown" *ngIf="comuniDropdownOpen && comuniQuery.length > 0">
+              <div *ngFor="let c of filteredComuni"
+                   class="comuni-item"
+                   [class.selected]="isComuneSelected(c.code)"
+                   (mousedown)="$event.preventDefault(); toggleComune(c.code)">
+                {{ c.name }}
+              </div>
+            </div>
+          </div>
+          <div class="mt-1 d-flex flex-wrap gap-1">
+            <span *ngFor="let code of selectedComuni" class="badge bg-primary">
+              {{ codeToName.get(code) || code }}
+              <span class="ms-1" style="cursor:pointer" (click)="removeComune(code)">✕</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottone — sempre all'estrema destra ────────────────────────────── -->
+      <div class="filtri-apply">
+        <button class="btn btn-primary btn-sm" (click)="getData()" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+          Applica filtri
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Errori ─────────────────────────────────────────────────────────── -->
+  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
+  <!-- ── Area contenuto (mappa / grafico) ───────────────────────────────── -->
+  <div class="indici-content">
+
+    <!-- Mappa -->
+    <ng-container *ngIf="showMap">
+      <app-indici-map
+        *ngIf="geoEnvelope; else mapHint"
+        [geojsonStr]="geoEnvelope.data"
+        [minValue]="geoEnvelope.min_value"
+        [maxValue]="geoEnvelope.max_value"
+        [colorScaleMode]="colorScaleMode">
+      </app-indici-map>
+      <ng-template #mapHint>
+        <div class="empty-hint" *ngIf="!loading">
+          Seleziona i filtri e clicca <strong>Applica filtri</strong> per visualizzare la mappa.
+        </div>
+      </ng-template>
+    </ng-container>
+
+    <!-- Grafico -->
+    <ng-container *ngIf="showChart">
+      <div class="empty-hint" *ngIf="!chartSeries.length && !loading">
+        Seleziona i filtri e clicca <strong>Applica filtri</strong>.
+      </div>
+      <div #chartEl></div>
+    </ng-container>
+
+    <!-- Loading spinner centrale -->
+    <div class="empty-hint" *ngIf="loading">
+      <div class="spinner-border text-primary"></div>
+    </div>
+
+  </div>
+
+</div>

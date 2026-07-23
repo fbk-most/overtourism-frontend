@@ -1,0 +1,15 @@
+:host {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
+.indici-map {
+  height: 480px;
+  width: 100%;
+  max-width: 100%;      
+  min-width: 0;          
+  border-radius: 8px;
+  z-index: 0;
+  display: block;        
+}
