@@ -2,6 +2,8 @@
 
   <!-- ── Pannello filtri ────────────────────────────────────────────────── -->
   <div class="filtri-panel">
+    
+    <!-- === RIGA 1: SEMPRE FISSA E VISIBILE === -->
     <div class="filtri-row">
 
       <!-- Cosa mostrare -->
@@ -49,7 +51,21 @@
         <input type="date" class="form-control form-control-sm" [(ngModel)]="endDate">
       </div>
 
-      <!-- Stagionalità (condizionale) -->
+      <!-- Bottone — sempre all'estrema destra della Prima Riga ────────── -->
+      <div class="filtri-apply">
+        <button class="btn btn-primary btn-sm" (click)="getData()" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
+          Applica filtri
+        </button>
+      </div>
+
+    </div>
+
+    <!-- === RIGA 2: CAMPI DINAMICI AGGIUNTIVI === -->
+    <div class="filtri-row mt-3 pt-3 border-top" 
+         *ngIf="showSeasonality || showGranularity || showComparisonDates || showComuni">
+
+      <!-- Stagionalità (condizionale - Mappa) -->
       <div class="filtri-field" *ngIf="showSeasonality">
         <label>Stagionalità</label>
         <select class="form-select form-select-sm" [(ngModel)]="seasonality">
@@ -59,17 +75,7 @@
         </select>
       </div>
 
-      <!-- Granularità temporale (condizionale) -->
-      <div class="filtri-field" *ngIf="showGranularity">
-        <label>Granularità temporale</label>
-        <select class="form-select form-select-sm" [(ngModel)]="granularity">
-          <option value="annuale">Annuale</option>
-          <option value="mensile">Mensile</option>
-          <option value="giornaliero">Giornaliero</option>
-        </select>
-      </div>
-
-      <!-- Date confronto (condizionale) -->
+      <!-- Date confronto (condizionale - Tasso var. mappa) -->
       <ng-container *ngIf="showComparisonDates">
         <div class="filtri-field">
           <label>Inizio confronto</label>
@@ -81,7 +87,17 @@
         </div>
       </ng-container>
 
-      <!-- Comuni (condizionale) -->
+      <!-- Granularità temporale (condizionale - Tasso var. grafico) -->
+      <div class="filtri-field" *ngIf="showGranularity">
+        <label>Granularità temp.</label>
+        <select class="form-select form-select-sm" [(ngModel)]="granularity">
+          <option value="annuale">Annuale</option>
+          <option value="mensile">Mensile</option>
+          <option value="giornaliero">Giornaliero</option>
+        </select>
+      </div>
+
+      <!-- Comuni (condizionale - Tasso var. grafico) -->
       <div class="filtri-field filtri-field--wide" *ngIf="showComuni">
         <label>Comuni selezionati</label>
         <div class="comuni-widget">
@@ -111,16 +127,9 @@
         </div>
       </div>
 
-      <!-- Bottone — sempre all'estrema destra ────────────────────────────── -->
-      <div class="filtri-apply">
-        <button class="btn btn-primary btn-sm" (click)="getData()" [disabled]="loading">
-          <span *ngIf="loading" class="spinner-border spinner-border-sm me-1"></span>
-          Applica filtri
-        </button>
-      </div>
-
     </div>
   </div>
+
 
   <!-- ── Errori ─────────────────────────────────────────────────────────── -->
   <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
