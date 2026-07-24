@@ -24,9 +24,15 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   private ready = false;
 
   ngAfterViewInit(): void {
-    // Inizializza la mappa (con zoomControl attivo)
     this.map = L.map(this.mapEl.nativeElement, { zoomControl: true, attributionControl: false })
       .setView([44.3, 9], 8);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20
+    }).addTo(this.map);
+
     this.ready = true;
     if (this.geojsonStr) this.render();
   }
