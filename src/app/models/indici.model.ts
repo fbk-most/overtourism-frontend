@@ -1,6 +1,7 @@
 export interface IndicatorMeta {
     value: string;
     label: string;
+    index_description?: string; 
     availableForVariation: boolean;
     extraFields: string[];
     years_range: { min_year: number; max_year: number };

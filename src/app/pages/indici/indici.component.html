@@ -41,14 +41,24 @@
 
       <!-- Inizio periodo -->
       <div class="filtri-field">
-        <label>Inizio periodo</label>
-        <input type="date" class="form-control form-control-sm" [(ngModel)]="startDate">
+        <label>Inizio periodo
+          <small class="text-muted fw-normal" *ngIf="currentMeta?.years_range">
+            ({{currentMeta!.years_range.min_year}}-{{currentMeta!.years_range.max_year}})
+          </small>
+        </label>
+        <input type="date" class="form-control form-control-sm" 
+               [(ngModel)]="startDate" 
+               [attr.min]="minDateBound || null" 
+               [attr.max]="maxDateBound || null">
       </div>
 
       <!-- Fine periodo -->
       <div class="filtri-field">
         <label>Fine periodo</label>
-        <input type="date" class="form-control form-control-sm" [(ngModel)]="endDate">
+        <input type="date" class="form-control form-control-sm" 
+               [(ngModel)]="endDate" 
+               [attr.min]="minDateBound || null" 
+               [attr.max]="maxDateBound || null">
       </div>
 
       <!-- Bottone — sempre all'estrema destra della Prima Riga ────────── -->
@@ -78,12 +88,22 @@
       <!-- Date confronto (condizionale - Tasso var. mappa) -->
       <ng-container *ngIf="showComparisonDates">
         <div class="filtri-field">
-          <label>Inizio confronto</label>
-          <input type="date" class="form-control form-control-sm" [(ngModel)]="startDateComparison">
+          <label>Inizio confronto 
+            <small class="text-muted fw-normal" *ngIf="currentMeta?.years_range">
+              ({{currentMeta!.years_range.min_year}}-{{currentMeta!.years_range.max_year}})
+            </small>
+          </label>
+          <input type="date" class="form-control form-control-sm" 
+                 [(ngModel)]="startDateComparison" 
+                 [attr.min]="minDateBound || null" 
+                 [attr.max]="maxDateBound || null">
         </div>
         <div class="filtri-field">
           <label>Fine confronto</label>
-          <input type="date" class="form-control form-control-sm" [(ngModel)]="endDateComparison">
+          <input type="date" class="form-control form-control-sm" 
+                 [(ngModel)]="endDateComparison" 
+                 [attr.min]="minDateBound || null" 
+                 [attr.max]="maxDateBound || null">
         </div>
       </ng-container>
 
@@ -130,7 +150,13 @@
     </div>
   </div>
 
-
+<!-- ── Alert Info Descrittiva  ─────────────────────────────────── -->
+<div class="alert alert-secondary py-2 px-3 mb-3 d-flex align-items-start gap-2" *ngIf="currentMeta?.index_description">
+    <i class="bi bi-info-circle text-primary mt-1"></i>
+    <div class="small text-dark" style="line-height: 1.4;">
+      <strong>Descrizione indicatore:</strong> {{ currentMeta?.index_description }}
+    </div>
+  </div>
   <!-- ── Errori ─────────────────────────────────────────────────────────── -->
   <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
 

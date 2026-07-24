@@ -72,6 +72,8 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   get showComuni()           { return this.showOption === 'variation-chart'; }
   get showComparisonDates()  { return this.showOption === 'variation-map'; }
   get currentMeta()          { return this.allIndicators.find(i => i.value === this.selectedIndicator); }
+  get minDateBound()         { return this.currentMeta?.years_range ? `${this.currentMeta.years_range.min_year}-01-01` : null; }
+  get maxDateBound()         { return this.currentMeta?.years_range ? `${this.currentMeta.years_range.max_year}-12-31` : null; }
 
   constructor(private svc: IndiciService) {}
 
