@@ -115,7 +115,7 @@ export function initializeAuth(authService: AuthenticationService) {
     SharedKpisComponent,
     OAuthModule.forRoot({
       resourceServer: {
-        allowedUrls: [environment.apiBaseUrl],
+        allowedUrls: [environment.apiBaseUrl, environment.agentApiUrl],
         sendAccessToken: true
       }
     }), 
