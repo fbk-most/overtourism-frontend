@@ -9,3 +9,12 @@
   .explanation-block {
     margin-bottom: 1.5rem;
   }
+
+  .ai-summary-content {
+    line-height: 1.6;
+  
+    h1, h2, h3 { font-size: 1rem; font-weight: 700; margin-top: 1rem; }
+    p           { margin-bottom: 0.5rem; }
+    ul, ol      { padding-left: 1.2rem; }
+    strong      { color: #1c2024; }
+  }

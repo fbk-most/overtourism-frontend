@@ -1,4 +1,26 @@
-<div class="explanation-block">
+<div class="mb-3" *ngIf="scenarioIds.length > 0">
+
+    <!-- Loading -->
+    <div class="d-flex align-items-center gap-2 text-muted small py-2" *ngIf="aiSummaryLoading">
+      <div class="spinner-border spinner-border-sm" role="status"></div>
+      <span>Generazione sommario in corso...</span>
+    </div>
+  
+    <!-- Errore -->
+    <div class="alert alert-warning py-2 small" *ngIf="aiSummaryError">
+      <span class="material-icons align-middle me-1" style="font-size:16px;">warning</span>
+      Impossibile generare il sommario automatico.
+    </div>
+  
+    <!-- Risultato (Rimosse le classi callout) -->
+    <div *ngIf="aiSummary && !aiSummaryLoading" class="mb-4">
+      <h6 class="text-primary mb-2 d-flex align-items-start ">
+        {{ scenarioIds.length > 1 ? 'Analisi comparativa' : 'Sommario scenario' }}
+      </h6>
+      <div class="small text-dark ai-summary-content" [innerHTML]="aiSummary"></div>
+    </div>
+  </div>
+<!-- <div class="explanation-block">
     <h6 class=" text-muted mb-2">Descrizione indice globale di sovraffollamento</h6>
     <div class="explanation-text">{{ getGlobalIndexExplanation() }}</div>
 </div>
@@ -16,7 +38,7 @@
 <div class="explanation-block">
     <h6 class=" text-muted mb-2">Descrizione di cambiamenti rispetto allo scenario base</h6>
     <div class="explanation-text">{{ getParametersChangesExplanation() }}</div>
-</div>
+</div> -->
 
 
 <!-- <it-accordion title="GUIDA ALLA LETTURA DEL GRAFICO">

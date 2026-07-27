@@ -1,30 +1,75 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { Widget } from '../../../services/scenario.service';
 import { ExplanationService } from '../../../services/explanation.service';
 import { DataFact } from '../../../models/data-fact.model';
+import { AgentService } from '../../../services/agent.service';
+import { AuthenticationService } from '../../../services/authentication.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { marked } from 'marked';
 
 @Component({
   selector: 'app-reading',
   standalone: false,
   templateUrl: './reading.component.html',
-  styleUrl: './reading.component.scss'
+  styleUrl: './reading.component.scss' // <-- nota: se dà problemi cambia in urls: ['./reading.component.scss']
 })
-export class ReadingComponent {
+export class ReadingComponent implements OnInit, OnChanges {
   @Input() widgets!: Record<string, Widget[]>;
   @Input() indexDiffs!: Record<string, any>;
   @Input() originalIndexDiffs!: Record<string, any>;
   @Input() dataFacts: DataFact[] = [];
+  @Input() scenarioIds: string[] = []; 
   categories = ['parcheggi', 'spiaggia', 'alberghi', 'ristoranti'];
   selectedCategory = 'all';
   dataFactsParametersChanges: DataFact[] = [];
+
+  aiSummary: SafeHtml | null = null;
+  aiSummaryLoading = false;
+  aiSummaryError = false;
   
-  constructor(private explanationService: ExplanationService) {}
-  ngOnInit() {
+  constructor(
+    private explanationService: ExplanationService,
+    private agentService: AgentService,
+    private authService: AuthenticationService,
+    private sanitizer: DomSanitizer
+  ) {} 
+  
+  ngOnInit(): void {
     if (this.dataFacts.length > 0) {
-      // Initialize with data from input
       this.dataFactsParametersChanges = this.createParameterChanges();
     }
+    if (this.scenarioIds.length > 0) {
+      this.loadAiSummary();
+    }
   }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['scenarioIds'] && !changes['scenarioIds'].firstChange) {
+      this.loadAiSummary();
+    }
+  }
+
+  loadAiSummary() {
+    if (!this.scenarioIds.length) return;
+    this.aiSummaryLoading = true;
+    this.aiSummaryError = false;
+    this.aiSummary = null;
+
+    this.agentService.getSummary(this.scenarioIds, this.authService.activeTenant).subscribe({
+      next: async (res) => {
+        const raw = res?.message || res?.result || res?.summary || res?.text || '';
+        // FIX: handle marked as async/promise if needed, or use parse()
+        const html = await marked.parse(raw); 
+        this.aiSummary = this.sanitizer.bypassSecurityTrustHtml(html);
+        this.aiSummaryLoading = false;
+      },
+      error: () => {
+        this.aiSummaryError = true;
+        this.aiSummaryLoading = false;
+      }
+    });
+  }
+
   getLocallyChangedKeys(): string[] {
     if (!this.indexDiffs || !this.originalIndexDiffs) return [];
     return Object.keys(this.indexDiffs).filter(key => 
