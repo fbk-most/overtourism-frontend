@@ -21,7 +21,16 @@ export class AgentService {
   getResult(sessionId: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/result/${sessionId}`, { withCredentials: true });
   }
-
+  getSummary(scenarioIds: string[], tenant: string =''): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/tool?tenant=${tenant}`,
+      { key: 'summary', scenario_ids: scenarioIds },
+      { withCredentials: true }
+    );
+  }
+  getUsageStats(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/usage_stats`, { withCredentials: true });
+  }
   injectSliders(sessionId: string, values: Record<string, any>): Observable<any> {
     return this.http.post(
       `${this.apiUrl}/inject_sliders`,

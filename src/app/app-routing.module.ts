@@ -23,6 +23,7 @@ import { LoginComponent } from './pages/login/login.component';
 import { AuthGuard } from './guards/auth.guard';
 import { ChatbotStandaloneComponent } from './components/chatbot/chatbot-standalone/chatbot-standalone.component';
 import { IndiciComponent } from './pages/indici/indici.component';
+import { AgentStatsComponent } from './pages/agent-stats/agent-stats.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -125,7 +126,7 @@ const routes: Routes = [
     //indici
   { path: 'indici', component: IndiciComponent, canActivate: [AuthGuard] },
   // 🔹 Altre sezioni del portale ()
-
+  { path: 'agent-stats', component: AgentStatsComponent, canActivate: [AuthGuard] },
   { path: 'faqs', component: FaqsComponent, data: { breadcrumb: 'FAQ' }, canActivate: [AuthGuard] },
   { path: '', redirectTo: 'problems', pathMatch: 'full' },
   { path: '**', redirectTo: 'problems' }

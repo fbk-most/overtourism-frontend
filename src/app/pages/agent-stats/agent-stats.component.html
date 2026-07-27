@@ -1,0 +1,91 @@
+<div class="container-fluid my-2">
+
+  <div background="true" class="px-4 pt-3 pb-2 mb-2">
+    <h4 class="mb-0 d-flex align-items-center gap-2">
+      <span class="material-icons text-primary">bar_chart</span>
+      Statistiche utilizzo Agente AI
+    </h4>
+  </div>
+
+  <!-- Loading -->
+  <div class="text-center py-5" *ngIf="loading">
+    <div class="spinner-border text-primary"></div>
+    <div class="mt-2 text-muted small">Caricamento statistiche...</div>
+  </div>
+
+  <!-- Errore -->
+  <div class="alert alert-danger" *ngIf="error">
+    <span class="material-icons align-middle me-2">error_outline</span>
+    Impossibile caricare le statistiche.
+  </div>
+
+  <ng-container *ngIf="!loading && !error">
+
+    <!-- KPI Cards -->
+    <!-- <div class="row mb-2 g-2">
+      <div class="col-6 col-md-3">
+        <it-card background="true" class="p-3 text-center">
+          <div class="text-muted small mb-1">Richieste totali</div>
+          <div class="fs-4 fw-bold text-primary">{{ totals.requests }}</div>
+        </it-card>
+      </div>
+      <div class="col-6 col-md-3">
+        <it-card background="true" class="p-3 text-center">
+          <div class="text-muted small mb-1">Token input</div>
+          <div class="fs-4 fw-bold text-primary">{{ totals.input_tokens | number }}</div>
+        </it-card>
+      </div>
+      <div class="col-6 col-md-3">
+        <it-card background="true" class="p-3 text-center">
+          <div class="text-muted small mb-1">Token output</div>
+          <div class="fs-4 fw-bold text-primary">{{ totals.output_tokens | number }}</div>
+        </it-card>
+      </div>
+      <div class="col-6 col-md-3">
+        <it-card background="true" class="p-3 text-center">
+          <div class="text-muted small mb-1">Costo totale</div>
+          <div class="fs-4 fw-bold text-success">$ {{ totals.cost }}</div>
+        </it-card>
+      </div>
+    </div> -->
+
+    <!-- Grafici -->
+    <it-card background="true" class="p-3 mb-2">
+      <div #chartCost style="height: 340px;"></div>
+    </it-card>
+
+    <it-card background="true" class="p-3 mb-2">
+      <div #chartTokens style="height: 380px;"></div>
+    </it-card>
+
+    <!-- Tabella -->
+    <!-- <it-card background="true" class="p-3 mb-2">
+      <h5 class="fw-bold mb-3">Dettaglio per giorno e utente</h5>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>Data</th>
+              <th>Utente</th>
+              <th class="text-end">Richieste</th>
+              <th class="text-end">Token input</th>
+              <th class="text-end">Token output</th>
+              <th class="text-end">Costo (USD)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of stats">
+              <td>{{ row.date }}</td>
+              <td><span class="badge bg-secondary">{{ row.user_id }}</span></td>
+              <td class="text-end">{{ row.requests }}</td>
+              <td class="text-end">{{ row.input_tokens | number }}</td>
+              <td class="text-end">{{ row.output_tokens | number }}</td>
+              <td class="text-end fw-semibold">$ {{ row.total_cost_usd | number:'1.4-4' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </it-card> -->
+
+  </ng-container>
+</div>
