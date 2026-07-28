@@ -90,6 +90,10 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "allowedHosts": ["all"],
+            "browserTarget": "overtourism-frontend:build"
+          },
           "configurations": {
             "production": {
               "buildTarget": "frontend:build:production"
