@@ -119,6 +119,7 @@
     </div>
   </div>
 
+  
   <div class="row">
     <h3 class="mb-3 p-3 h3">Comparazione parametri</h3>
     <div class="col-md-6">
@@ -149,6 +150,41 @@
         </div>
       </div>
     </div>
+     <!-- ── Sommario AI ─────────────────────────────────────────────────── -->
+  <div class="row mt-4" *ngIf="selectedScenario1Id && selectedScenario2Id">
+    <div class="col-12">
+      <h3 class="mb-3 p-3 h3 d-flex align-items-center gap-2">
+        <span class="material-icons text-primary">auto_awesome</span>
+        Analisi comparativa AI
+      </h3>
+
+      <!-- Loading -->
+      <div class="d-flex align-items-center gap-2 text-muted small p-3" *ngIf="aiSummaryLoading">
+        <div class="spinner-border spinner-border-sm" role="status"></div>
+        <span>Generazione analisi comparativa in corso...</span>
+      </div>
+
+      <!-- Errore -->
+      <div class="alert alert-warning mx-3" *ngIf="aiSummaryError">
+        <span class="material-icons align-middle me-1" style="font-size:16px;">warning</span>
+        Impossibile generare l'analisi automatica.
+      </div>
+
+      <!-- Risultato -->
+      <div class="callout callout-highlight note mx-3" *ngIf="aiSummary && !aiSummaryLoading">
+        <!-- <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="badge" [ngStyle]="{'background-color': scenario1Color}">
+            {{ getScenarioName(selectedScenario1Id) }}
+          </span>
+          <span class="material-icons text-muted" style="font-size:16px;">compare_arrows</span>
+          <span class="badge" [ngStyle]="{'background-color': scenario2Color}">
+            {{ getScenarioName(selectedScenario2Id) }}
+          </span>
+        </div> -->
+        <div class="small text-dark ai-summary-content" [innerHTML]="aiSummary"></div>
+      </div>
+    </div>
+  </div>
   </div>
 
   <app-back-button class="exclude-from-pdf"></app-back-button>

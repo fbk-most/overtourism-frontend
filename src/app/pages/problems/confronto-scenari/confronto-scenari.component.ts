@@ -13,6 +13,9 @@ import { TranslateService } from '@ngx-translate/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfrontoScenariContext } from '../../../models/confronto-scenari-context.model';
 import { ChatbotDialogComponent } from '../../../components/chatbot/chatbot-integrated/chatbot-dialog/chatbot-dialog.component';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { AgentService } from '../../../services/agent.service';
+import { marked } from 'marked';
 
 @Component({
   selector: 'app-confronto-scenari',
@@ -52,13 +55,18 @@ export class ConfrontoScenariComponent {
   plotInputLeft?: PlotInput;
   plotInputRight?: PlotInput; 
   
+  aiSummary: SafeHtml | null = null;
+  aiSummaryLoading = false;
+  aiSummaryError = false;
   constructor(
     private scenarioService: ScenarioService,
     private plotService: PlotService,
     private route: ActivatedRoute,
     private pdfService: PdfService,
     private translate: TranslateService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private agentService: AgentService,
+    private sanitizer: DomSanitizer
   ) { }
 
   async ngOnInit() {
@@ -238,8 +246,31 @@ export class ConfrontoScenariComponent {
     finally {
       this.isLoading = false; 
     }
+    if (this.selectedScenario1Id && this.selectedScenario2Id && this.kpisLeft && this.kpisRight) {
+      this.loadAiSummary();
+    }
   }
+  private loadAiSummary() {
+    const ids = [this.selectedScenario1Id, this.selectedScenario2Id].filter(Boolean);
+    if (ids.length === 0) return;
 
+    this.aiSummaryLoading = true;
+    this.aiSummaryError = false;
+    this.aiSummary = null;
+
+    this.agentService.getSummary(ids).subscribe({
+      next: async (res) => {
+        const raw = res?.message || res?.result || res?.summary || res?.text || '';
+        const html = await marked.parse(raw);
+        this.aiSummary = this.sanitizer.bypassSecurityTrustHtml(html);
+        this.aiSummaryLoading = false;
+      },
+      error: () => {
+        this.aiSummaryError = true;
+        this.aiSummaryLoading = false;
+      }
+    });
+  }
   private arrayToDict(values: any): Record<string, any> {
     if (!values) return {};
     
