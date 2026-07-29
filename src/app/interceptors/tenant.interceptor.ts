@@ -9,16 +9,23 @@ export class TenantInterceptor implements HttpInterceptor {
   constructor(private authService: AuthenticationService) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const apiBase = environment.apiBaseUrl;
+    const activeTenant = this.authService.activeTenant;
+    if (!activeTenant) {
+      return next.handle(req);
+    }
 
-    if (req.url.startsWith(apiBase)|| req.url.startsWith(environment.agentApiUrl)) {
-      const activeTenant = this.authService.activeTenant;
-      
-      if (activeTenant) {
-        const newUrl = req.url.replace(apiBase, `${apiBase}/${activeTenant}`);
-        const clonedReq = req.clone({ url: newUrl });
-        return next.handle(clonedReq);
-      }
+    const apiBase = environment.apiBaseUrl;
+    const agentApi = environment.agentApiUrl;
+
+    if (req.url.startsWith(apiBase)) {
+      const newUrl = req.url.replace(apiBase, `${apiBase}/${activeTenant}`);
+      return next.handle(req.clone({ url: newUrl }));
+    }
+
+    if (req.url.startsWith(agentApi)) {
+      const separator = req.url.includes('?') ? '&' : '?';
+      const newUrl = `${req.url}${separator}tenant=${activeTenant}`;
+      return next.handle(req.clone({ url: newUrl }));
     }
 
     return next.handle(req);

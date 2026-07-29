@@ -55,7 +55,7 @@ export class ReadingComponent implements OnInit, OnChanges {
     this.aiSummaryError = false;
     this.aiSummary = null;
 
-    this.agentService.getSummary(this.scenarioIds, this.authService.activeTenant).subscribe({
+    this.agentService.getSummary(this.scenarioIds).subscribe({
       next: async (res) => {
         const raw = res?.message || res?.result || res?.summary || res?.text || '';
         // FIX: handle marked as async/promise if needed, or use parse()

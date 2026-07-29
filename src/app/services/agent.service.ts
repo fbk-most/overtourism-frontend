@@ -2,12 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { AuthenticationService } from './authentication.service';
+import { fetchEventSource } from '@microsoft/fetch-event-source';
 
 @Injectable({ providedIn: 'root' })
 export class AgentService {
   private readonly apiUrl = environment.agentApiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private authService: AuthenticationService) {}
 
   sendMessage(sessionId: string, message: string, language: string, files: File[]): Observable<any> {
     const formData = new FormData();
@@ -21,16 +23,19 @@ export class AgentService {
   getResult(sessionId: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/result/${sessionId}`, { withCredentials: true });
   }
-  getSummary(scenarioIds: string[], tenant: string =''): Observable<any> {
+  
+  getSummary(scenarioIds: string[]): Observable<any> {
     return this.http.post(
-      `${this.apiUrl}/tool?tenant=${tenant}`,
+      `${this.apiUrl}/tool`,
       { key: 'summary', scenario_ids: scenarioIds },
       { withCredentials: true }
     );
   }
+  
   getUsageStats(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/usage_stats`, { withCredentials: true });
   }
+  
   injectSliders(sessionId: string, values: Record<string, any>): Observable<any> {
     return this.http.post(
       `${this.apiUrl}/inject_sliders`,
@@ -40,14 +45,78 @@ export class AgentService {
   }
 
   submitFeedback(sessionId: string, messageIndex: number, vote?: string | null, comment?: string): Observable<any> {
-    const params: any = { session_id: sessionId, message_index: String(messageIndex) };
+    const params: any = { session_id: sessionId, message_index: messageIndex }; 
     if (vote) params['vote'] = vote;
     if (comment) params['comment'] = comment;
-    return this.http.get(`${this.apiUrl}/feedback`, { params, withCredentials: true });
+    return this.http.post(`${this.apiUrl}/feedback`, null, { params, withCredentials: true });
   }
 
-  createEventSource(sessionId: string): EventSource {
-    return new EventSource(`${this.apiUrl}/stream/${sessionId}`, { withCredentials: true });
+  createEventSource(sessionId: string): any {
+    const params = new URLSearchParams();
+    if (this.authService.activeTenant) {
+      params.append('tenant', this.authService.activeTenant);
+    }
+
+    const qs = params.toString();
+    const url = `${this.apiUrl}/stream/${sessionId}${qs ? '?' + qs : ''}`;
+    const ctrl = new AbortController();
+    const token = this.authService.accessToken;
+
+    // Mappa dei listener registrati tramite addEventListener
+    const listeners: Record<string, Array<(e: any) => void>> = {};
+
+    const customEventSource = {
+      // Supporta addEventListener per eventi tipizzati (done, status, thought, ecc.)
+      addEventListener: (type: string, handler: (e: any) => void) => {
+        if (!listeners[type]) listeners[type] = [];
+        listeners[type].push(handler);
+      },
+      // onmessage di fallback (usato raramente)
+      onmessage: null as ((ev: any) => void) | null,
+      onerror:   null as ((err: any) => void) | null,
+      close: () => ctrl.abort()
+    };
+
+    fetchEventSource(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'text/event-stream'
+      },
+      signal: ctrl.signal,
+      onmessage(msg) {
+        const eventType = msg.event || 'message';
+
+        // Prova a parsare il JSON per estrarre il tipo interno se non c'è msg.event
+        let resolvedType = eventType;
+        let payload: any = { data: msg.data };
+        try {
+          const parsed = JSON.parse(msg.data);
+          // Il backend manda {"type": "thought"|"done"|"status", "content": "..."}
+          if (parsed?.type) {
+            resolvedType = parsed.type;
+            payload = { data: parsed.content ?? msg.data, raw: parsed };
+          }
+        } catch {}
+
+        // Chiama i listener registrati con addEventListener
+        if (listeners[resolvedType]) {
+          listeners[resolvedType].forEach(fn => fn(payload));
+        }
+        // Chiama anche onmessage generico se registrato
+        if (customEventSource.onmessage) {
+          customEventSource.onmessage({ data: msg.data, type: resolvedType });
+        }
+      },
+      onerror(err) {
+        if (customEventSource.onerror) {
+          customEventSource.onerror(err);
+        }
+        throw err; // Blocca il retry automatico
+      }
+    });
+
+    return customEventSource;
   }
 
   generateSessionId(): string {

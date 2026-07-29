@@ -104,6 +104,7 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
     this.loading = true;
     this.statusMessage = '';
     this.shouldScroll = true;
+
     const mock = this.mockService.find(currentInput);
     if (mock) {
       setTimeout(() => {
@@ -112,50 +113,52 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
       }, 800);
       return;
     }
-    const eventSource = this.agentSvc.createEventSource(this.sessionId);
-
-    eventSource.addEventListener('status', (e: MessageEvent) => {
-      this.statusMessage = e.data;
-      this.shouldScroll = true;
-    });
-
-    eventSource.addEventListener('done', async () => {
-      eventSource.close();
-      try {
-        const data = await firstValueFrom(this.agentSvc.getResult(this.sessionId));
-        this.activeContext = data.active_context || '-';
-        this.messages = [...newMessages, {
-          role: 'assistant',
-          content: data.response,
-          chartData: data.chart_data ?? null,
-          slidersData: data.sliders_data ?? null
-        }];
-      } catch {
-        this.messages = [...newMessages, { role: 'assistant', content: 'Errore nel recuperare la risposta.' }];
-      }
-      this.loading = false;
-      this.statusMessage = null;
-      this.shouldScroll = true;
-    });
-
-    eventSource.onerror = () => {
-      eventSource.close();
-      this.loading = false;
-      this.statusMessage = null;
-    };
 
     const files = [...this.attachments];
     this.attachments = [];
     if (this.fileInputRef) this.fileInputRef.nativeElement.value = '';
 
+    // 1. Prima invia la POST per creare/registrare la sessione sul backend
     this.agentSvc.sendMessage(this.sessionId, currentInput, 'Italiano', files).subscribe({
+      next: () => {
+        // 2. Solo dopo che la sessione esiste, apri lo stream
+        const eventSource = this.agentSvc.createEventSource(this.sessionId);
+
+        eventSource.addEventListener('status', (e: MessageEvent) => {
+          this.statusMessage = e.data;
+          this.shouldScroll = true;
+        });
+
+        eventSource.addEventListener('done', async () => {
+          eventSource.close();
+          try {
+            const data = await firstValueFrom(this.agentSvc.getResult(this.sessionId));
+            this.activeContext = data.active_context || '-';
+            this.messages = [...newMessages, {
+              role: 'assistant',
+              content: data.response,
+              chartData: data.chart_data ?? null,
+              slidersData: data.sliders_data ?? null
+            }];
+          } catch {
+            this.messages = [...newMessages, { role: 'assistant', content: 'Errore nel recuperare la risposta.' }];
+          }
+          this.loading = false;
+          this.statusMessage = null;
+          this.shouldScroll = true;
+        });
+
+        eventSource.onerror = () => {
+          eventSource.close();
+          this.loading = false;
+          this.statusMessage = null;
+        };
+      },
       error: () => {
-        eventSource.close();
         this.messages = [...newMessages, { role: 'assistant', content: 'Errore nel contattare il server.' }];
         this.loading = false;
       }
     });
-
   }
 
   onSliderSubmit(sessionId: string) {

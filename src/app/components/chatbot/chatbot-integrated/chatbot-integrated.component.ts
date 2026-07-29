@@ -11,6 +11,8 @@ import { ChatbotActionService } from '../../../services/chatbot/chatbotAction.se
 import { ChatMockService } from '../../../services/chatbot/chat-mock.service';
 import { AgentResponse, ChatFeedback, ChatMessage } from '../../../models/chat.model';
 import { ChatFeedbackBarComponent } from '../chatbot-standalone/chat-feedback-bar/chat-feedback-bar.component';
+import { AgentService } from '../../../services/agent.service';
+import { firstValueFrom } from 'rxjs';
 
 
 
@@ -45,8 +47,8 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
   sessionId!: string;
   language = 'Italian';
 
-  private readonly API_URL = 'http://localhost:9000/agent';
-  private eventSource: EventSource | null = null;
+  private eventSource: any = null;
+  constructor(private agentSvc: AgentService) {}
 
   private parseMarkdown(text: string): string {
     return marked.parse(text) as string;
@@ -105,9 +107,10 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
     if (!text || this.isTyping) return;
 
     this.messages.push({ role: 'user', content: text });
-        this.inputText = '';
+    this.inputText = '';
     this.isTyping = true;
     this.statusMessage = '';
+
     const mock = this.mockService.find(text);
     if (mock) {
       setTimeout(() => {
@@ -118,60 +121,54 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
     }
 
     this.closeEventSource();
-    this.eventSource = new EventSource(`${this.API_URL}/stream/${this.sessionId}`);
-
-    this.eventSource.addEventListener('status', (e: MessageEvent) => {
-      this.statusMessage = e.data;
-    });
-
-    this.eventSource.addEventListener('done', async () => {
-      this.closeEventSource();
-      try {
-        const data = await fetch(`${this.API_URL}/result/${this.sessionId}`)
-          .then(res => res.json());
-
-        if (data.session_id) this.sessionId = data.session_id;
-        this.pushBot(data.response ?? 'No response received.');
-      } catch {
-        this.pushBot('Error fetching result.');
-      }
-      this.isTyping = false;
-      this.statusMessage = '';
-    });
-
-    this.eventSource.onerror = () => {
-      this.closeEventSource();
-      this.pushBot('Connection error. Please try again.');
-      this.isTyping = false;
-      this.statusMessage = '';
-    };
 
     const formData = new FormData();
     formData.append('message', text);
     formData.append('session_id', this.sessionId);
     formData.append('user_lang', this.language);
 
-    // const validScenarioIds = [this.scenarioId1, this.scenarioId2].filter(
-    //   id => typeof id === 'string' && id.trim().length > 0
-    // );
-    // if (validScenarioIds.length > 0) {
-    //   formData.append('integrated_mode', 'true');
-    //   validScenarioIds.forEach(id => formData.append('context', id));
-    // }
     const problemId = this.contextService.problemId$.getValue();
     const scenarios = this.contextService.scenarioIds$.getValue();
-
     if (problemId) formData.append('problem_id', problemId);
     if (scenarios.length) {
       formData.append('integrated_mode', 'true');
       scenarios.forEach(id => formData.append('context', id));
     }
-    this.http.post(this.API_URL, formData).subscribe({
+
+    // 1. Prima POST, poi stream
+    this.agentSvc.sendMessage(this.sessionId, text, this.language, []).subscribe({
+      next: () => {
+        // 2. Apri stream solo dopo che la sessione è registrata
+        this.eventSource = this.agentSvc.createEventSource(this.sessionId);
+
+        this.eventSource.addEventListener('status', (e: MessageEvent) => {
+          this.statusMessage = e.data;
+        });
+
+        this.eventSource.addEventListener('done', async () => {
+          this.closeEventSource();
+          try {
+            const data = await firstValueFrom(this.agentSvc.getResult(this.sessionId));
+            if (data.session_id) this.sessionId = data.session_id;
+            this.pushBot(data.response ?? 'No response received.');
+          } catch {
+            this.pushBot('Error fetching result.');
+          }
+          this.isTyping = false;
+          this.statusMessage = '';
+        });
+
+        this.eventSource.onerror = () => {
+          this.closeEventSource();
+          this.pushBot('Connection error. Please try again.');
+          this.isTyping = false;
+          this.statusMessage = '';
+        };
+      },
       error: () => {
         this.closeEventSource();
         this.pushBot('Sorry, something went wrong.');
         this.isTyping = false;
-        this.statusMessage = '';
       }
     });
   }
@@ -196,11 +193,8 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
 
   private async submitFeedback(index: number): Promise<void> {
     const fb = this.getFeedback(index);
-    const params = new URLSearchParams({ session_id: this.sessionId, message_index: String(index) });
-    if (fb.vote) params.set('vote', fb.vote);
-    if (fb.comment) params.set('comment', fb.comment);
     try {
-      await fetch(`${this.API_URL}/feedback?${params.toString()}`, { method: 'GET', credentials: 'include' });
+      await firstValueFrom(this.agentSvc.submitFeedback(this.sessionId, index-1, fb.vote, fb.comment));
     } catch (err) {
       console.error('Failed to submit feedback', err);
     }
