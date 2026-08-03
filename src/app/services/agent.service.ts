@@ -62,16 +62,13 @@ export class AgentService {
     const ctrl = new AbortController();
     const token = this.authService.accessToken;
 
-    // Mappa dei listener registrati tramite addEventListener
     const listeners: Record<string, Array<(e: any) => void>> = {};
 
     const customEventSource = {
-      // Supporta addEventListener per eventi tipizzati (done, status, thought, ecc.)
       addEventListener: (type: string, handler: (e: any) => void) => {
         if (!listeners[type]) listeners[type] = [];
         listeners[type].push(handler);
       },
-      // onmessage di fallback (usato raramente)
       onmessage: null as ((ev: any) => void) | null,
       onerror:   null as ((err: any) => void) | null,
       close: () => ctrl.abort()
@@ -87,23 +84,19 @@ export class AgentService {
       onmessage(msg) {
         const eventType = msg.event || 'message';
 
-        // Prova a parsare il JSON per estrarre il tipo interno se non c'è msg.event
         let resolvedType = eventType;
         let payload: any = { data: msg.data };
         try {
           const parsed = JSON.parse(msg.data);
-          // Il backend manda {"type": "thought"|"done"|"status", "content": "..."}
           if (parsed?.type) {
             resolvedType = parsed.type;
             payload = { data: parsed.content ?? msg.data, raw: parsed };
           }
         } catch {}
 
-        // Chiama i listener registrati con addEventListener
         if (listeners[resolvedType]) {
           listeners[resolvedType].forEach(fn => fn(payload));
         }
-        // Chiama anche onmessage generico se registrato
         if (customEventSource.onmessage) {
           customEventSource.onmessage({ data: msg.data, type: resolvedType });
         }
@@ -112,7 +105,7 @@ export class AgentService {
         if (customEventSource.onerror) {
           customEventSource.onerror(err);
         }
-        throw err; // Blocca il retry automatico
+        throw err; 
       }
     });
 

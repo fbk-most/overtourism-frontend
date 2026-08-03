@@ -16,7 +16,9 @@ import { SharedPlotComponent } from '../../shared/shared-plot/shared-plot.compon
   selector: 'app-chatbot-standalone',
   standalone: true,
   imports: [CommonModule, FormsModule, ChatMessageComponent, DesignAngularKitModule,
-    SharedHistogramComponent, SharedKpisComponent,SharedPlotComponent],  templateUrl: './chatbot-standalone.component.html',
+    // @ts-ignore-warnings
+    SharedHistogramComponent, SharedKpisComponent,SharedPlotComponent],
+    templateUrl: './chatbot-standalone.component.html',
   styleUrls: ['./chatbot-standalone.component.scss']
 })
 export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {

@@ -17,11 +17,13 @@ export class TenantInterceptor implements HttpInterceptor {
     const apiBase = environment.apiBaseUrl;
     const agentApi = environment.agentApiUrl;
 
+    // API classica: tenant nel PATH
     if (req.url.startsWith(apiBase)) {
       const newUrl = req.url.replace(apiBase, `${apiBase}/${activeTenant}`);
       return next.handle(req.clone({ url: newUrl }));
     }
 
+    // Agent API: tenant come QUERY PARAMETER
     if (req.url.startsWith(agentApi)) {
       const separator = req.url.includes('?') ? '&' : '?';
       const newUrl = `${req.url}${separator}tenant=${activeTenant}`;
