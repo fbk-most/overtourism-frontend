@@ -24,12 +24,17 @@ export class AgentService {
     return this.http.get(`${this.apiUrl}/result/${sessionId}`, { withCredentials: true });
   }
   
-  getSummary(scenarioIds: string[]): Observable<any> {
-    return this.http.post(
-      `${this.apiUrl}/tool`,
-      { key: 'summary', scenario_ids: scenarioIds },
-      { withCredentials: true }
-    );
+  getSummary(scenarioIds: string[], sessionId?: string, evaluationId?: string): Observable<any> {
+    const body: any = sessionId && evaluationId
+      ? { 
+          key: 'summary-temp', 
+          scenario_ids: scenarioIds, 
+          creation_session: sessionId, 
+          evaluation_id: evaluationId 
+        }
+      : { key: 'summary', scenario_ids: scenarioIds };
+
+    return this.http.post(`${this.apiUrl}/tool`, body, { withCredentials: true });
   }
   
   getUsageStats(): Observable<any[]> {

@@ -166,12 +166,15 @@
             Lettura delle informazioni elaborate
           </h6> -->
           <app-reading 
-            [widgets]="widgets" 
-            [indexDiffs]="indexDiffs" 
-            [dataFacts]="inputData?.dataFacts || []"
-            [originalIndexDiffs]="originalIndexDiffs"
-            [scenarioIds]="scenarioId ? [scenarioId] : []">
-          </app-reading>
+          [widgets]="widgets" 
+          [indexDiffs]="indexDiffs" 
+          [dataFacts]="inputData?.dataFacts || []"
+          [originalIndexDiffs]="originalIndexDiffs"
+          [scenarioIds]="(sessionScenarioId || scenarioId) ? [(sessionScenarioId || scenarioId)!] : []"
+          [originalScenarioIds]="scenarioId ? [scenarioId] : []"
+          [sessionId]="sessionScenarioId ? sessionId : undefined"
+          [evaluationId]="sessionEvaluationId || undefined">
+        </app-reading>
         </div>
       </div>
     </div>

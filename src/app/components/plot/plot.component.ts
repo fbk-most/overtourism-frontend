@@ -12,7 +12,7 @@ import { NotificationService } from '../../services/notifications.service';
 import { Router } from '@angular/router';
 import { ItModalComponent } from 'design-angular-kit';
 import { TranslateService } from '@ngx-translate/core';
-import { ProblemService } from '../../services/problem.service'; 
+import { ProblemService } from '../../services/problem.service';
 
 @Component({
   selector: 'app-plot',
@@ -60,9 +60,10 @@ export class PlotComponent implements AfterViewInit {
   //widget diversi ma non locali, usati per il reset locale
   originalIndexDiffs: Record<string, string> = {};
   pendingNavigationResolve: ((result: boolean) => void) | null = null;
-  sessionId!: string; 
-  sessionScenarioId: string | null = null; 
- 
+  sessionId!: string;
+  sessionScenarioId: string | null = null;
+  sessionEvaluationId: string | null = null;
+
   constructor(private plotService: PlotService,
     private scenarioService: ScenarioService,
     private problemService: ProblemService,
@@ -73,12 +74,12 @@ export class PlotComponent implements AfterViewInit {
   ) { }
 
   async ngAfterViewInit() {
-    await this.initSessionAsync();  
-    await this.loadWidgetsAsync(); 
-    await this.loadData();         
-  } catch (e: any) {
+    await this.initSessionAsync();
+    await this.loadWidgetsAsync();
+    await this.loadData();
+  } catch(e: any) {
     console.error("Errore inizializzazione component plot", e);
-  
+
   }
   ngOnInit() {
 
@@ -147,11 +148,11 @@ export class PlotComponent implements AfterViewInit {
       )
       .subscribe({
         next: (res) => {
-          this.isSaving = false;  
+          this.isSaving = false;
           this.hasChanges = false;
           this.closeModal();
           this.navigationAfterSave = true;
-          
+
           if (this.pendingNavigationResolve) {
             this.pendingNavigationResolve(true);
             this.pendingNavigationResolve = null;
@@ -160,11 +161,11 @@ export class PlotComponent implements AfterViewInit {
           this.notif.showSuccess(
             this.translate.instant('scenari.create_success', { name: this.titolo })
           );
-  
+
           this.router.navigate(['/problems', this.problemId, 'proposals', this.proposalId]);
         },
         error: (err) => {
-          this.isSaving = false;  
+          this.isSaving = false;
           this.notif.showError(
             this.translate.instant('scenari.create_error', { name: this.titolo }) || err?.message
           );
@@ -208,17 +209,17 @@ export class PlotComponent implements AfterViewInit {
   }
   onWidgetsChanged(updatedWidgets: Record<string, Widget[]>) {
     console.log('Widgets changed:', updatedWidgets);
-  
+
     const changedValues: Record<string, number | [number, number]> = {};
-  
+
     for (const key of Object.keys(updatedWidgets)) {
       const currentGroup = this.originalWidgets[key] || [];
       const updatedGroup = updatedWidgets[key];
-  
+
       for (let i = 0; i < updatedGroup.length; i++) {
         const updated = updatedGroup[i];
         const original = currentGroup[i];
-  
+
         if (!original) {
           // Nuovo widget
           changedValues[updated.index_id] = this.extractValue(updated);
@@ -229,13 +230,13 @@ export class PlotComponent implements AfterViewInit {
           isLognorm
             ? updated.v !== original.v
             : updated.v !== original.v || updated.vMin !== original.vMin || updated.vMax !== original.vMax;
-  
+
         if (hasChanged) {
           changedValues[updated.index_id] = this.extractValue(updated);
         }
       }
     }
-  
+
     if (Object.keys(changedValues).length > 0) {
       console.log('Sending changed widgets:', changedValues);
       this.hasChanges = true;
@@ -246,7 +247,7 @@ export class PlotComponent implements AfterViewInit {
       console.log('Widgets are equal, no update needed');
     }
   }
-  
+
 
   extractValue(widget: Widget): number | [number, number] {
     if (widget.scale && widget.index_category !== '%' && widget.index_type !== 'lognorm') {
@@ -254,54 +255,48 @@ export class PlotComponent implements AfterViewInit {
       const vMax = widget.vMax ?? (widget.loc + widget.scale);
       return [vMin ?? 1, vMax ?? 1];
     }
-  
+
     return widget.v ?? widget.loc ?? 0;
   }
   async updateData(values: Record<string, number | [number, number]>) {
     this.loading = true;
+    // Resetta per dire ai figli (ReadingComponent) di aspettare
+    this.sessionScenarioId = null;
+    this.sessionEvaluationId = null;
     
     try {
       const sessionScenario = await firstValueFrom(
-        this.scenarioService.createSessionScenario(
-          this.sessionId, 
-          this.problemId, 
-          this.scenarioId, 
-          values
-        )
+        this.scenarioService.createSessionScenario(this.sessionId, this.problemId, this.scenarioId, values)
       );
-      
-      this.sessionScenarioId = sessionScenario.scenario_id;
-      console.log('Session scenario created with ID:', this.sessionScenarioId);
-      const evaluationRes = await firstValueFrom(
-        this.scenarioService.createSessionEvaluation(
-          this.sessionId,
-          this.problemId,
-          this.sessionScenarioId!
-        )
-      );
+      const tempScenarioId = sessionScenario.scenario_id; // Salva in variabile temp
 
-      const evaluationId = evaluationRes.evaluation_id || evaluationRes.id; 
+      const evaluationRes = await firstValueFrom(
+        this.scenarioService.createSessionEvaluation(this.sessionId, this.problemId, tempScenarioId!)
+      );
+      const tempEvaluationId = evaluationRes.evaluation_id || evaluationRes.id; // Salva in variabile temp
+
       const rawResponse = await firstValueFrom(
         this.scenarioService.getSessionEvaluationData(
           this.sessionId,
-          evaluationId,
+          tempEvaluationId,
           this.problemId
         )
       );
 
-      const scenarioData = rawResponse.extras?.data || rawResponse.data || rawResponse; 
+      const scenarioData = rawResponse.extras?.data || rawResponse.data || rawResponse;
       this.inputData = this.plotService.preparePlotInput(scenarioData);
-            
-            const actualNumericalValues = this.arrayToDict(sessionScenario.index_values || []);
-            let diffsValues = sessionScenario.extras?.index_diffs;
-            if (!diffsValues && sessionScenario.index_values) {
-                diffsValues = actualNumericalValues;
-            }
-      
-            this.indexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
-            
-            this.kpisData = this.inputData.kpis;
-            // this.renderPlot();
+
+      const actualNumericalValues = this.arrayToDict(sessionScenario.index_values || []);
+      let diffsValues = sessionScenario.extras?.index_diffs;
+      if (!diffsValues && sessionScenario.index_values) {
+        diffsValues = actualNumericalValues;
+      }
+
+      this.indexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
+      this.kpisData = this.inputData.kpis;
+
+      this.sessionScenarioId = tempScenarioId;
+      this.sessionEvaluationId = tempEvaluationId;
 
     } catch (err: any) {
       console.error('Errore aggiornamento dati di sessione:', err);
@@ -317,98 +312,98 @@ export class PlotComponent implements AfterViewInit {
   toggleControls(): void {
     this.showControls = !this.showControls;
   }
-    goToCompare(): void {
-      this.router.navigate([
-        '/problems',
-        this.problemId,
-        'proposals',
-        this.proposalId,
-        'scenari',
-        'confronta',
-        this.scenarioId,
-        'default'
-      ]);
-      console.log('Vai alla pagina di confronto');
-    }
-    private applyIndexDiffsToWidgets(
-      widgets: Record<string, Widget[]>,
-      indexVals: Record<string, any>  
-    ): Record<string, Widget[]> {
-      const clone = JSON.parse(JSON.stringify(widgets));
-      for (const key of Object.keys(clone)) {
-        for (const widget of clone[key]) {
-          const newVal = indexVals[widget.index_id];
-          
-          if (newVal !== undefined) {
-            if (Array.isArray(newVal)) {
-              widget.vMin = newVal[0];
-              widget.vMax = newVal[1];
-            } else {
-              widget.v = typeof newVal === 'number' ? newVal : Number(newVal);
-            }
+  goToCompare(): void {
+    this.router.navigate([
+      '/problems',
+      this.problemId,
+      'proposals',
+      this.proposalId,
+      'scenari',
+      'confronta',
+      this.scenarioId,
+      'default'
+    ]);
+    console.log('Vai alla pagina di confronto');
+  }
+  private applyIndexDiffsToWidgets(
+    widgets: Record<string, Widget[]>,
+    indexVals: Record<string, any>
+  ): Record<string, Widget[]> {
+    const clone = JSON.parse(JSON.stringify(widgets));
+    for (const key of Object.keys(clone)) {
+      for (const widget of clone[key]) {
+        const newVal = indexVals[widget.index_id];
+
+        if (newVal !== undefined) {
+          if (Array.isArray(newVal)) {
+            widget.vMin = newVal[0];
+            widget.vMax = newVal[1];
+          } else {
+            widget.v = typeof newVal === 'number' ? newVal : Number(newVal);
           }
         }
       }
-      return clone;
     }
-    async loadData() {
-      this.loading = true;
-      if (!this.scenarioId || !this.problemId) {
-        this.notificationService.showError('Scenario o problem mancanti.');
-        this.loading = false;
-        return;
-      }
-      try {
-        const problemData = await firstValueFrom(this.problemService.getProblemById(this.problemId));
-        this.editableIndexes = problemData?.extras?.editable_indexes || [];
-        const scenarioMetadata = await firstValueFrom(this.scenarioService.getScenarioData(this.scenarioId, this.problemId));
-        
-        const actualNumericalValues = this.arrayToDict(scenarioMetadata.index_values || []);
-
-        let diffsValues = scenarioMetadata.extras?.index_diffs;
-        
-        if (!diffsValues && scenarioMetadata.index_values) {
-            diffsValues = actualNumericalValues;
-        }         
-        this.originalIndexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
-        this.indexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
-        this.widgets = this.applyIndexDiffsToWidgets(this.originalWidgets, actualNumericalValues);
-        const evaluations = await firstValueFrom(this.scenarioService.getEvaluations(this.problemId, this.scenarioId));
-        const completedEvals = evaluations.filter(e => 
-          e.scenario_id === this.scenarioId && e.state === 'COMPLETED'
-        );
-
-        completedEvals.sort((a, b) => {
-          const dateA = new Date(a.finished || 0).getTime();
-          const dateB = new Date(b.finished || 0).getTime();
-          return dateB - dateA; // Ordine decrescente
-        });
-
-        const currentEval = completedEvals[0];
-        if (!currentEval) {
-          throw new Error('Nessuna evaluation completata trovata per questo scenario.');
-        }
-        
-        const validEvaluationId = currentEval.evaluation_id;
-        const rawResponse = await firstValueFrom(this.scenarioService.getEvaluationData(validEvaluationId, this.problemId));
-        
-        const dataSet = rawResponse.data || {};
-        
-        // Prepariamo i dati per il plot (le curve)
-        this.inputData = this.plotService.preparePlotInput(dataSet);
-        this.kpisData = this.inputData.kpis;
-        
-        this.setupSelectOptions();
-        // this.renderPlot();
-      } catch (error: any) {
-        console.error('Errore nel caricamento dati evaluation', error);
-        this.notificationService.showError(
-          `Errore: ${error.message || 'impossibile caricare i dati del grafico.'}`
-        );
-      } finally {
-        this.loading = false;
-      }
+    return clone;
+  }
+  async loadData() {
+    this.loading = true;
+    if (!this.scenarioId || !this.problemId) {
+      this.notificationService.showError('Scenario o problem mancanti.');
+      this.loading = false;
+      return;
     }
+    try {
+      const problemData = await firstValueFrom(this.problemService.getProblemById(this.problemId));
+      this.editableIndexes = problemData?.extras?.editable_indexes || [];
+      const scenarioMetadata = await firstValueFrom(this.scenarioService.getScenarioData(this.scenarioId, this.problemId));
+
+      const actualNumericalValues = this.arrayToDict(scenarioMetadata.index_values || []);
+
+      let diffsValues = scenarioMetadata.extras?.index_diffs;
+
+      if (!diffsValues && scenarioMetadata.index_values) {
+        diffsValues = actualNumericalValues;
+      }
+      this.originalIndexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
+      this.indexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
+      this.widgets = this.applyIndexDiffsToWidgets(this.originalWidgets, actualNumericalValues);
+      const evaluations = await firstValueFrom(this.scenarioService.getEvaluations(this.problemId, this.scenarioId));
+      const completedEvals = evaluations.filter(e =>
+        e.scenario_id === this.scenarioId && e.state === 'COMPLETED'
+      );
+
+      completedEvals.sort((a, b) => {
+        const dateA = new Date(a.finished || 0).getTime();
+        const dateB = new Date(b.finished || 0).getTime();
+        return dateB - dateA; // Ordine decrescente
+      });
+
+      const currentEval = completedEvals[0];
+      if (!currentEval) {
+        throw new Error('Nessuna evaluation completata trovata per questo scenario.');
+      }
+
+      const validEvaluationId = currentEval.evaluation_id;
+      const rawResponse = await firstValueFrom(this.scenarioService.getEvaluationData(validEvaluationId, this.problemId));
+
+      const dataSet = rawResponse.data || {};
+
+      // Prepariamo i dati per il plot (le curve)
+      this.inputData = this.plotService.preparePlotInput(dataSet);
+      this.kpisData = this.inputData.kpis;
+
+      this.setupSelectOptions();
+      // this.renderPlot();
+    } catch (error: any) {
+      console.error('Errore nel caricamento dati evaluation', error);
+      this.notificationService.showError(
+        `Errore: ${error.message || 'impossibile caricare i dati del grafico.'}`
+      );
+    } finally {
+      this.loading = false;
+    }
+  }
   private setupSelectOptions() {
     if (this.inputData?.heatmapsByFunction) {
       this.selectOptions = [
@@ -440,7 +435,7 @@ export class PlotComponent implements AfterViewInit {
     );
   }
   onFunzioneChange() {
-  //   this.renderPlot();
+    //   this.renderPlot();
   }
   resetIndexDiffs(): void {
     // Ripristina widgets e indexDiffs allo stato originale

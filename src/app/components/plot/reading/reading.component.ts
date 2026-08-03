@@ -19,6 +19,9 @@ export class ReadingComponent implements OnInit, OnChanges {
   @Input() originalIndexDiffs!: Record<string, any>;
   @Input() dataFacts: DataFact[] = [];
   @Input() scenarioIds: string[] = []; 
+  @Input() originalScenarioIds: string[] =[];
+  @Input() sessionId?: string;        
+  @Input() evaluationId?: string;  
   categories = ['parcheggi', 'spiaggia', 'alberghi', 'ristoranti'];
   selectedCategory = 'all';
   dataFactsParametersChanges: DataFact[] = [];
@@ -38,27 +41,33 @@ export class ReadingComponent implements OnInit, OnChanges {
     if (this.dataFacts.length > 0) {
       this.dataFactsParametersChanges = this.createParameterChanges();
     }
-    if (this.scenarioIds.length > 0) {
+    if (this.scenarioIds.length > 0 && !this.sessionId) {
       this.loadAiSummary();
     }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['scenarioIds'] && !changes['scenarioIds'].firstChange) {
+    const scenarioChanged = changes['scenarioIds'] && !changes['scenarioIds'].firstChange;
+    const evalChanged = changes['evaluationId'] && !changes['evaluationId'].firstChange;
+
+    if (scenarioChanged || evalChanged) {
+      if (this.sessionId && !this.evaluationId) {
+        return; 
+      }
       this.loadAiSummary();
     }
   }
 
   loadAiSummary() {
-    if (!this.scenarioIds.length) return;
+    const ids = this.originalScenarioIds.length ? this.originalScenarioIds : this.scenarioIds;
+    if (!ids.length) return;
     this.aiSummaryLoading = true;
     this.aiSummaryError = false;
     this.aiSummary = null;
 
-    this.agentService.getSummary(this.scenarioIds).subscribe({
+    this.agentService.getSummary(ids, this.sessionId, this.evaluationId).subscribe({
       next: async (res) => {
         const raw = res?.message || res?.result || res?.summary || res?.text || '';
-        // FIX: handle marked as async/promise if needed, or use parse()
         const html = await marked.parse(raw); 
         this.aiSummary = this.sanitizer.bypassSecurityTrustHtml(html);
         this.aiSummaryLoading = false;
