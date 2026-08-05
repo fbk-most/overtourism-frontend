@@ -11,6 +11,7 @@ import { AgentResponse, ChatFeedback,ChatMessage, UIAction } from '../../../mode
 import { SharedHistogramComponent } from '../../shared/shared-histogram/shared-histogram.component';
 import { SharedKpisComponent } from '../../shared/shared-kpis/shared-kpis.component';
 import { SharedPlotComponent } from '../../shared/shared-plot/shared-plot.component';
+import { IndiciMapComponent } from '../../indici-map/indici-map.component';
 
 @Component({
   selector: 'app-chatbot-standalone',
@@ -24,8 +25,10 @@ import { SharedPlotComponent } from '../../shared/shared-plot/shared-plot.compon
 export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
   readonly widgetRegistry: Record<string, any> = {
     'histogramComparison': SharedHistogramComponent,
-    'kpiList': SharedKpisComponent,
+    'indexComparison': SharedKpisComponent,
     'plot': SharedPlotComponent, 
+    'map': IndiciMapComponent 
+
   };
   private translator = inject(ChatbotActionTranslatorService);
   private mockService = inject(ChatMockService);
@@ -82,8 +85,9 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
   }
   /** Gestisce risposta: traduce DomainEvents in UIActions inline */
   private handleAgentResponse(currentMessages: ChatMessage[], data: AgentResponse): void {
-    const inlineActions: UIAction[] = data.events?.length
-      ? data.events.flatMap(e => this.translator.translateForStandalone(e))
+    const rawEvents = data.assistant_action_data || data.assistant_action_data || [];
+    const inlineActions: UIAction[] = rawEvents.length
+      ? rawEvents.flatMap(e => this.translator.translateForStandalone(e))
                    .filter(a => a.type === 'SHOW_WIDGET')
       : [];
 
@@ -120,10 +124,8 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
     this.attachments = [];
     if (this.fileInputRef) this.fileInputRef.nativeElement.value = '';
 
-    // 1. Prima invia la POST per creare/registrare la sessione sul backend
     this.agentSvc.sendMessage(this.sessionId, currentInput, 'Italiano', files).subscribe({
       next: () => {
-        // 2. Solo dopo che la sessione esiste, apri lo stream
         const eventSource = this.agentSvc.createEventSource(this.sessionId);
 
         eventSource.addEventListener('status', (e: MessageEvent) => {
@@ -136,12 +138,7 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
           try {
             const data = await firstValueFrom(this.agentSvc.getResult(this.sessionId));
             this.activeContext = data.active_context || '-';
-            this.messages = [...newMessages, {
-              role: 'assistant',
-              content: data.response,
-              chartData: data.chart_data ?? null,
-              slidersData: data.sliders_data ?? null
-            }];
+            this.handleAgentResponse(newMessages, data);
           } catch {
             this.messages = [...newMessages, { role: 'assistant', content: 'Errore nel recuperare la risposta.' }];
           }
@@ -183,12 +180,7 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
       try {
         const data = await firstValueFrom(this.agentSvc.getResult(sessionId));
         this.activeContext = data.active_context || '-';
-        this.messages = [...currentMessages, {
-          role: 'assistant',
-          content: data.response,
-          chartData: data.chart_data ?? null,
-          slidersData: data.sliders_data ?? null
-        }];
+        this.handleAgentResponse(currentMessages, data);
       } catch {
         this.messages = [...currentMessages, { role: 'assistant', content: 'Errore nel recuperare la risposta.' }];
       }

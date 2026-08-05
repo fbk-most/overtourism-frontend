@@ -3,6 +3,9 @@ import { SharedChartPayload } from "./plot.model";
 // ─── Domain Events  ───────────────────────────
 // da definire bene
 export type DomainEventType =
+ | 'SHOW_WIDGET'
+
+  // da definire bene
   | 'SCENARIO_CREATED'
   | 'SCENARIO_UPDATED'
   | 'COMPARISON_READY'
@@ -29,7 +32,7 @@ export interface AgentResponse {
   active_context?: string;
   chart_data?: SharedChartPayload | null;
   sliders_data?: SlidersData | null;
-  events?: DomainEvent[];  
+  assistant_action_data?: DomainEvent[]; 
 }
 
 // ─── Messaggio in chat ─────────────────────────────────────────────────────

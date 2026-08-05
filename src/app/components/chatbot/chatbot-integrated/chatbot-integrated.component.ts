@@ -94,8 +94,8 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
   private handleAgentResponse(data: AgentResponse): void {
     this.pushBot(data.response ?? 'Nessuna risposta.');
 
-    if (data.events?.length) {
-      data.events
+    if (data.assistant_action_data?.length) {
+      data.assistant_action_data
         .flatMap(e => this.translator.translateForIntegrated(e))
         .forEach(action => this.actionService.execute(action));
     }
