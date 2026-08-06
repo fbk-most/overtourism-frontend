@@ -6,6 +6,7 @@ import { ProblemScenario } from '../../../models/scenario.model';
 import { PlotComponent } from '../../../components/plot/plot.component';
 import { ItModalComponent } from 'design-angular-kit';
 import { PdfService } from '../../../services/pdf.service';
+import { ChatbotContextService } from '../../../services/chatbot/chatbotContext.service';
 
 @Component({
   selector: 'app-scenario-detail',
@@ -28,7 +29,8 @@ export class ScenarioDetailComponent {
     private route: ActivatedRoute,
     private scenarioService: ScenarioService,
     private router: Router,
-    private pdfService: PdfService
+    private pdfService: PdfService,
+    private chatbotCtx: ChatbotContextService
 
 
   ) { }
@@ -37,6 +39,11 @@ export class ScenarioDetailComponent {
     this.problemId = this.route.snapshot.paramMap.get('problemId')!;
     this.proposalId = this.route.snapshot.paramMap.get('proposalId')!;
     this.scenarioId = this.route.snapshot.paramMap.get('scenarioId')!;
+    this.chatbotCtx.setContext(
+      this.problemId,
+      this.proposalId,
+      this.scenarioId ? [this.scenarioId] : []
+    );
     this.loadScenarioDetails();
   }
   canDeactivate(): Promise<boolean> | boolean {

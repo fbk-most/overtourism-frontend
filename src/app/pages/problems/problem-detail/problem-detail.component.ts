@@ -8,6 +8,7 @@ import { ProposalService } from '../../../services/proposal.service';
 import { ItModalComponent } from 'design-angular-kit';
 import { Problem } from '../../../models/problem.model';
 import { ModalCleanupService } from '../../../services/modal-cleanup.service.ts.service';
+import { ChatbotContextService } from '../../../services/chatbot/chatbotContext.service';
 
 interface ProposalResponse {
   data: Proposal[];
@@ -48,12 +49,16 @@ export class ProblemDetailComponent implements OnInit,AfterViewInit {
     private notif: NotificationService,
     private translate: TranslateService,
     private proposalService: ProposalService,
-        private modalCleanup: ModalCleanupService
+        private modalCleanup: ModalCleanupService,
+        private chatbotCtx: ChatbotContextService
+
     
   ) {}
 
   ngOnInit() {
     this.problemId = this.route.snapshot.paramMap.get('problemId')!;
+    this.chatbotCtx.setContext(this.problemId, null, []);
+
     this.loadProblem();
   }
   ngAfterViewInit(): void {

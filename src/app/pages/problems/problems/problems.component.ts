@@ -5,6 +5,7 @@ import { of, delay, Observable } from 'rxjs';
 import { NotificationService } from '../../../services/notifications.service';
 import { ItModalComponent, SearchItem } from 'design-angular-kit';
 import { Router } from '@angular/router';
+import { ChatbotContextService } from '../../../services/chatbot/chatbotContext.service';
 
 @Component({
   selector: 'app-problems',
@@ -31,11 +32,13 @@ export class ProblemsComponent {
   }
   constructor(private problemService: ProblemService,
     private notificationService: NotificationService,
-    private router: Router
+    private router: Router,
+    private chatbotCtx: ChatbotContextService 
 
   ) {}
 
   ngOnInit(): void {
+    this.chatbotCtx.setContext(null, null, []);
     this.loadProblems();
   }
 

@@ -9,38 +9,51 @@ import { fetchEventSource } from '@microsoft/fetch-event-source';
 export class AgentService {
   private readonly apiUrl = environment.agentApiUrl;
 
-  constructor(private http: HttpClient, private authService: AuthenticationService) {}
+  constructor(private http: HttpClient, private authService: AuthenticationService) { }
 
-  sendMessage(sessionId: string, message: string, language: string, files: File[]): Observable<any> {
+  sendMessage(
+    sessionId: string, 
+    message: string, 
+    language: string, 
+    files: File[] = [], 
+    integratedMode: boolean = false,  
+    context: string[] = []            
+  ): Observable<any> {
     const formData = new FormData();
     formData.append('message', message);
     formData.append('session_id', sessionId);
     formData.append('user_lang', language);
+    
+    formData.append('integrated_mode', integratedMode ? 'true' : 'false');
+    
     files.forEach(file => formData.append('files', file));
+    
+    context.forEach(ctx => formData.append('context', ctx));
+
     return this.http.post(this.apiUrl, formData, { withCredentials: true });
   }
 
   getResult(sessionId: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/result/${sessionId}`, { withCredentials: true });
   }
-  
+
   getSummary(scenarioIds: string[], sessionId?: string, evaluationId?: string): Observable<any> {
     const body: any = sessionId && evaluationId
-      ? { 
-          key: 'summary-temp', 
-          scenario_ids: scenarioIds, 
-          creation_session: sessionId, 
-          evaluation_id: evaluationId 
-        }
+      ? {
+        key: 'summary-temp',
+        scenario_ids: scenarioIds,
+        creation_session: sessionId,
+        evaluation_id: evaluationId
+      }
       : { key: 'summary', scenario_ids: scenarioIds };
 
     return this.http.post(`${this.apiUrl}/tool`, body, { withCredentials: true });
   }
-  
+
   getUsageStats(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/usage_stats`, { withCredentials: true });
   }
-  
+
   injectSliders(sessionId: string, values: Record<string, any>): Observable<any> {
     return this.http.post(
       `${this.apiUrl}/inject_sliders`,
@@ -50,7 +63,7 @@ export class AgentService {
   }
 
   submitFeedback(sessionId: string, messageIndex: number, vote?: string | null, comment?: string): Observable<any> {
-    const params: any = { session_id: sessionId, message_index: messageIndex }; 
+    const params: any = { session_id: sessionId, message_index: messageIndex };
     if (vote) params['vote'] = vote;
     if (comment) params['comment'] = comment;
     return this.http.post(`${this.apiUrl}/feedback`, null, { params, withCredentials: true });
@@ -75,7 +88,7 @@ export class AgentService {
         listeners[type].push(handler);
       },
       onmessage: null as ((ev: any) => void) | null,
-      onerror:   null as ((err: any) => void) | null,
+      onerror: null as ((err: any) => void) | null,
       close: () => ctrl.abort()
     };
 
@@ -97,7 +110,7 @@ export class AgentService {
             resolvedType = parsed.type;
             payload = { data: parsed.content ?? msg.data, raw: parsed };
           }
-        } catch {}
+        } catch { }
 
         if (listeners[resolvedType]) {
           listeners[resolvedType].forEach(fn => fn(payload));
@@ -110,7 +123,7 @@ export class AgentService {
         if (customEventSource.onerror) {
           customEventSource.onerror(err);
         }
-        throw err; 
+        throw err;
       }
     });
 
