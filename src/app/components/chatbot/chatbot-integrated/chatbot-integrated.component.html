@@ -1,8 +1,7 @@
 <!-- Floating button -->
 <div class="chatbot-button" (click)="toggle()">💬</div>
 
-<!-- Chat window -->
-<div class="chatbot-window" *ngIf="isOpen">
+<div class="chatbot-window" *ngIf="isOpen" (focusin)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
   <div class="chatbot-header">
     Chatbot
     <span class="close" (click)="toggle()">✕</span>
@@ -37,13 +36,13 @@
   </div>
 
   <div class="chatbot-input">
-    <input
-      type="text"
+    <textarea
       [(ngModel)]="inputText"
-      (keydown.enter)="send()"
+      (keydown)="handleKeyDown($event)"
       spellcheck="false"
-      placeholder="Scrivi qui il tuo messaggio"
-    />
+      placeholder="Scrivi qui il tuo messaggio..."
+      rows="1"
+    ></textarea>
     <button (click)="send()">Invia</button>
   </div>
 </div>

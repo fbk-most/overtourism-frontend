@@ -6,45 +6,55 @@ export class ChatbotActionTranslatorService {
 
   /**
    * Traduce un DomainEvent in UIActions per il chatbot INTEGRATO.
-   * L'integrato naviga nell'app, mostra toast, aggiorna il contesto.
    */
   translateForIntegrated(event: DomainEvent): UIAction[] {
+    const payload = event.payload || {};
+
     switch (event.type) {
+      case 'NAVIGATE': {
+        const target = payload['target']; // es. "PROBLEMS", "PROPOSALS", "Index"
+        
+        if (target === 'PROBLEMS') {
+          return [{ type: 'NAVIGATE', payload: { path: ['/problems'] } }];
+        }
+        if (target === 'PROPOSALS') {
+          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals'] } }];
+        }
+        if (target === 'SCENARIOS') {
+          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals', payload['idProposal'], 'scenari'] } }];
+        }
+        if (target === 'SCENARIO') {
+          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals', payload['idProposal'], 'scenari', payload['idScenario']] } }];
+        }
+        if (target === 'Index') {
+          // Naviga agli indici passando i filtri come query parameters
+          return [{ type: 'NAVIGATE', payload: { path: ['/indici'], queryParams: payload['param'] } }];
+        }
+        break;
+      }
 
-      case 'SCENARIO_CREATED':
-        return [
-          { 
-            type: 'NAVIGATE', 
-            payload: { 
-              path: `/problems/${event.payload['problem_id']}/proposals/${event.payload['proposal_id']}/scenari/${event.payload['scenario_id']}` 
-            } 
-          },
-          { type: 'SHOW_TOAST', payload: { message: `Scenario "${event.payload['name']}" creato con successo!`, level: 'success' } }
-        ];
+      case 'COMPARE_SCENARIO':
+        return [{ type: 'NAVIGATE', payload: { 
+          path: ['/problems', payload['idProblem'], 'proposals', payload['idProposal'], 'scenari', 'confronta', payload['idScenario1'], payload['idScenario2']] 
+        } }];
 
-      case 'SCENARIO_UPDATED':
-        return [
-          { type: 'SHOW_TOAST', payload: { message: 'Scenario aggiornato.', level: 'info' } }
-        ];
-
-      case 'COMPARISON_READY':
-        return [
-          {
-            type: 'NAVIGATE',
-            payload: {
-              path: `/problems/${event.payload['problem_id']}/proposals/${event.payload['proposal_id']}/scenari/confronta/${event.payload['scenario_id_1']}/${event.payload['scenario_id_2']}`
-            }
-          }
-        ];
-
-      case 'NAVIGATION_REQUESTED':
-        return [
-          { type: 'NAVIGATE', payload: { path: event.payload['path'] } }
-        ];
-
-      default:
-        return [];
+      case 'DELETED': {
+        // Se elimini, torni alla lista padre
+        const target = payload['target'];
+        if (target === 'SCENARIO') {
+          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals', payload['idProposal'], 'scenari'] } }];
+        }
+        if (target === 'PROPOSTA') {
+          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals'] } }];
+        }
+        if (target === 'PROBLEMA') {
+          return [{ type: 'NAVIGATE', payload: { path: ['/problems'] } }];
+        }
+        break;
+      }
     }
+
+    return [];
   }
 
   /**

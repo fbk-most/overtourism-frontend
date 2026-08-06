@@ -91,6 +91,12 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
   toggle(): void {
     this.isOpen = !this.isOpen;
   }
+  handleKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault(); 
+      this.send();
+    }
+  }
   private handleAgentResponse(data: AgentResponse): void {
     this.pushBot(data.response ?? 'Nessuna risposta.');
 
@@ -103,6 +109,7 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
   // ─── Send ──────────────────────────────────────────────────────────────────
 
   send(): void {
+    if (!this.inputText.trim()) return;
     const text = this.inputText.trim();
     if (!text || this.isTyping) return;
 
@@ -122,23 +129,33 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
 
     this.closeEventSource();
 
-    const formData = new FormData();
-    formData.append('message', text);
-    formData.append('session_id', this.sessionId);
-    formData.append('user_lang', this.language);
+    // const formData = new FormData();
+    // formData.append('message', text);
+    // formData.append('session_id', this.sessionId);
+    // formData.append('user_lang', this.language);
+    // formData.append('integrated_mode', 'true');
 
-    const problemId = this.contextService.problemId$.getValue();
-    const scenarios = this.contextService.scenarioIds$.getValue();
-    if (problemId) formData.append('problem_id', problemId);
-    if (scenarios.length) {
-      formData.append('integrated_mode', 'true');
-      scenarios.forEach(id => formData.append('context', id));
+    // Manda IL CONTESTO COMPLETO
+    if (!this.sessionId) {
+      this.sessionId = this.agentSvc.generateSessionId();
     }
 
-    // 1. Prima POST, poi stream
-    this.agentSvc.sendMessage(this.sessionId, text, this.language, []).subscribe({
+    // //  Estrai il contesto dal service
+    // const ctx = this.contextService.getPayloadContext();
+    
+    // //  Crea il dizionario del contesto da passare al service
+    // const contextData: Record<string, any> = {
+    //   integrated_mode: 'true',
+    //   route: ctx.route
+    // };
+    
+
+    const ctx = this.contextService.getPayloadContext();
+
+    const contextArray = [JSON.stringify(ctx)];
+    this.agentSvc.sendMessage(this.sessionId, text, this.language, [], true, contextArray).subscribe({
       next: () => {
-        // 2. Apri stream solo dopo che la sessione è registrata
+        // Apri stream solo dopo che la sessione è registrata
         this.eventSource = this.agentSvc.createEventSource(this.sessionId);
 
         this.eventSource.addEventListener('status', (e: MessageEvent) => {

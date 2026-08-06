@@ -14,7 +14,7 @@ $primary-color: var(--bs-primary);
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 1000;
+  z-index: 9999; 
 }
 
 .chatbot-window {
@@ -28,7 +28,7 @@ $primary-color: var(--bs-primary);
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);
   display: flex;
   flex-direction: column;
-  z-index: 1000;
+  z-index: 9999; 
 }
 
 .chatbot-header {
@@ -120,16 +120,23 @@ $primary-color: var(--bs-primary);
 .chatbot-input {
   display: flex;
   gap: 8px;
-  padding: 8px;
+  padding: 12px;
   border-top: 1px solid #ccc;
+  background: #fff;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
-.chatbot-input input {
+.chatbot-input textarea {
   flex: 1;
   padding: 8px;
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 16px;
+  font-family: inherit;
+  resize: none;
+  max-height: 120px; 
+  overflow-y: auto;
 }
 
 .chatbot-input button {

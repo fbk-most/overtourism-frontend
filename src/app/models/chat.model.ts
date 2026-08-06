@@ -4,13 +4,16 @@ import { SharedChartPayload } from "./plot.model";
 // da definire bene
 export type DomainEventType =
  | 'SHOW_WIDGET'
+ | 'DELETED'
+ | 'COMPARE_SCENARIO'
+ | 'NAVIGATE'
 
-  // da definire bene
-  | 'SCENARIO_CREATED'
-  | 'SCENARIO_UPDATED'
-  | 'COMPARISON_READY'
-  | 'EVALUATION_READY'
-  | 'NAVIGATION_REQUESTED';  //??
+  // // da definire bene
+  // | 'SCENARIO_CREATED'
+  // | 'SCENARIO_UPDATED'
+  // | 'COMPARISON_READY'
+  // | 'EVALUATION_READY'
+  // | 'NAVIGATION_REQUESTED';  //??
 
 export interface DomainEvent {
   type: DomainEventType;

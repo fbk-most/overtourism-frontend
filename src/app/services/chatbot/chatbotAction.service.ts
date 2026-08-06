@@ -9,7 +9,12 @@ export class ChatbotActionService {
   execute(action: UIAction): void {
     switch (action.type) {
       case 'NAVIGATE':
-        this.router.navigate([action.payload['path']]);
+        const navPayload = action.payload;
+        if (navPayload['queryParams']) {
+          this.router.navigate(navPayload['path'], { queryParams: navPayload['queryParams'] });
+        } else {
+          this.router.navigate(navPayload['path']);
+        }
         break;
       case 'SHOW_TOAST':
         // TODO Collega al tuo ToastService esistente 
