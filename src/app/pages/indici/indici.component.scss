@@ -100,3 +100,36 @@
     text-align: center;
     strong { color: #1c2024; }
   }
+  /* Tooltip Custom per Info Indicatore */
+.info-hover-wrapper {
+  position: relative;
+  
+  .html-tooltip {
+    display: none;
+    position: absolute;
+    bottom: 100%; /* Appare sopra l'icona */
+    right: -20px; /* Allineato verso sinistra */
+    margin-bottom: 8px;
+    width: 250px;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 1.4;
+    z-index: 1060;
+    white-space: normal;
+    text-transform: none;
+    pointer-events: none; /* Cliccandolo non chiude la tendina */
+  }
+
+  &:hover .html-tooltip {
+    display: block;
+    animation: fadeIn 0.2s ease-in-out;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.alert_danger{
+  background-image: none;
+}

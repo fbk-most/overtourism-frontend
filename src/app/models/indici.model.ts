@@ -12,7 +12,7 @@ export interface IndicatorMeta {
     name: string;
   }
   
-  export type ShowOption = 'map' | 'variation-chart' | 'variation-map';
+  export type ShowOption = 'map' | 'chart' ;
   export type TemporalGranularity = 'annuale' | 'mensile' | 'giornaliero';
   
   export interface GeoDataEnvelope {

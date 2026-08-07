@@ -27,10 +27,11 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Filtri ─────────────────────────────────────────────────────────────────
   showOption: ShowOption = 'map';
+  enableVariation: boolean = false;  //Confronto temporale
   selectedIndicator = '';
   startDate = '';
   endDate = '';
-  seasonality = 'high';
+  seasonality = '';
   granularity: TemporalGranularity = 'annuale';
   startDateComparison = '';
   endDateComparison = '';
@@ -63,14 +64,12 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('chartEl') chartEl?: ElementRef;
   private chartLabels: string[] = [];
   public chartSeries: VariationSeries[] = [];
-
+  chartType: 'scatter' | 'bar' = 'scatter';
   // ── Visibilità sezioni ─────────────────────────────────────────────────────
-  get showMap()              { return this.showOption === 'map' || this.showOption === 'variation-map'; }
-  get showChart()            { return this.showOption === 'variation-chart'; }
-  get showSeasonality()      { return this.showOption === 'map' && this.currentMeta?.extraFields?.includes('seasonality'); }
-  get showGranularity()      { return this.showOption === 'variation-chart'; }
-  get showComuni()           { return this.showOption === 'variation-chart'; }
-  get showComparisonDates()  { return this.showOption === 'variation-map'; }
+  get showMap()              { return this.showOption === 'map'; }
+  get showChart()            { return this.showOption === 'chart'; }
+  get showGranularity()      { return this.showOption === 'chart'; }
+  get showComuni()           { return this.showOption === 'chart'; }
   get currentMeta()          { return this.allIndicators.find(i => i.value === this.selectedIndicator); }
   get minDateBound()         { return this.currentMeta?.years_range ? `${this.currentMeta.years_range.min_year}-01-01` : null; }
   get maxDateBound()         { return this.currentMeta?.years_range ? `${this.currentMeta.years_range.max_year}-12-31` : null; }
@@ -83,7 +82,8 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
         this.allIndicators = res.indicators;
         this.updateVisibleIndicators();
         if (this.visibleIndicators.length) {
-          this.selectedIndicator = this.visibleIndicators[0].value;
+          const defaultInd = this.visibleIndicators.find(i => i.value !== 'tasso-variazione') || this.visibleIndicators[0];
+          this.selectedIndicator = defaultInd.value;
           this.applyYearsRange();
         }
       },
@@ -102,26 +102,23 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Gestione filtri ────────────────────────────────────────────────────────
 
-  onShowOptionChange(): void {
-    this.updateVisibleIndicators();
-    this.geoEnvelope = null;
+
+  selectIndicator(value: string): void {
+    this.selectedIndicator = value;
+    this.onIndicatorChange();
   }
 
-  onIndicatorChange(): void {
-    this.applyYearsRange();
-  }
-
-  private updateVisibleIndicators(): void {
-    const isVariation = this.showOption !== 'map';
-    this.visibleIndicators = isVariation
-      ? this.allIndicators.filter(i => i.availableForVariation !== false)
-      : this.allIndicators;
-
-    if (!this.visibleIndicators.find(i => i.value === this.selectedIndicator)) {
-      this.selectedIndicator = this.visibleIndicators[0]?.value ?? '';
+  onTabSelected(event: any): void {
+    // Gestisce l'evento di DAKit quando si cambia tab
+    const tabLabel = event?.label?.toLowerCase() || '';
+    if (tabLabel.includes('mappa') && this.showOption !== 'map') {
+      this.showOption = 'map';
+      this.onShowOptionChange();
+    } else if (tabLabel.includes('grafic') && this.showOption !== 'chart') {
+      this.showOption = 'chart';
+      this.onShowOptionChange();
     }
   }
-
   private applyYearsRange(): void {
     const meta = this.currentMeta;
     if (!meta?.years_range) return;
@@ -132,8 +129,51 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
     this.endDateComparison   = `${max_year}-12-31`;
   }
 
+  onShowOptionChange(): void {
+    this.updateVisibleIndicators();
+    this.geoEnvelope = null;
+  }
+
+  onVariationToggle(): void {
+    this.updateVisibleIndicators();
+    this.geoEnvelope = null;
+  }
+
+  onIndicatorChange(): void {
+    this.applyYearsRange();
+  }
+
+  private updateVisibleIndicators(): void {
+    const isVariation = this.enableVariation || this.showOption === 'chart';
+    this.visibleIndicators = isVariation
+      ? this.allIndicators.filter(i => i.availableForVariation !== false)
+      : this.allIndicators;
+
+    if (!this.visibleIndicators.find(i => i.value === this.selectedIndicator)) {
+      const defaultInd = this.visibleIndicators.find(i => i.value !== 'tasso-variazione') || this.visibleIndicators[0];
+      this.selectedIndicator = defaultInd?.value ?? '';
+    }
+  }
+
+
   // ── Comuni picker ──────────────────────────────────────────────────────────
 
+   // Lista nomi disponibili per l'autocomplete (esclude già selezionati)
+   get availableComuniNames(): string[] {
+    return this.allComuni
+      .filter(c => !this.selectedComuni.includes(c.code))
+      .map(c => c.name);
+  }
+
+  // Chiamato dall'app-autocomplete che restituisce il nome
+  onComuneSelectedByName(name: string): void {
+    const comune = this.allComuni.find(c => c.name === name);
+    if (comune && !this.selectedComuni.includes(comune.code)) {
+      if (this.selectedComuni.length >= 10) return;
+      this.selectedComuni.push(comune.code);
+      if (this.chartEl) this.updateChartVisibility();
+    }
+  }
   toggleComune(code: string): void {
     const idx = this.selectedComuni.indexOf(code);
     if (idx >= 0) {
@@ -158,20 +198,14 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loading = true;
     this.geoEnvelope = null;
 
-    if (this.showOption === 'map') {
-      this.svc.getIndexData(
-        this.selectedIndicator,
-        this.startDate || undefined,
-        this.endDate   || undefined,
-        this.showSeasonality ? this.seasonality : undefined,
-        this.spatialGranularity
-      ).subscribe({
-        next: res => { this.geoEnvelope = res.geo_data; this.loading = false; },
-        error: e  => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
-      });
-
-    } else if (this.showOption === 'variation-chart') {
+    if (!this.checkDateBounds()) {
+      this.loading = false;
+      return;
+    }
+    
+    if (this.showOption === 'chart') {
       if (!this.startDate || !this.endDate) { this.loading = false; return; }
+      
       this.svc.getVariationData(
         this.selectedIndicator, this.startDate, this.endDate,
         this.granularity, this.spatialGranularity
@@ -185,28 +219,98 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
         error: () => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
       });
 
-    } else if (this.showOption === 'variation-map') {
-      if (!this.startDate || !this.endDate || !this.startDateComparison || !this.endDateComparison) {
-        this.loading = false; return;
+    } else if (this.showOption === 'map') {
+      if (this.enableVariation) {
+        // Tasso di variazione mappa
+        if (!this.startDate || !this.endDate || !this.startDateComparison || !this.endDateComparison) {
+          this.loading = false; return;
+        }
+        this.svc.getVariationOverTime(
+          this.selectedIndicator,
+          this.startDate, this.endDate,
+          this.startDateComparison, this.endDateComparison,
+          this.spatialGranularity
+        ).subscribe({
+          next: res => { this.geoEnvelope = res.geo_data; this.loading = false; },
+          error: () => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
+        });
+      } else {
+        // Mappa normale indicatore
+        this.svc.getIndexData(
+          this.selectedIndicator,
+          this.startDate || undefined,
+          this.endDate   || undefined,
+          this.seasonality ? this.seasonality : undefined, // Se 'Tutto' ('') passa undefined
+          this.spatialGranularity
+        ).subscribe({
+          next: res => { this.geoEnvelope = res.geo_data; this.loading = false; },
+          error: e  => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
+        });
       }
-      this.svc.getVariationOverTime(
-        this.selectedIndicator,
-        this.startDate, this.endDate,
-        this.startDateComparison, this.endDateComparison,
-        this.spatialGranularity
-      ).subscribe({
-        next: res => { this.geoEnvelope = res.geo_data; this.loading = false; },
-        error: () => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
-      });
     }
   }
+  // ── Metodo di validazione Date ─────────────────────────────────────────────
 
+  private checkDateBounds(): boolean {
+    const minBound = this.minDateBound;
+    const maxBound = this.maxDateBound;
+    
+    this.error = '';
+
+    // 1. Controllo cronologico: Data fine >= Data Inizio per il periodo base
+    if (this.startDate && this.endDate && this.startDate > this.endDate) {
+      this.error = "La data di 'Fine periodo' non può essere precedente a 'Inizio periodo'.";
+      return false;
+    }
+
+    // 2. Controlli per il periodo di confronto (se abilitato per la mappa)
+    if (this.showOption === 'map' && this.enableVariation) {
+      if (this.startDateComparison && this.endDateComparison && this.startDateComparison > this.endDateComparison) {
+        this.error = "La data di 'Fine confronto' non può essere precedente a 'Inizio confronto'.";
+        return false;
+      }
+      
+      // 3. Controllo di sequenzialità: La baseline (periodo base) deve terminare prima che inizi il confronto
+      if (this.endDate && this.startDateComparison && this.endDate >= this.startDateComparison) {
+        this.error = "Il periodo base deve terminare prima dell'inizio del periodo di confronto.";
+        return false;
+      }
+    }
+
+    // Se non ci sono limiti configurati, salta i controlli ai bounds
+    if (!minBound || !maxBound) return true;
+
+    const isOutOfBounds = (d: string) => d && (d < minBound || d > maxBound);
+    const msg = `Le date inserite devono essere comprese tra il ${this.currentMeta?.years_range.min_year} e il ${this.currentMeta?.years_range.max_year}.`;
+
+    // 4. Controlla date fuori dai limiti minimi/massimi
+    if (this.startDate || this.endDate) {
+      if (isOutOfBounds(this.startDate) || isOutOfBounds(this.endDate)) {
+        this.error = msg;
+        return false;
+      }
+    }
+
+    if (this.showOption === 'map' && this.enableVariation) {
+      if (isOutOfBounds(this.startDateComparison) || isOutOfBounds(this.endDateComparison)) {
+        this.error = msg;
+        return false;
+      }
+    }
+
+    return true; // Tutto ok
+  }
   // ── Chart Plotly ───────────────────────────────────────────────────────────
 
-  private renderChart(): void {
+  public renderChart(): void {
     if (!this.chartEl) return;
 
     const traces: Partial<Plotly.PlotData>[] = [];
+
+    // Converti le label in base alla granularità
+    const xLabels = this.granularity === 'mensile'
+      ? this.chartLabels.map(l => new Date(l + '-01')) // "2022-08" → Date object
+      : this.chartLabels;                               // annuale/giornaliero: stringa
 
     this.chartSeries.forEach((s, i) => {
       const color = PALETTE[i % PALETTE.length];
@@ -214,45 +318,73 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
       const name  = this.codeToName.get(s.label) || s.label;
       const vis   = this.selectedComuni.length === 0 || this.selectedComuni.includes(s.label);
 
-      // Banda di confidenza
-      traces.push({
-        x: [...this.chartLabels, ...[...this.chartLabels].reverse()],
-        y: [
-          ...s.data.map((v, j) => v + std[j]),
-          ...[...s.data.map((v, j) => v - std[j])].reverse()
-        ],
-        fill: 'toself',
-        fillcolor: color + '30',
-        line: { color: 'transparent' },
-        name: name + ' (conf.)',
-        showlegend: false,
-        visible: vis ? true : 'legendonly',
-        hoverinfo: 'skip'
-      } as any);
+      // Banda di confidenza (solo linee)
+      if (this.chartType === 'scatter') {
+        traces.push({
+          x: [...xLabels, ...[...xLabels].reverse()],
+          y: [
+            ...s.data.map((v, j) => v + std[j]),
+            ...[...s.data.map((v, j) => v - std[j])].reverse()
+          ],
+          fill: 'toself',
+          fillcolor: color + '30',
+          line: { color: 'transparent' },
+          name: name + ' (conf.)',
+          showlegend: false,
+          visible: vis ? true : 'legendonly',
+          hoverinfo: 'skip'
+        } as any);
+      }
 
       // Serie principale
       traces.push({
-        x: this.chartLabels,
+        x: xLabels,
         y: s.data,
-        mode: 'lines+markers',
+        type: this.chartType,
+        mode: this.chartType === 'scatter' ? 'lines+markers' : undefined,
         name,
-        line: { color, width: 2 },
-        marker: { size: 4 },
+        line:   this.chartType === 'scatter' ? { color, width: 2 } : undefined,
+        marker: { color },
         visible: vis ? true : 'legendonly',
       } as any);
     });
 
+    // Configurazione asse X in base alla granularità
+    const xAxisConfig: Partial<Plotly.LayoutAxis> =
+      this.granularity === 'annuale'
+        ? {
+            // Solo interi sull'asse X
+            type: 'linear',
+            tickformat: 'd',
+            dtick: 1,
+          }
+        : this.granularity === 'mensile'
+        ? {
+            // Plotly legge i Date object e usa il locale del browser
+            type: 'date',
+            tickformat: '%b %Y', // "ago 2022" in italiano se il browser è in it
+            dtick: 'M1',
+          }
+        : {
+            // Giornaliero
+            type: 'date',
+            tickformat: '%d %b %Y',
+          };
+
     Plotly.react(this.chartEl.nativeElement, traces, {
       title: {
-        text: `Tasso di variazione — ${this.currentMeta?.label ?? ''}`,
+        text: `${this.currentMeta?.label ?? ''}`,
         font: { size: 14 }
       },
       height: 420,
       margin: { t: 50, l: 50, r: 20, b: 50 },
       legend: { orientation: 'h', y: -0.2 },
       hovermode: 'x unified',
+      barmode: 'group',
+      xaxis: xAxisConfig,
     }, { responsive: true, displayModeBar: false });
   }
+  
 
   private updateChartVisibility(): void {
     if (!this.chartEl || !this.chartSeries.length) return;
