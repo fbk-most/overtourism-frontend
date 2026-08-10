@@ -12,22 +12,22 @@ export class AgentService {
   constructor(private http: HttpClient, private authService: AuthenticationService) { }
 
   sendMessage(
-    sessionId: string, 
-    message: string, 
-    language: string, 
-    files: File[] = [], 
-    integratedMode: boolean = false,  
-    context: string[] = []            
+    sessionId: string,
+    message: string,
+    language: string,
+    files: File[] = [],
+    integratedMode: boolean = false,
+    context: string[] = []
   ): Observable<any> {
     const formData = new FormData();
     formData.append('message', message);
     formData.append('session_id', sessionId);
     formData.append('user_lang', language);
-    
+
     formData.append('integrated_mode', integratedMode ? 'true' : 'false');
-    
+
     files.forEach(file => formData.append('files', file));
-    
+
     context.forEach(ctx => formData.append('context', ctx));
 
     return this.http.post(this.apiUrl, formData, { withCredentials: true });
@@ -40,12 +40,20 @@ export class AgentService {
   getSummary(scenarioIds: string[], sessionId?: string, evaluationId?: string): Observable<any> {
     const body: any = sessionId && evaluationId
       ? {
-        key: 'summary-temp',
-        scenario_ids: scenarioIds,
-        creation_session: sessionId,
-        evaluation_id: evaluationId
+        key: 'summary',
+        current_context: {
+          temp: {
+            creation_session: sessionId,
+            evaluation_id: evaluationId,
+          }
+        },
       }
-      : { key: 'summary', scenario_ids: scenarioIds };
+      : {
+        key: 'summary',
+        current_context: {
+          scenarios: scenarioIds
+        }
+      };
 
     return this.http.post(`${this.apiUrl}/tool`, body, { withCredentials: true });
   }
