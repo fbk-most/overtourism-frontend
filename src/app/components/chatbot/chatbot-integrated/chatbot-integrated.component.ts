@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, inject, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -29,12 +29,14 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
   private mockService = inject(ChatMockService);
   private http = inject(HttpClient);
   private contextService = inject(ChatbotContextService);
+  @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
 
   isOpen = false;
   isTyping = false;
   inputText = '';
   statusMessage = '';
+  private shouldScrollToBottom = false;
 
   messages: ChatMessage[] = [];
   feedbacks: Record<number, ChatFeedback> = {};
@@ -62,7 +64,27 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.closeEventSource();
   }
+  ngAfterViewChecked(): void {
+    if (this.shouldScrollToBottom) {
+      this.scrollToBottom();
+      this.shouldScrollToBottom = false;
+    }
+  }
 
+  private scrollToBottom(): void {
+    try {
+      if (this.scrollContainer && this.scrollContainer.nativeElement) {
+        const el = this.scrollContainer.nativeElement;
+        el.scrollTop = el.scrollHeight;
+      }
+    } catch (error) {
+      // Ignora errori di scroll
+    }
+  }
+
+  private triggerScroll(): void {
+    this.shouldScrollToBottom = true;
+  }
   private generateSessionId(): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     return Array.from({ length: 8 }, () =>
@@ -86,10 +108,15 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
       html: this.parseMarkdown(text),
       index
     });
+    this.triggerScroll();
+
   }
 
   toggle(): void {
     this.isOpen = !this.isOpen;
+    if (this.isOpen) {
+      this.triggerScroll();
+    }
   }
   handleKeyDown(event: KeyboardEvent) {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -117,12 +144,13 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
     this.inputText = '';
     this.isTyping = true;
     this.statusMessage = '';
-
+    this.triggerScroll();
     const mock = this.mockService.find(text);
     if (mock) {
       setTimeout(() => {
         this.handleAgentResponse(mock);
         this.isTyping = false;
+        this.triggerScroll(); 
       }, 800);
       return;
     }

@@ -7,7 +7,7 @@
     <span class="close" (click)="toggle()">✕</span>
   </div>
 
-  <div class="chatbot-messages">
+  <div class="chatbot-messages" #scrollContainer>
     <div *ngFor="let msg of messages; let i = index"
          [ngClass]="{ 'user': msg.role === 'user', 'bot': msg.role === 'assistant' }">
  
