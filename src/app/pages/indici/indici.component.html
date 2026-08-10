@@ -1,7 +1,7 @@
-<div class="container-fluid my-4">
+<div class="container-fluid my-2">
 
     <!-- ── Pannello filtri principale ─────────────────────────────────────── -->
-  <div class="bg-white rounded border shadow-sm p-4 mb-4">
+  <div class="filtri-panel">
     
     <!-- RIGA 1: Dropdown Indici, Granularità, Date, Stagionalità o Temp. -->
     <div class="row g-3 align-items-start">
@@ -87,7 +87,7 @@
   </div>
 
     <!-- RIGA 2 (Filtro Mappa + Applica) -->
-    <div class="d-flex flex-wrap align-items-center gap-3 mt-4 pt-3 border-top">
+    <div class="filtri-row2 d-flex flex-wrap align-items-center gap-3">
       
       <!-- Sezione MAPPA (Confronto Storico) -->
       <ng-container *ngIf="showMap">
@@ -126,14 +126,14 @@
   </div>
 
   <!-- ── Alert Errori ───────────────────────────────────────────────────────── -->
-  <div class="alert alert-danger mb-4 py-2 px-3" *ngIf="error">
+  <div class="alert alert-danger py-2 px-3 mb-2" *ngIf="error">
     <span class="material-icons align-middle me-2">error_outline</span>{{ error }}
   </div>
 
 
 
   <!-- ── Visualizzazione Tabs ───────────────────────────────────────────── -->
-  <div class="bg-white rounded border shadow-sm p-2 mb-4" style="min-height: 550px;">
+  <div class="indici-content">
     
     <it-tab-container (tabSelected)="onTabSelected($event)">
       <!-- TAB MAPPA -->

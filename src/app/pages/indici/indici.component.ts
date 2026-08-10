@@ -93,6 +93,12 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
     this.svc.getComuni().subscribe(res => {
       this.allComuni = res.comuni;
       this.allComuni.forEach(c => this.codeToName.set(c.code, c.name));
+
+      // Pre-seleziona il comune con code === '-1' (comune aggregato)
+      const defaultComune = this.allComuni.find(c => c.code === '-1');
+      if (defaultComune) {
+        this.selectedComuni = [defaultComune.code];
+      }
     });
   }
 
@@ -221,15 +227,20 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
 
     } else if (this.showOption === 'map') {
       if (this.enableVariation) {
-        // Tasso di variazione mappa
+        // Mappa tasso di variazione: chiama getIndexData con index='tasso-variazione'
+        // e indicator=selectedIndicator + date confronto
         if (!this.startDate || !this.endDate || !this.startDateComparison || !this.endDateComparison) {
           this.loading = false; return;
         }
-        this.svc.getVariationOverTime(
-          this.selectedIndicator,
-          this.startDate, this.endDate,
-          this.startDateComparison, this.endDateComparison,
-          this.spatialGranularity
+        this.svc.getIndexData(
+          'tasso-variazione',
+          this.startDate,
+          this.endDate,
+          this.seasonality ? this.seasonality : undefined,
+          this.spatialGranularity,
+          this.selectedIndicator,       
+          this.startDateComparison,
+          this.endDateComparison
         ).subscribe({
           next: res => { this.geoEnvelope = res.geo_data; this.loading = false; },
           error: () => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
@@ -240,7 +251,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
           this.selectedIndicator,
           this.startDate || undefined,
           this.endDate   || undefined,
-          this.seasonality ? this.seasonality : undefined, // Se 'Tutto' ('') passa undefined
+          this.seasonality ? this.seasonality : undefined,
           this.spatialGranularity
         ).subscribe({
           next: res => { this.geoEnvelope = res.geo_data; this.loading = false; },
@@ -271,8 +282,8 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       
       // 3. Controllo di sequenzialità: La baseline (periodo base) deve terminare prima che inizi il confronto
-      if (this.endDate && this.startDateComparison && this.endDate >= this.startDateComparison) {
-        this.error = "Il periodo base deve terminare prima dell'inizio del periodo di confronto.";
+      if (this.endDateComparison && this.startDate && this.endDateComparison >= this.startDate) {
+        this.error = "Il periodo di confronto deve terminare prima dell'inizio del periodo base.";
         return false;
       }
     }
@@ -312,42 +323,44 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
       ? this.chartLabels.map(l => new Date(l + '-01')) // "2022-08" → Date object
       : this.chartLabels;                               // annuale/giornaliero: stringa
 
-    this.chartSeries.forEach((s, i) => {
-      const color = PALETTE[i % PALETTE.length];
-      const std   = s.std ?? s.data.map(() => 0);
-      const name  = this.codeToName.get(s.label) || s.label;
-      const vis   = this.selectedComuni.length === 0 || this.selectedComuni.includes(s.label);
-
-      // Banda di confidenza (solo linee)
-      if (this.chartType === 'scatter') {
+      this.chartSeries.forEach((s, i) => {
+        const color = PALETTE[i % PALETTE.length];
+        const std   = s.std ?? s.data.map(() => 0);
+        const name  = this.codeToName.get(s.label) || s.label;
+        
+        // true = selezionato o nessun filtro attivo
+        const isSelected = this.selectedComuni.length === 0 || this.selectedComuni.includes(s.label);
+  
+        // Banda di confidenza (solo linee, solo se il comune è selezionato)
+        if (this.chartType === 'scatter' && isSelected) {
+          traces.push({
+            x: [...xLabels, ...[...xLabels].reverse()],
+            y: [
+              ...s.data.map((v, j) => v + std[j]),
+              ...[...s.data.map((v, j) => v - std[j])].reverse()
+            ],
+            fill: 'toself',
+            fillcolor: color + '30',
+            line: { color: 'transparent' },
+            name: name + ' (conf.)',
+            showlegend: false,  
+            hoverinfo: 'skip'
+          } as any);
+        }
+  
+        // Serie principale: visibile solo se selezionata, altrimenti opacity 0
         traces.push({
-          x: [...xLabels, ...[...xLabels].reverse()],
-          y: [
-            ...s.data.map((v, j) => v + std[j]),
-            ...[...s.data.map((v, j) => v - std[j])].reverse()
-          ],
-          fill: 'toself',
-          fillcolor: color + '30',
-          line: { color: 'transparent' },
-          name: name + ' (conf.)',
-          showlegend: false,
-          visible: vis ? true : 'legendonly',
-          hoverinfo: 'skip'
+          x: xLabels,
+          y: s.data,
+          type: this.chartType,
+          mode: this.chartType === 'scatter' ? 'lines+markers' : undefined,
+          name,
+          line:      this.chartType === 'scatter' ? { color, width: 2 } : undefined,
+          marker:    { color },
+          visible:   isSelected ? true : false,   
+          showlegend: isSelected,                  
         } as any);
-      }
-
-      // Serie principale
-      traces.push({
-        x: xLabels,
-        y: s.data,
-        type: this.chartType,
-        mode: this.chartType === 'scatter' ? 'lines+markers' : undefined,
-        name,
-        line:   this.chartType === 'scatter' ? { color, width: 2 } : undefined,
-        marker: { color },
-        visible: vis ? true : 'legendonly',
-      } as any);
-    });
+      });
 
     // Configurazione asse X in base alla granularità
     const xAxisConfig: Partial<Plotly.LayoutAxis> =

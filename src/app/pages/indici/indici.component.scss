@@ -1,114 +1,124 @@
 // ── Pannello filtri ────────────────────────────────────────────────────────
 .filtri-panel {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 16px 20px 12px;
-    margin-bottom: 24px;
-  
-    .filtri-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: flex-end;
-    }
-  
-    .filtri-field {
-      display: flex;
-      flex-direction: column;
-      min-width: 160px;
-      flex: 1 1 160px;
-      max-width: 240px;
-  
-      label {
-        font-size: 12px;
-        font-weight: 600;
-        color: #495057;
-        margin-bottom: 4px;
-      }
-    }
-  
-    .filtri-field--wide {
-      min-width: 260px;
-      max-width: 360px;
-    }
-  
-    // Il bottone occupa sempre l'ultima posizione a destra
-    .filtri-apply {
-      margin-left: auto;
-      align-self: flex-end;
-      flex: 0 0 auto;
-  
-      button {
-        min-width: 140px;
-        white-space: nowrap;
-      }
-    }
-  }
-  
-  // ── Separatore contenuto ───────────────────────────────────────────────────
-  .indici-content {
-    background: #ffffff;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    min-width: 0;          
-    overflow: hidden;      
-    .empty-hint {
-      padding: 48px 0;
-      text-align: center;
-      color: #868e96;
-    }
-  }
-  
-  // ── Comuni widget ──────────────────────────────────────────────────────────
-  .comuni-widget {
-    position: relative;
-  }
-  .comuni-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: #fff;
-    border: 1px solid rgba(0,0,0,0.12);
-    border-radius: 4px;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 1000;
-    margin-top: 2px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  
-    .comuni-item {
-      padding: 7px 12px;
-      cursor: pointer;
-      font-size: 13px;
-      &:hover    { background: #f2f5f7; }
-      &.selected { background: #e6f0fa; color: #0066cc; font-weight: 600; }
-    }
-  }
-  
-  .empty-hint {
-    min-height: 260px;
+  background: #ffffff;
+  border: none;
+  border-bottom: 1px solid #dee2e6; // Solo linea sotto
+  border-radius: 0;
+  padding: 12px 0 16px;
+  margin-bottom: 0;
+
+  .filtri-row {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    color: #5a6772;
-    font-size: 15px;
-    text-align: center;
-    strong { color: #1c2024; }
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
   }
-  /* Tooltip Custom per Info Indicatore */
+
+  .filtri-field {
+    display: flex;
+    flex-direction: column;
+    min-width: 140px;
+    flex: 1 1 140px;
+    max-width: 220px;
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 3px;
+    }
+  }
+
+  .filtri-field--wide {
+    min-width: 240px;
+    max-width: 340px;
+  }
+
+  .filtri-apply {
+    margin-left: auto;
+    align-self: flex-end;
+    flex: 0 0 auto;
+
+    button {
+      min-width: 130px;
+      white-space: nowrap;
+    }
+  }
+}
+
+// ── Seconda riga filtri (confronto + applica) ──────────────────────────────
+.filtri-row2 {
+  border-top: 1px solid #dee2e6;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+// ── Contenuto Tab (Mappa + Grafico) ───────────────────────────────────────
+.indici-content {
+  background: #ffffff;
+  border: none;
+  border-radius: 0;
+  padding: 12px 0;
+  box-shadow: none;
+  min-width: 0;
+  overflow: hidden;
+
+  .empty-hint {
+    padding: 48px 0;
+    text-align: center;
+    color: #868e96;
+  }
+}
+
+// ── Comuni widget ──────────────────────────────────────────────────────────
+.comuni-widget {
+  position: relative;
+}
+
+.comuni-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: 2px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+
+  .comuni-item {
+    padding: 7px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    &:hover    { background: #f2f5f7; }
+    &.selected { background: #e6f0fa; color: #0066cc; font-weight: 600; }
+  }
+}
+
+.empty-hint {
+  min-height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: #5a6772;
+  font-size: 15px;
+  text-align: center;
+  strong { color: #1c2024; }
+}
+
+// ── Tooltip Info Indicatore ────────────────────────────────────────────────
 .info-hover-wrapper {
   position: relative;
-  
+
   .html-tooltip {
     display: none;
     position: absolute;
-    bottom: 100%; /* Appare sopra l'icona */
-    right: -20px; /* Allineato verso sinistra */
+    bottom: 100%;
+    right: -20px;
     margin-bottom: 8px;
     width: 250px;
     font-size: 12px;
@@ -117,7 +127,7 @@
     z-index: 1060;
     white-space: normal;
     text-transform: none;
-    pointer-events: none; /* Cliccandolo non chiude la tendina */
+    pointer-events: none;
   }
 
   &:hover .html-tooltip {
@@ -128,8 +138,10 @@
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.alert_danger{
+
+// ── Alert ──────────────────────────────────────────────────────────────────
+.alert-danger {
   background-image: none;
 }
