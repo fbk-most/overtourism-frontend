@@ -16,7 +16,7 @@
     "settings": "Settings"
   },
   "kpi": {
-    "title": "Indicators",
+    "title": "Criticality Indicators",
     "area": "Total Area",
     "overtourism_level": "Overtourism Days",
     "constraint_level_parcheggi": "Parking Constraint Days",

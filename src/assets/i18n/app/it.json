@@ -16,7 +16,7 @@
     "settings": "Impostazioni"
   },
   "kpi": {
-    "title": "Indici",
+    "title": "Indici di criticità",
     "area": "Area Totale",
     "overtourism_level": "Giorni di criticità complessiva",
     "constraint_level_parcheggi": "Giorni di criticità Parcheggi",

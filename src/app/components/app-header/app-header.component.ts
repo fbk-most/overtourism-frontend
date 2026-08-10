@@ -19,7 +19,7 @@ constructor(public router: Router,    public authService: AuthenticationService
   }
   links = [
     { label: 'Analisi', route: '/problems' },
-    { label: 'Indici', route: '/indici' },
+    { label: 'Indici territoriali', route: '/indici' },
     // { label: 'Indici di Capacità', route: '/capacity' },
     // { label: 'Flussi', route: '/flows' },
     // { label: 'Livello di Affollamento', route: '/overtourism' },
