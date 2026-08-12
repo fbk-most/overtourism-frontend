@@ -37,7 +37,8 @@ const routes: Routes = [
       {
         path: '',
         component: ProblemsComponent,
-        canActivate: [AuthGuard]
+        canActivate: [AuthGuard],
+        data: { breadcrumb: 'Lista analisi' }
       },
       {
         path: 'create',
