@@ -2,6 +2,10 @@ import {
   Component, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy
 } from '@angular/core';
 import Plotly from 'plotly.js-dist-min';
+// @ts-ignore
+import * as itLocale from 'plotly.js-locales/it';
+(Plotly as any).register(itLocale);
+
 import { IndicatorMeta, Comune, ShowOption, TemporalGranularity, GeoDataEnvelope, VariationSeries } from '../../models/indici.model';
 import { IndiciService } from '../../services/indici.service';
 
@@ -23,6 +27,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   allIndicators: IndicatorMeta[] = [];
   visibleIndicators: IndicatorMeta[] = [];
   allComuni: Comune[] = [];
+  allAreas: Comune[] = []; 
   codeToName = new Map<string, string>();
 
   // ── Filtri ─────────────────────────────────────────────────────────────────
@@ -41,6 +46,11 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   comuniQuery = '';
   comuniDropdownOpen = false;
   selectedComuni: string[] = [];
+  selectedAreas: string[] = [];
+
+  get currentSelection(): string[] {
+    return this.spatialGranularity === 'comune' ? this.selectedComuni : this.selectedAreas;
+  }
   get filteredComuni(): Comune[] {
     const q = this.comuniQuery.toLowerCase();
     return this.allComuni.filter(c =>
@@ -90,15 +100,20 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
       error: () => this.error = 'Impossibile caricare gli indicatori.'
     });
 
-    this.svc.getComuni().subscribe(res => {
-      this.allComuni = res.comuni;
+    this.svc.getSpatialAreas().subscribe(res => {
+      this.allComuni = res.comuni || [];
+      this.allAreas = res.areas || [];
+      
       this.allComuni.forEach(c => this.codeToName.set(c.code, c.name));
+      this.allAreas.forEach(a => this.codeToName.set(a.code, a.name));
 
-      // Pre-seleziona il comune con code === '-1' (comune aggregato)
+      // Pre-seleziona il '-1' (aggregato) se esiste per Comuni
       const defaultComune = this.allComuni.find(c => c.code === '-1');
-      if (defaultComune) {
-        this.selectedComuni = [defaultComune.code];
-      }
+      if (defaultComune) this.selectedComuni = [defaultComune.code];
+      
+      // Pre-seleziona il '-1' globale se esiste per Aree
+      const defaultArea = this.allAreas.find(c => c.code === '-1');
+      if (defaultArea) this.selectedAreas = [defaultArea.code];
     });
   }
 
@@ -166,17 +181,27 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
 
    // Lista nomi disponibili per l'autocomplete (esclude già selezionati)
    get availableComuniNames(): string[] {
-    return this.allComuni
-      .filter(c => !this.selectedComuni.includes(c.code))
-      .map(c => c.name);
+    return this.allComuni.filter(c => !this.selectedComuni.includes(c.code)).map(c => c.name);
   }
-
+ // Lista nomi disponibili per l'autocomplete AREE  
+ get availableAreaNames(): string[] {
+  return this.allAreas.filter(a => !this.selectedAreas.includes(a.code)).map(a => a.name);
+}
   // Chiamato dall'app-autocomplete che restituisce il nome
   onComuneSelectedByName(name: string): void {
     const comune = this.allComuni.find(c => c.name === name);
     if (comune && !this.selectedComuni.includes(comune.code)) {
       if (this.selectedComuni.length >= 10) return;
       this.selectedComuni.push(comune.code);
+      if (this.chartEl) this.updateChartVisibility();
+    }
+  }
+
+  onAreaSelectedByName(name: string): void {
+    const area = this.allAreas.find(a => a.name === name);
+    if (area && !this.selectedAreas.includes(area.code)) {
+      if (this.selectedAreas.length >= 10) return;
+      this.selectedAreas.push(area.code);
       if (this.chartEl) this.updateChartVisibility();
     }
   }
@@ -194,7 +219,11 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   removeComune(code: string): void { this.toggleComune(code); }
-
+  removeArea(code: string): void {
+    const idx = this.selectedAreas.indexOf(code);
+    if (idx >= 0) this.selectedAreas.splice(idx, 1);
+    if (this.chartEl) this.updateChartVisibility();
+  }
   onComuniInput(): void { this.comuniDropdownOpen = true; }
 
   // ── Esegui query ───────────────────────────────────────────────────────────
@@ -283,7 +312,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
       
       // 3. Controllo di sequenzialità: La baseline (periodo base) deve terminare prima che inizi il confronto
       if (this.endDateComparison && this.startDate && this.endDateComparison >= this.startDate) {
-        this.error = "Il periodo di confronto deve terminare prima dell'inizio del periodo base.";
+        this.error = "Il periodo di confronto deve terminare prima dell'inizio del periodo base di analisi.";
         return false;
       }
     }
@@ -318,84 +347,76 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const traces: Partial<Plotly.PlotData>[] = [];
 
-    // Converti le label in base alla granularità
-    const xLabels = this.granularity === 'mensile'
-      ? this.chartLabels.map(l => new Date(l + '-01')) // "2022-08" → Date object
-      : this.chartLabels;                               // annuale/giornaliero: stringa
+    // Date grezze → Date objects per mensile/giornaliero, stringhe per annuale
+    const xLabels = (this.granularity === 'mensile')
+      ? this.chartLabels.map(l => new Date(l + '-01'))
+      : this.granularity === 'giornaliero'
+      ? this.chartLabels.map(l => new Date(l))
+      : this.chartLabels;
 
-      this.chartSeries.forEach((s, i) => {
-        const color = PALETTE[i % PALETTE.length];
-        const std   = s.std ?? s.data.map(() => 0);
-        const name  = this.codeToName.get(s.label) || s.label;
-        
-        // true = selezionato o nessun filtro attivo
-        const isSelected = this.selectedComuni.length === 0 || this.selectedComuni.includes(s.label);
-  
-        // Banda di confidenza (solo linee, solo se il comune è selezionato)
-        if (this.chartType === 'scatter' && isSelected) {
-          traces.push({
-            x: [...xLabels, ...[...xLabels].reverse()],
-            y: [
-              ...s.data.map((v, j) => v + std[j]),
-              ...[...s.data.map((v, j) => v - std[j])].reverse()
-            ],
-            fill: 'toself',
-            fillcolor: color + '30',
-            line: { color: 'transparent' },
-            name: name + ' (conf.)',
-            showlegend: false,  
-            hoverinfo: 'skip'
-          } as any);
-        }
-  
-        // Serie principale: visibile solo se selezionata, altrimenti opacity 0
+    this.chartSeries.forEach((s, i) => {
+      const isSelected = this.currentSelection.length === 0 || this.currentSelection.includes(s.label);
+
+      let colorIndex = i;
+      if (this.currentSelection.length > 0 && isSelected) {
+        colorIndex = this.currentSelection.indexOf(s.label);
+      }
+
+      const color = PALETTE[colorIndex % PALETTE.length];
+      const std   = s.std ?? s.data.map(() => 0);
+      const name  = this.codeToName.get(s.label) || s.label;
+
+      // Banda di confidenza (solo linee, solo se selezionato)
+      if (this.chartType === 'scatter' && isSelected) {
         traces.push({
-          x: xLabels,
-          y: s.data,
-          type: this.chartType,
-          mode: this.chartType === 'scatter' ? 'lines+markers' : undefined,
-          name,
-          line:      this.chartType === 'scatter' ? { color, width: 2 } : undefined,
-          marker:    { color },
-          visible:   isSelected ? true : false,   
-          showlegend: isSelected,                  
+          x: [...xLabels, ...[...xLabels].reverse()],
+          y: [
+            ...s.data.map((v, j) => v + std[j]),
+            ...[...s.data.map((v, j) => v - std[j])].reverse()
+          ],
+          fill: 'toself',
+          fillcolor: color + '30',
+          line: { color: 'transparent' },
+          name: name + ' (conf.)',
+          showlegend: false,
+          hoverinfo: 'skip'
         } as any);
-      });
+      }
 
-    // Configurazione asse X in base alla granularità
+      // Serie principale
+      traces.push({
+        x: xLabels,
+        y: s.data,
+        type: this.chartType,
+        mode: this.chartType === 'scatter' ? 'lines+markers' : undefined,
+        name,
+        line:       this.chartType === 'scatter' ? { color, width: 2 } : undefined,
+        marker:     { color },
+        visible:    isSelected ? true : false,
+        showlegend: isSelected,
+      } as any);
+    });
+
     const xAxisConfig: Partial<Plotly.LayoutAxis> =
       this.granularity === 'annuale'
-        ? {
-            // Solo interi sull'asse X
-            type: 'linear',
-            tickformat: 'd',
-            dtick: 1,
-          }
+        ? { type: 'linear', tickformat: 'd', dtick: 1 }
         : this.granularity === 'mensile'
-        ? {
-            // Plotly legge i Date object e usa il locale del browser
-            type: 'date',
-            tickformat: '%b %Y', // "ago 2022" in italiano se il browser è in it
-            dtick: 'M1',
-          }
-        : {
-            // Giornaliero
-            type: 'date',
-            tickformat: '%d %b %Y',
-          };
+        ? { type: 'date', tickformat: '%b %Y', dtick: 'M1' }
+        : { type: 'date', tickformat: '%d %b %Y' };
 
     Plotly.react(this.chartEl.nativeElement, traces, {
-      title: {
-        text: `${this.currentMeta?.label ?? ''}`,
-        font: { size: 14 }
-      },
-      height: 420,
-      margin: { t: 50, l: 50, r: 20, b: 50 },
-      legend: { orientation: 'h', y: -0.2 },
+      title:     { text: `${this.currentMeta?.label ?? ''}`, font: { size: 14 } },
+      height:    420,
+      margin:    { t: 50, l: 50, r: 20, b: 50 },
+      legend:    { orientation: 'h', y: -0.2 },
       hovermode: 'x unified',
-      barmode: 'group',
-      xaxis: xAxisConfig,
-    }, { responsive: true, displayModeBar: false });
+      barmode:   'group',
+      xaxis:     xAxisConfig,
+    }, {
+      responsive:     true,
+      displayModeBar: false,
+      locale:         'it', 
+    });
   }
   
 

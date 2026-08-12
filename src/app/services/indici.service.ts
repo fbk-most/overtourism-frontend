@@ -19,9 +19,8 @@ export class IndiciService {
     return this.http.get<{ indicators: IndicatorMeta[] }>(`${this.base}/get-index-list`);
   }
 
-  getComuni(spatialGranularity = 'comune'): Observable<{ comuni: Comune[] }> {
-    const params = new HttpParams().set('spatial_granularity', spatialGranularity);
-    return this.http.get<{ comuni: Comune[] }>(`${this.base}/get-comuni`, { params });
+  getSpatialAreas(): Observable<{ comuni: Comune[], areas: Comune[] }> {
+    return this.http.get<{ comuni: Comune[], areas: Comune[] }>(`${this.base}/get-spatial-areas`);
   }
 
   getIndexData(
