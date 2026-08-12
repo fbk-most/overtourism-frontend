@@ -59,11 +59,13 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     let geojson: any;
     try { 
       geojson = JSON.parse(this.geojsonStr); 
+      geojson = this.fixEncoding(geojson);
+
     } catch (e) { 
       console.error('GeoJSON parse error', e); 
       return; 
     }
-
+    
     // ── 1. Disegna i dati GeoJSON e gestisci l'Hover ───────────────────────
     this.geoLayer = L.geoJSON(geojson, {
       style: (feature: any) => {
@@ -118,7 +120,27 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
       this.renderColorbar(); // Crea la legenda
     }, 0);
   }
-
+  private fixEncoding(obj: any): any {
+    if (typeof obj === 'string') {
+      try {
+        // escape() mappa ogni char al suo %XX latin-1, decodeURIComponent() lo reinterpreta come UTF-8
+        return decodeURIComponent(escape(obj));
+      } catch {
+        return obj; // Se fallisce (es. stringa già corretta) restituisce l'originale
+      }
+    }
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.fixEncoding(item));
+    }
+    if (obj !== null && typeof obj === 'object') {
+      const fixed: any = {};
+      for (const key of Object.keys(obj)) {
+        fixed[key] = this.fixEncoding(obj[key]);
+      }
+      return fixed;
+    }
+    return obj; // number, boolean, null: invariati
+  }
   // ── 2. Scala Colori Viridis ──────────────────────────────────────────────
   private readonly STOPS: [number, [number, number, number]][] = [
     [0.0,  [173, 216, 230]],
