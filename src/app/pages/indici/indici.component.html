@@ -46,8 +46,8 @@
       <div class="dropdown-menu shadow">
         <div class="link-list-wrapper">
           <ul class="link-list">
-            <li><a class="list-item" (click)="spatialGranularity = 'comune'" style="cursor:pointer"><span>Comunale</span></a></li>
-            <li><a class="list-item" (click)="spatialGranularity = 'macro_area'" style="cursor:pointer"><span>Macro area</span></a></li>
+            <li><a class="list-item" (click)="spatialGranularity = 'comune'; markDirty()" style="cursor:pointer"><span>Comunale</span></a></li>
+            <li><a class="list-item" (click)="spatialGranularity = 'macro_area'; markDirty()" style="cursor:pointer"><span>Macro area</span></a></li>
           </ul>
         </div>
       </div>
@@ -59,12 +59,12 @@
       <div class="d-flex gap-2">
         <div>
           <label class="form-label fw-bold mb-1" style="font-size:13px;">Inizio periodo</label>
-          <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1" [(ngModel)]="startDate"
+          <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1" [(ngModel)]="startDate"  (ngModelChange)="markDirty()"
                  [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="height: auto; min-height: 48px;">
         </div>
         <div>
           <label class="form-label fw-bold mb-1" style="font-size:13px;">Fine periodo</label>
-          <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1" [(ngModel)]="endDate"
+          <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1" [(ngModel)]="endDate"  (ngModelChange)="markDirty()"
                  [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="height: auto; min-height: 48px;">
         </div>
       </div>
@@ -86,10 +86,10 @@
       <div class="dropdown-menu shadow">
         <div class="link-list-wrapper">
           <ul class="link-list">
-            <li><a class="list-item" (click)="seasonality = ''" style="cursor:pointer"><span>Tutte le stagioni</span></a></li>
-            <li><a class="list-item" (click)="seasonality = 'high'" style="cursor:pointer"><span>Alta stagione (lug–ago)</span></a></li>
-            <li><a class="list-item" (click)="seasonality = 'shoulder'" style="cursor:pointer"><span>Stagioni spalla</span></a></li>
-            <li><a class="list-item" (click)="seasonality = 'weekend'" style="cursor:pointer"><span>Weekend</span></a></li>
+            <li><a class="list-item" (click)="seasonality = ''; markDirty()" style="cursor:pointer"><span>Tutte le stagioni</span></a></li>
+            <li><a class="list-item" (click)="seasonality = 'high'; markDirty()" style="cursor:pointer"><span>Alta stagione (lug–ago)</span></a></li>
+            <li><a class="list-item" (click)="seasonality = 'shoulder'; markDirty()" style="cursor:pointer"><span>Stagioni spalla</span></a></li>
+            <li><a class="list-item" (click)="seasonality = 'weekend'; markDirty()" style="cursor:pointer"><span>Weekend</span></a></li>
           </ul>
         </div>
       </div>
@@ -109,9 +109,9 @@
       <div class="dropdown-menu shadow">
         <div class="link-list-wrapper">
           <ul class="link-list">
-            <li><a class="list-item" (click)="granularity = 'annuale'" style="cursor:pointer"><span>Annuale</span></a></li>
-            <li><a class="list-item" (click)="granularity = 'mensile'" style="cursor:pointer"><span>Mensile</span></a></li>
-            <li><a class="list-item" (click)="granularity = 'giornaliero'" style="cursor:pointer"><span>Giornaliero</span></a></li>
+            <li><a class="list-item" (click)="granularity = 'annuale'; markDirty()" style="cursor:pointer"><span>Annuale</span></a></li>
+            <li><a class="list-item" (click)="granularity = 'mensile'; markDirty()" style="cursor:pointer"><span>Mensile</span></a></li>
+            <li><a class="list-item" (click)="granularity = 'giornaliero'; markDirty()" style="cursor:pointer"><span>Giornaliero</span></a></li>
           </ul>
         </div>
       </div>
@@ -134,12 +134,12 @@
           <div class="d-flex align-items-center gap-2 border-start ps-3 ms-2">
             <label class="form-label fw-bold mb-0" style="font-size:13px;">Inizio confronto</label>
             <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
-                   [(ngModel)]="startDateComparison"
+                   [(ngModel)]="startDateComparison" (ngModelChange)="markDirty()"
                    [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="height: auto; min-height: 48px; min-width: 150px;">
             
             <label class="form-label fw-bold mb-0 ms-2" style="font-size:13px;">Fine confronto</label>
             <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
-                   [(ngModel)]="endDateComparison"
+                   [(ngModel)]="endDateComparison" (ngModelChange)="markDirty()"
                    [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="height: auto; min-height: 48px; min-width: 150px;">
           </div>
         </ng-container>
@@ -150,8 +150,11 @@
 
       <!-- Bottone Esegui -->
       <div class="ms-auto pt-1">
-        <button itButton="primary" (click)="getData()" [disabled]="loading">
-          <ng-container *ngIf="!loading">Applica filtri</ng-container>
+        <button itButton="primary" [attr.itButton]="isDirty ? 'warning' : 'primary'" (click)="getData()" [disabled]="loading">
+          <ng-container *ngIf="!loading">
+            <span *ngIf="isDirty" class="material-icons align-middle me-1" style="font-size: 18px;">refresh</span>
+            {{ isDirty ? 'Aggiorna dati' : 'Applica filtri' }}
+          </ng-container>
           <ng-container *ngIf="loading">
             <span class="spinner-border spinner-border-sm me-2" role="status"></span>
             Caricamento...
@@ -166,7 +169,11 @@
     <span class="material-icons align-middle me-2">error_outline</span>{{ error }}
   </div>
 
-
+  <!-- ── Alert Filtri Modificati ────────────────────────────────────────────── -->
+  <div class="alert alert-warning py-2 px-3 mb-2 d-flex align-items-center" *ngIf="isDirty && !error && !loading && (geoEnvelope || chartSeries.length)">
+    <span class="material-icons align-middle me-2">warning_amber</span>
+    <span>I filtri sono stati modificati. I dati attualmente visibili non sono aggiornati con la nuova selezione. Premi <strong>Aggiorna dati</strong>.</span>
+  </div>
 
   <!-- ── Visualizzazione Tabs ───────────────────────────────────────────── -->
   <div class="indici-content">

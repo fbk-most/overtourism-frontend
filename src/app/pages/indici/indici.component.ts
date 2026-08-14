@@ -62,7 +62,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   // ── Stato UI ───────────────────────────────────────────────────────────────
   loading = false;
   error = '';
-
+  isDirty = false;
   // ── Dati mappa ─────────────────────────────────────────────────────────────
   geoEnvelope: GeoDataEnvelope | null = null;
   get colorScaleMode(): 'linear' | 'log' {
@@ -126,11 +126,11 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
 
   selectIndicator(value: string): void {
     this.selectedIndicator = value;
+    this.markDirty();
     this.onIndicatorChange();
   }
 
   onTabSelected(event: any): void {
-    // Gestisce l'evento di DAKit quando si cambia tab
     const tabLabel = event?.label?.toLowerCase() || '';
     if (tabLabel.includes('mappa') && this.showOption !== 'map') {
       this.showOption = 'map';
@@ -153,15 +153,22 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   onShowOptionChange(): void {
     this.updateVisibleIndicators();
     this.geoEnvelope = null;
+    this.markDirty();
   }
 
   onVariationToggle(): void {
     this.updateVisibleIndicators();
     this.geoEnvelope = null;
+    this.markDirty();
   }
 
   onIndicatorChange(): void {
     this.applyYearsRange();
+    
+  }
+
+  markDirty(): void {
+    this.isDirty = true;
   }
 
   private updateVisibleIndicators(): void {
@@ -249,6 +256,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
           this.chartLabels = res.labels;
           this.chartSeries = res.series;
           this.loading = false;
+          this.isDirty = false;
           setTimeout(() => this.renderChart(), 50);
         },
         error: () => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
@@ -271,7 +279,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
           this.startDateComparison,
           this.endDateComparison
         ).subscribe({
-          next: res => { this.geoEnvelope = res.geo_data; this.loading = false; },
+          next: res => { this.geoEnvelope = res.geo_data; this.loading = false;this.isDirty = false; },
           error: () => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
         });
       } else {
@@ -283,7 +291,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
           this.seasonality ? this.seasonality : undefined,
           this.spatialGranularity
         ).subscribe({
-          next: res => { this.geoEnvelope = res.geo_data; this.loading = false; },
+          next: res => { this.geoEnvelope = res.geo_data; this.loading = false;this.isDirty = false; },
           error: e  => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
         });
       }

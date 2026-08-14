@@ -144,3 +144,6 @@ main.ng-leave {
 @keyframes spinner-spin {
   to { transform: rotate(360deg); }
 }
+.alert-warning {
+  background-image: none;
+}
