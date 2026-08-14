@@ -3,6 +3,7 @@ import { AuthConfig, OAuthEvent, OAuthService } from 'angular-oauth2-oidc';
 import { environment } from '../../environments/environment';
 import { Router } from '@angular/router';
 import { NotificationService } from './notifications.service';
+import { ChatbotService } from './chatbot/chatbot.service';
 
 export const authConfig: AuthConfig = {
   issuer: environment.auth.issuer,
@@ -24,7 +25,8 @@ export class AuthenticationService {
 
   constructor(private oauthService: OAuthService,
     private router: Router,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private chatbotService: ChatbotService
   ) {}
 
   public async initialLoginSequence(): Promise<void> {
@@ -93,6 +95,7 @@ export class AuthenticationService {
   }
 
   logout() {
+    this.chatbotService.clearSession();
     this.router.navigate(['/login']).then(() => {
 
     this.oauthService.logOut();
