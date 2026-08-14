@@ -54,8 +54,8 @@
               "src/styles.scss",
               "node_modules/bootstrap-icons/font/bootstrap-icons.css",
               "node_modules/material-design-icons/iconfont/material-icons.css",
-              "node_modules/leaflet/dist/leaflet.css",
-  "src/styles.scss"
+              "node_modules/leaflet/dist/leaflet.css"
+  
             ],
             "scripts": []
           },
