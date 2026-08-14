@@ -1,9 +1,11 @@
 <!-- AREA PRIVATA-->
 <ng-container *ngIf="authService.isLoggedIn; else loginLayout">
+  <div class="d-flex flex-column min-vh-100">
+
   <app-header (toggleSidebar)="toggleSidebar()"></app-header>
   
-  <div class="d-flex">
-    <main class="p-4" style="flex: 1">
+  <div class="d-flex flex-grow-1">
+    <main class="p-4 w-100">
       <app-breadcrumbs></app-breadcrumbs>
       <router-outlet></router-outlet>
     </main>
@@ -11,6 +13,8 @@
   
   <app-footer></app-footer>
   <app-chatbot-integrated></app-chatbot-integrated>
+
+  </div>
 </ng-container>
 
 <!-- AREA PUBBLICA-->
