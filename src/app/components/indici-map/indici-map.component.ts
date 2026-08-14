@@ -16,6 +16,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() maxValue = 10;
   @Input() colorScaleMode: 'linear' | 'log' = 'linear';
   @Input() unitDescription: string = ''; 
+  @Input() mapTitle: string = '';
   @ViewChild('mapEl', { static: false }) mapEl!: ElementRef;
 
   private map?: L.Map;
@@ -38,7 +39,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.ready && (changes['geojsonStr'] || changes['minValue'] || changes['maxValue'] || changes['colorScaleMode'] || changes['unitDescription'])) {
+    if (this.ready && (changes['geojsonStr'] || changes['minValue'] || changes['maxValue'] || changes['colorScaleMode'] || changes['unitDescription'] || changes['mapTitle'])) {
       this.render();
     }
   }
@@ -189,10 +190,10 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
           font-size: 12px; display: flex; flex-direction: column;
           align-items: flex-start; gap: 4px;`;
 
-        const title = document.createElement('div');
-        title.textContent = `Legenda${self.colorScaleMode === 'log' ? ' (log)' : ''}`;
-        title.style.cssText = 'font-weight: bold; margin-bottom: 4px;';
-        div.appendChild(title);
+          const title = document.createElement('div');
+          title.textContent = `Legenda${self.colorScaleMode === 'log' ? ' (log)' : ''}`;
+          title.style.cssText = 'font-weight: bold; margin-bottom: 4px; max-width: 200px; line-height: 1.2;';
+          div.appendChild(title);
 
         const row = document.createElement('div');
         row.style.cssText = 'display: flex; flex-direction: row; align-items: stretch; gap: 6px;';
