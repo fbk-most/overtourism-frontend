@@ -11,8 +11,8 @@ import { IndiciService } from '../../services/indici.service';
 
 
 const PALETTE = [
-  '#e63946','#457b9d','#2a9d8f','#e9c46a','#f4a261',
-  '#264653','#6a4c93','#1982c4','#8ac926','#ff595e','#6a994e',
+  '#e63946', '#457b9d', '#2a9d8f', '#e9c46a', '#f4a261',
+  '#264653', '#6a4c93', '#1982c4', '#8ac926', '#ff595e', '#6a994e',
 ];
 
 @Component({
@@ -27,7 +27,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   allIndicators: IndicatorMeta[] = [];
   visibleIndicators: IndicatorMeta[] = [];
   allComuni: Comune[] = [];
-  allAreas: Comune[] = []; 
+  allAreas: Comune[] = [];
   codeToName = new Map<string, string>();
 
   // ── Filtri ─────────────────────────────────────────────────────────────────
@@ -65,6 +65,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   isDirty = false;
   // ── Dati mappa ─────────────────────────────────────────────────────────────
   geoEnvelope: GeoDataEnvelope | null = null;
+  unitDescription: string = '';
   get colorScaleMode(): 'linear' | 'log' {
     return ['indice-densita-turistica', 'turismo-sommerso'].includes(this.selectedIndicator)
       ? 'log' : 'linear';
@@ -76,15 +77,15 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   public chartSeries: VariationSeries[] = [];
   chartType: 'scatter' | 'bar' = 'scatter';
   // ── Visibilità sezioni ─────────────────────────────────────────────────────
-  get showMap()              { return this.showOption === 'map'; }
-  get showChart()            { return this.showOption === 'chart'; }
-  get showGranularity()      { return this.showOption === 'chart'; }
-  get showComuni()           { return this.showOption === 'chart'; }
-  get currentMeta()          { return this.allIndicators.find(i => i.value === this.selectedIndicator); }
-  get minDateBound()         { return this.currentMeta?.years_range ? `${this.currentMeta.years_range.min_year}-01-01` : null; }
-  get maxDateBound()         { return this.currentMeta?.years_range ? `${this.currentMeta.years_range.max_year}-12-31` : null; }
+  get showMap() { return this.showOption === 'map'; }
+  get showChart() { return this.showOption === 'chart'; }
+  get showGranularity() { return this.showOption === 'chart'; }
+  get showComuni() { return this.showOption === 'chart'; }
+  get currentMeta() { return this.allIndicators.find(i => i.value === this.selectedIndicator); }
+  get minDateBound() { return this.currentMeta?.years_range ? `${this.currentMeta.years_range.min_year}-01-01` : null; }
+  get maxDateBound() { return this.currentMeta?.years_range ? `${this.currentMeta.years_range.max_year}-12-31` : null; }
 
-  constructor(private svc: IndiciService) {}
+  constructor(private svc: IndiciService) { }
 
   ngOnInit(): void {
     this.svc.getIndicatorList().subscribe({
@@ -103,23 +104,23 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
     this.svc.getSpatialAreas().subscribe(res => {
       this.allComuni = res.comuni || [];
       this.allAreas = res.areas || [];
-      
+
       this.allComuni.forEach(c => this.codeToName.set(c.code, c.name));
       this.allAreas.forEach(a => this.codeToName.set(a.code, a.name));
 
       // Pre-seleziona il '-1' (aggregato) se esiste per Comuni
       const defaultComune = this.allComuni.find(c => c.code === '-1');
       if (defaultComune) this.selectedComuni = [defaultComune.code];
-      
+
       // Pre-seleziona il '-1' globale se esiste per Aree
       const defaultArea = this.allAreas.find(c => c.code === '-1');
       if (defaultArea) this.selectedAreas = [defaultArea.code];
     });
   }
 
-  ngAfterViewInit(): void {}
+  ngAfterViewInit(): void { }
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void { }
 
   // ── Gestione filtri ────────────────────────────────────────────────────────
 
@@ -145,9 +146,9 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!meta?.years_range) return;
     const { min_year, max_year } = meta.years_range;
     this.startDate = `${max_year}-01-01`;
-    this.endDate   = `${max_year}-12-31`;
+    this.endDate = `${max_year}-12-31`;
     this.startDateComparison = `${max_year}-01-01`;
-    this.endDateComparison   = `${max_year}-12-31`;
+    this.endDateComparison = `${max_year}-12-31`;
   }
 
   onShowOptionChange(): void {
@@ -164,7 +165,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onIndicatorChange(): void {
     this.applyYearsRange();
-    
+
   }
 
   markDirty(): void {
@@ -186,14 +187,14 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Comuni picker ──────────────────────────────────────────────────────────
 
-   // Lista nomi disponibili per l'autocomplete (esclude già selezionati)
-   get availableComuniNames(): string[] {
+  // Lista nomi disponibili per l'autocomplete (esclude già selezionati)
+  get availableComuniNames(): string[] {
     return this.allComuni.filter(c => !this.selectedComuni.includes(c.code)).map(c => c.name);
   }
- // Lista nomi disponibili per l'autocomplete AREE  
- get availableAreaNames(): string[] {
-  return this.allAreas.filter(a => !this.selectedAreas.includes(a.code)).map(a => a.name);
-}
+  // Lista nomi disponibili per l'autocomplete AREE  
+  get availableAreaNames(): string[] {
+    return this.allAreas.filter(a => !this.selectedAreas.includes(a.code)).map(a => a.name);
+  }
   // Chiamato dall'app-autocomplete che restituisce il nome
   onComuneSelectedByName(name: string): void {
     const comune = this.allComuni.find(c => c.name === name);
@@ -244,10 +245,10 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
       this.loading = false;
       return;
     }
-    
+
     if (this.showOption === 'chart') {
       if (!this.startDate || !this.endDate) { this.loading = false; return; }
-      
+
       this.svc.getVariationData(
         this.selectedIndicator, this.startDate, this.endDate,
         this.granularity, this.spatialGranularity
@@ -275,11 +276,11 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
           this.endDate,
           this.seasonality ? this.seasonality : undefined,
           this.spatialGranularity,
-          this.selectedIndicator,       
+          this.selectedIndicator,
           this.startDateComparison,
           this.endDateComparison
         ).subscribe({
-          next: res => { this.geoEnvelope = res.geo_data; this.loading = false;this.isDirty = false; },
+          next: res => { this.geoEnvelope = res.geo_data; this.unitDescription = res.index_value_unit_description || ''; this.loading = false; this.isDirty = false; },
           error: () => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
         });
       } else {
@@ -287,12 +288,12 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
         this.svc.getIndexData(
           this.selectedIndicator,
           this.startDate || undefined,
-          this.endDate   || undefined,
+          this.endDate || undefined,
           this.seasonality ? this.seasonality : undefined,
           this.spatialGranularity
         ).subscribe({
-          next: res => { this.geoEnvelope = res.geo_data; this.loading = false;this.isDirty = false; },
-          error: e  => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
+          next: res => { this.geoEnvelope = res.geo_data; this.unitDescription = res.index_value_unit_description || ''; this.loading = false; this.isDirty = false; },
+          error: e => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
         });
       }
     }
@@ -302,7 +303,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   private checkDateBounds(): boolean {
     const minBound = this.minDateBound;
     const maxBound = this.maxDateBound;
-    
+
     this.error = '';
 
     // 1. Controllo cronologico: Data fine >= Data Inizio per il periodo base
@@ -317,7 +318,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
         this.error = "La data di 'Fine confronto' non può essere precedente a 'Inizio confronto'.";
         return false;
       }
-      
+
       // 3. Controllo di sequenzialità: La baseline (periodo base) deve terminare prima che inizi il confronto
       if (this.endDateComparison && this.startDate && this.endDateComparison >= this.startDate) {
         this.error = "Il periodo di confronto deve terminare prima dell'inizio del periodo base di analisi.";
@@ -359,8 +360,8 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
     const xLabels = (this.granularity === 'mensile')
       ? this.chartLabels.map(l => new Date(l + '-01'))
       : this.granularity === 'giornaliero'
-      ? this.chartLabels.map(l => new Date(l))
-      : this.chartLabels;
+        ? this.chartLabels.map(l => new Date(l))
+        : this.chartLabels;
 
     this.chartSeries.forEach((s, i) => {
       const isSelected = this.currentSelection.length === 0 || this.currentSelection.includes(s.label);
@@ -371,8 +372,8 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
       }
 
       const color = PALETTE[colorIndex % PALETTE.length];
-      const std   = s.std ?? s.data.map(() => 0);
-      const name  = this.codeToName.get(s.label) || s.label;
+      const std = s.std ?? s.data.map(() => 0);
+      const name = this.codeToName.get(s.label) || s.label;
 
       // Banda di confidenza (solo linee, solo se selezionato)
       if (this.chartType === 'scatter' && isSelected) {
@@ -398,9 +399,9 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
         type: this.chartType,
         mode: this.chartType === 'scatter' ? 'lines+markers' : undefined,
         name,
-        line:       this.chartType === 'scatter' ? { color, width: 2 } : undefined,
-        marker:     { color },
-        visible:    isSelected ? true : false,
+        line: this.chartType === 'scatter' ? { color, width: 2 } : undefined,
+        marker: { color },
+        visible: isSelected ? true : false,
         showlegend: isSelected,
       } as any);
     });
@@ -409,24 +410,24 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
       this.granularity === 'annuale'
         ? { type: 'linear', tickformat: 'd', dtick: 1 }
         : this.granularity === 'mensile'
-        ? { type: 'date', tickformat: '%b %Y', dtick: 'M1' }
-        : { type: 'date', tickformat: '%d %b %Y' };
+          ? { type: 'date', tickformat: '%b %Y', dtick: 'M1' }
+          : { type: 'date', tickformat: '%d %b %Y' };
 
     Plotly.react(this.chartEl.nativeElement, traces, {
-      title:     { text: `${this.currentMeta?.label ?? ''}`, font: { size: 14 } },
-      height:    420,
-      margin:    { t: 50, l: 50, r: 20, b: 50 },
-      legend:    { orientation: 'h', y: -0.2 },
+      title: { text: `${this.currentMeta?.label ?? ''}`, font: { size: 14 } },
+      height: 420,
+      margin: { t: 50, l: 50, r: 20, b: 50 },
+      legend: { orientation: 'h', y: -0.2 },
       hovermode: 'x unified',
-      barmode:   'group',
-      xaxis:     xAxisConfig,
+      barmode: 'group',
+      xaxis: xAxisConfig,
     }, {
-      responsive:     true,
+      responsive: true,
       displayModeBar: false,
-      locale:         'it', 
+      locale: 'it',
     });
   }
-  
+
 
   private updateChartVisibility(): void {
     if (!this.chartEl || !this.chartSeries.length) return;

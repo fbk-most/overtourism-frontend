@@ -15,7 +15,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() minValue = 0;
   @Input() maxValue = 10;
   @Input() colorScaleMode: 'linear' | 'log' = 'linear';
-
+  @Input() unitDescription: string = ''; 
   @ViewChild('mapEl', { static: false }) mapEl!: ElementRef;
 
   private map?: L.Map;
@@ -38,7 +38,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.ready && (changes['geojsonStr'] || changes['minValue'] || changes['maxValue'] || changes['colorScaleMode'])) {
+    if (this.ready && (changes['geojsonStr'] || changes['minValue'] || changes['maxValue'] || changes['colorScaleMode'] || changes['unitDescription'])) {
       this.render();
     }
   }
@@ -196,6 +196,13 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
 
         const row = document.createElement('div');
         row.style.cssText = 'display: flex; flex-direction: row; align-items: stretch; gap: 6px;';
+
+        if (self.unitDescription) {
+          const unit = document.createElement('div');
+          unit.textContent = self.unitDescription;
+          unit.style.cssText = 'font-size: 10px; color: #555; margin-bottom: 6px; max-width: 130px; line-height: 1.2;';
+          div.appendChild(unit);
+        }
 
         const canvas = document.createElement('canvas');
         canvas.width = BAR_W; canvas.height = BAR_H;

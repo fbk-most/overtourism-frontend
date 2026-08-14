@@ -23,6 +23,7 @@ export interface IndicatorMeta {
   
   export interface IndexDataResponse {
     geo_data: GeoDataEnvelope;
+    index_value_unit_description?: string;
   }
   
   export interface VariationSeries {

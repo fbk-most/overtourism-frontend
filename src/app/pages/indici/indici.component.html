@@ -186,7 +186,8 @@
             [geojsonStr]="geoEnvelope.data"
             [minValue]="geoEnvelope.min_value"
             [maxValue]="geoEnvelope.max_value"
-            [colorScaleMode]="colorScaleMode">
+            [colorScaleMode]="colorScaleMode"
+            [unitDescription]="unitDescription">
           </app-indici-map>
           <ng-template #mapHint>
             <div class="empty-hint p-5 text-center text-muted mt-5" *ngIf="!loading">
