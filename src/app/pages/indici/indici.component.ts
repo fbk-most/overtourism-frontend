@@ -65,7 +65,9 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   isDirty = false;
   // ── Dati mappa ─────────────────────────────────────────────────────────────
   geoEnvelope: GeoDataEnvelope | null = null;
-  unitDescription: string = '';
+  get unitDescription(): string {
+    return this.currentMeta?.index_value_unit_description || '';
+  }
   get colorScaleMode(): 'linear' | 'log' {
     return ['indice-densita-turistica', 'turismo-sommerso'].includes(this.selectedIndicator)
       ? 'log' : 'linear';
@@ -280,7 +282,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
           this.startDateComparison,
           this.endDateComparison
         ).subscribe({
-          next: res => { this.geoEnvelope = res.geo_data; this.unitDescription = res.index_value_unit_description || ''; this.loading = false; this.isDirty = false; },
+          next: res => { this.geoEnvelope = res.geo_data; this.loading = false; this.isDirty = false; },
           error: () => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
         });
       } else {
@@ -292,7 +294,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
           this.seasonality ? this.seasonality : undefined,
           this.spatialGranularity
         ).subscribe({
-          next: res => { this.geoEnvelope = res.geo_data; this.unitDescription = res.index_value_unit_description || ''; this.loading = false; this.isDirty = false; },
+          next: res => { this.geoEnvelope = res.geo_data; this.loading = false; this.isDirty = false; },
           error: e => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
         });
       }
@@ -312,17 +314,19 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
       return false;
     }
 
-    // 2. Controlli per il periodo di confronto (se abilitato per la mappa)
+    // 2. Controlli temporali sul periodo di confronto (se variazione abilitata e tab mappa)
     if (this.showOption === 'map' && this.enableVariation) {
-      if (this.startDateComparison && this.endDateComparison && this.startDateComparison > this.endDateComparison) {
-        this.error = "La data di 'Fine confronto' non può essere precedente a 'Inizio confronto'.";
-        return false;
-      }
-
-      // 3. Controllo di sequenzialità: La baseline (periodo base) deve terminare prima che inizi il confronto
-      if (this.endDateComparison && this.startDate && this.endDateComparison >= this.startDate) {
-        this.error = "Il periodo di confronto deve terminare prima dell'inizio del periodo base di analisi.";
-        return false;
+      if (this.startDateComparison && this.endDateComparison) {
+        if (this.startDateComparison > this.endDateComparison) {
+          this.error = "La data di 'Fine confronto' non può essere precedente a 'Inizio confronto'.";
+          return false;
+        }
+        
+        // Controllo richiesto: Il periodo di base e il periodo di confronto non possono essere uguali
+        if (this.startDate === this.startDateComparison && this.endDate === this.endDateComparison) {
+          this.error = "Il periodo di confronto non può coincidere esattamente con il periodo di base.";
+          return false;
+        }
       }
     }
 
@@ -332,7 +336,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
     const isOutOfBounds = (d: string) => d && (d < minBound || d > maxBound);
     const msg = `Le date inserite devono essere comprese tra il ${this.currentMeta?.years_range.min_year} e il ${this.currentMeta?.years_range.max_year}.`;
 
-    // 4. Controlla date fuori dai limiti minimi/massimi
+    // 3. Controlla date fuori dai limiti minimi/massimi
     if (this.startDate || this.endDate) {
       if (isOutOfBounds(this.startDate) || isOutOfBounds(this.endDate)) {
         this.error = msg;
@@ -391,20 +395,43 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
           hoverinfo: 'skip'
         } as any);
       }
-
+      const hasStd = s.std && s.std.some(val => val > 0);
+      const hoverTemplate = hasStd
+        ? `%{y:.2f} ± %{customdata:.2f}<extra></extra>`
+        : `%{y:.2f}<extra></extra>`;
       // Serie principale
-      traces.push({
+      let traceConfig: any = {
         x: xLabels,
         y: s.data,
         type: this.chartType,
-        mode: this.chartType === 'scatter' ? 'lines+markers' : undefined,
         name,
-        line: this.chartType === 'scatter' ? { color, width: 2 } : undefined,
-        marker: { color },
+        customdata: std, // Array passato per leggere il customdata nel template
+        hovertemplate: hoverTemplate,
         visible: isSelected ? true : false,
         showlegend: isSelected,
-      } as any);
+      };
+
+      if (this.chartType === 'scatter') {
+        traceConfig.mode = 'lines+markers';
+        traceConfig.line = { color, width: 2 };
+        traceConfig.marker = { color };
+      } else { // chartType === 'bar'
+        traceConfig.marker = { color };
+        if (hasStd) {
+          traceConfig.error_y = {
+            type: 'data',
+            array: std,
+            visible: true,
+            color: '#333333',
+            thickness: 1.5,
+            width: 3
+          };
+        }
+      }
+
+      traces.push(traceConfig);
     });
+
 
     const xAxisConfig: Partial<Plotly.LayoutAxis> =
       this.granularity === 'annuale'
@@ -412,7 +439,9 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
         : this.granularity === 'mensile'
           ? { type: 'date', tickformat: '%b %Y', dtick: 'M1' }
           : { type: 'date', tickformat: '%d %b %Y' };
-
+    const yAxisConfig: Partial<Plotly.LayoutAxis> = this.unitDescription
+      ? { title: { text: this.unitDescription, font: { size: 12, color: '#666' } } }
+      : {};
     Plotly.react(this.chartEl.nativeElement, traces, {
       title: { text: `${this.currentMeta?.label ?? ''}`, font: { size: 14 } },
       height: 420,
@@ -421,6 +450,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
       hovermode: 'x unified',
       barmode: 'group',
       xaxis: xAxisConfig,
+      yaxis: yAxisConfig,
     }, {
       responsive: true,
       displayModeBar: false,

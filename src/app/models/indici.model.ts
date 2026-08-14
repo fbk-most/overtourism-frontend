@@ -2,6 +2,7 @@ export interface IndicatorMeta {
     value: string;
     label: string;
     index_description?: string; 
+    index_value_unit_description?: string;
     availableForVariation: boolean;
     extraFields: string[];
     years_range: { min_year: number; max_year: number };
@@ -23,7 +24,6 @@ export interface IndicatorMeta {
   
   export interface IndexDataResponse {
     geo_data: GeoDataEnvelope;
-    index_value_unit_description?: string;
   }
   
   export interface VariationSeries {
