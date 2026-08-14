@@ -12,6 +12,7 @@ import { SharedHistogramComponent } from '../../shared/shared-histogram/shared-h
 import { SharedKpisComponent } from '../../shared/shared-kpis/shared-kpis.component';
 import { SharedPlotComponent } from '../../shared/shared-plot/shared-plot.component';
 import { IndiciMapComponent } from '../../indici-map/indici-map.component';
+import { ChatbotService } from '../../../services/chatbot/chatbot.service';
 
 @Component({
   selector: 'app-chatbot-standalone',
@@ -47,12 +48,19 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
 
   private shouldScroll = false;
 
-  constructor(private agentSvc: AgentService) {
-    this.sessionId = this.agentSvc.generateSessionId();
+
+  constructor(private agentSvc: AgentService, private chatbotSvc: ChatbotService) {
+    const savedSession = this.chatbotSvc.loadSessionId();
+    this.sessionId = savedSession ?? this.agentSvc.generateSessionId();
+    if (!savedSession) {
+      this.chatbotSvc.saveSessionId(this.sessionId);
+    }
   }
 
-  ngOnInit() {}
-
+  ngOnInit() {
+    this.messages = this.chatbotSvc.loadMessages();
+    if (this.messages.length > 0) this.shouldScroll = true;
+  }
   ngAfterViewChecked() {
     if (this.shouldScroll && this.chatRef) {
       this.chatRef.nativeElement.scrollTop = this.chatRef.nativeElement.scrollHeight;
@@ -83,21 +91,28 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
   removeAttachment(idx: number) {
     this.attachments = this.attachments.filter((_, i) => i !== idx);
   }
-  /** Gestisce risposta: traduce DomainEvents in UIActions inline */
+    /** Salva i messaggi nel localStorage ogni volta che cambiano */
+    private saveMessages(msgs: ChatMessage[]): void {
+      this.chatbotSvc.saveMessages(msgs);    }
+
+    /** Gestisce risposta: traduce DomainEvents in UIActions inline */
   private handleAgentResponse(currentMessages: ChatMessage[], data: AgentResponse): void {
-    const rawEvents = data.assistant_action_data || data.assistant_action_data || [];
+    const rawEvents = data.assistant_action_data || [];
     const inlineActions: UIAction[] = rawEvents.length
       ? rawEvents.flatMap(e => this.translator.translateForStandalone(e))
                    .filter(a => a.type === 'SHOW_WIDGET')
       : [];
 
-    this.messages = [...currentMessages, {
+    const updated: ChatMessage[] = [...currentMessages, {
       role: 'assistant',
       content: data.response,
       chartData: data.chart_data ?? null,
       slidersData: data.sliders_data ?? null,
       inlineActions: inlineActions.length > 0 ? inlineActions : undefined
     }];
+
+    this.messages = updated;
+    this.saveMessages(updated);  
   }
   async sendMessage() {
     if (!this.input.trim() && this.attachments.length === 0) return;
@@ -105,6 +120,7 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
     const currentInput = this.input;
     const newMessages: ChatMessage[] = [...this.messages, { role: 'user', content: currentInput || '[Attachment]' }];
     this.messages = newMessages;
+    this.saveMessages(newMessages);
     this.input = '';
     if (this.textareaRef) this.textareaRef.nativeElement.style.height = 'auto';
     this.loading = true;

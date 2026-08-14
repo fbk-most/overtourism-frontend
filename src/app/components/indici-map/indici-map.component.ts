@@ -23,7 +23,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   private geoLayer?: L.GeoJSON;
   private colorbarControl?: L.Control;
   private ready = false;
-
+  private currentHoveredLayer: L.Path | null = null; 
   ngAfterViewInit(): void {
     this.map = L.map(this.mapEl.nativeElement, { zoomControl: true, attributionControl: false })
       .setView([44.3, 9], 8);
@@ -52,7 +52,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
 
   private render(): void {
     if (!this.map || !this.geojsonStr) return;
-
+    this.currentHoveredLayer = null;
     // Pulisci vecchi layer e controlli
     if (this.geoLayer) { this.map.removeLayer(this.geoLayer); }
     if (this.colorbarControl) { this.map.removeControl(this.colorbarControl); }
@@ -111,9 +111,26 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
         layer.on('mouseout', () => {
           this.geoLayer?.resetStyle(layer as L.Path);
         });
+        layer.on('mouseover', () => {
+          // Resetta il layer rimasto bloccato (es. dopo cambio tab)
+          if (this.currentHoveredLayer && this.currentHoveredLayer !== (layer as L.Path)) {
+            this.geoLayer?.resetStyle(this.currentHoveredLayer);
+          }
+          this.currentHoveredLayer = layer as L.Path;
+          (layer as L.Path).setStyle({ weight: 2, color: '#444', dashArray: '', fillOpacity: 1.0 });
+        });
+        layer.on('mouseout', () => {
+          this.geoLayer?.resetStyle(layer as L.Path);
+          this.currentHoveredLayer = null;
+        });
       }
     }).addTo(this.map);
-
+    this.map.getContainer().addEventListener('mouseleave', () => {
+      if (this.currentHoveredLayer) {
+        this.geoLayer?.resetStyle(this.currentHoveredLayer);
+        this.currentHoveredLayer = null;
+      }
+    });
     // Forza ricalcolo delle dimensioni e adatta la vista
     setTimeout(() => {
       this.map!.invalidateSize();
