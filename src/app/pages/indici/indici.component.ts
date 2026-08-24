@@ -140,6 +140,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
       this.onShowOptionChange();
     } else if (tabLabel.includes('grafic') && this.showOption !== 'chart') {
       this.showOption = 'chart';
+      // this.enableVariation = false;
       this.onShowOptionChange();
     }
   }

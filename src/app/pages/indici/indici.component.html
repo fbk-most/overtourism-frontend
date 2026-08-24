@@ -120,19 +120,34 @@
 
 </div>
 
-    <!-- RIGA 2 (Filtro Mappa + Applica) -->
-    <div class="filtri-row2 d-flex flex-wrap align-items-center gap-3">
+   <!-- RIGA 2 (Filtro Mappa + Applica) -->
+   <div class="filtri-row2 d-flex flex-wrap align-items-center gap-3">
       
-      <!-- Sezione MAPPA (Confronto Storico) -->
-      <ng-container *ngIf="showMap">
+    <!-- Sezione MAPPA (Confronto Storico) -->
+    <ng-container> 
+      
+      <span [title]="showOption !== 'map' ? 'Il tasso di variazione è disponibile solo nella vista Mappa.' : ''" class="d-inline-flex">
         <div class="form-check mb-0 d-flex align-items-center">
-          <input type="checkbox" class="form-check-input me-2" [(ngModel)]="enableVariation" id="varCheck" (change)="onVariationToggle()">
-          <label class="form-check-label fw-bold mb-0 text-primary" style="font-size:14px; cursor: pointer;" for="varCheck">Tasso di variazione</label>
+          <input type="checkbox" 
+                 class="form-check-input me-2" 
+                 [(ngModel)]="enableVariation" 
+                 [disabled]="showOption !== 'map'" 
+                 id="varCheck" 
+                 (change)="onVariationToggle()">
+          
+          <label class="form-check-label fw-bold mb-0" 
+                 [ngClass]="showOption === 'map' ? 'text-primary' : 'text-muted opacity-50'" 
+                 [style.cursor]="showOption === 'map' ? 'pointer' : 'not-allowed'"
+                 style="font-size:14px;" 
+                 for="varCheck">
+            Tasso di variazione
+          </label>
         </div>
+      </span>
 
-        <ng-container *ngIf="enableVariation">
-          <div class="d-flex align-items-center gap-2 border-start ps-3 ms-2">
-            <label class="form-label fw-bold mb-0" style="font-size:13px;">Inizio confronto</label>
+      <ng-container *ngIf="enableVariation">
+        <div class="d-flex align-items-center gap-2 border-start ps-3 ms-2">
+          <label class="form-label fw-bold mb-0" style="font-size:13px;">Inizio confronto</label>
             <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
                    [(ngModel)]="startDateComparison" (ngModelChange)="markDirty()"
                    [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="height: auto; min-height: 48px; min-width: 150px;">
@@ -199,11 +214,14 @@
       </it-tab-item>
 
       <!-- TAB GRAFICI -->
-      <it-tab-item label="Grafici" icon="chart-line" [active]="showOption === 'chart'">
-        <div class="p-3">
-  
-          <!-- BARRA FILTRI GRAFICO: sempre visibile quando si è nel tab grafici -->
-          <div class="chart-wrapper" *ngIf="showChart">
+      <it-tab-item 
+      label="Grafici" 
+      icon="chart-line" 
+      [active]="showOption === 'chart'"
+      [disabled]="enableVariation">
+<div class="p-3">  
+  <!-- BARRA FILTRI GRAFICO: sempre visibile quando si è nel tab grafici -->
+  <div class="chart-wrapper" *ngIf="showChart">
   
            <!-- Riga: Autocomplete + Toggle Linee/Barre -->
            <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-2">
