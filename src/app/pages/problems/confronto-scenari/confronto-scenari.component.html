@@ -80,7 +80,8 @@
       <app-shared-histogram
         *ngIf="selectedScenario1Id || selectedScenario2Id" 
         [payload]="histogramPayload"
-        [loading]="isLoading">
+        [loading]="isLoading"
+        [kpiMapper]="kpiMapper">
       </app-shared-histogram>
     </div>
   </div>
@@ -88,7 +89,8 @@
     <!-- <app-kpi-comparison [kpisLeft]="kpisLeft ?? {}" [kpisRight]="kpisRight ?? {}"></app-kpi-comparison> -->
     <app-shared-kpis 
     [kpisMain]="kpisLeft" 
-    [kpisCompare]="kpisRight">
+    [kpisCompare]="kpisRight"
+    [kpiMapper]="kpiMapper">
 </app-shared-kpis>
   </div>
   <div class="row">

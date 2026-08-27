@@ -44,50 +44,49 @@ export class AppPlotEditorWidgetComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.scenarioService.currentScenario$.subscribe(scenario => {
-      if (scenario) {
-        this.scenario = scenario;
-      }
+      if (scenario) this.scenario = scenario;
     });
-  // // Inizializza vMin e vMax per i widget che hanno scala
-  // for (const group of this.objectKeys(this.widgets)) {
-  //   for (const widget of this.widgets[group]) {
-  //     if (widget.scale && widget.index_category !== '%') {
-  //       widget.vMin = widget.loc ;
-  //       widget.vMax = widget.loc+widget.scale;
-  //     }
-  //   }
-  // }
-    this.scenarioService.fetchScenarioData();
-  
-    // Imposta il primo tab attivo se ce n'è almeno uno
-    const groups = this.objectKeys(this.widgets);
-    if (groups.length) {
-      this.activeTab = groups[0];
+
+    for (const group of this.objectKeys(this.widgets)) {
+      for (const widget of this.widgets[group]) {
+        if (widget.kind === 'distribution') {
+          // Range doppio: legge default_range oppure min/max
+          widget.vMin = widget.vMin ?? (widget as any).default_range?.[0] ?? widget.min_value ?? 0;
+          widget.vMax = widget.vMax ?? (widget as any).default_range?.[1] ?? widget.max_value ?? 100;
+        } else if (widget.kind === 'scalar') {
+          // Valore singolo: legge default oppure min_value
+          widget.v = widget.v ?? (widget as any).default ?? widget.min_value ?? 0;
+        } else if (widget.kind === 'categorical') {
+          // Select: legge default_category oppure primo support
+          widget.v = widget.v ?? (widget as any).default_category ?? (widget as any).support?.[0];
+        }
+      }
     }
+
+    this.scenarioService.fetchScenarioData();
+    const groups = this.objectKeys(this.widgets);
+    if (groups.length) this.activeTab = groups[0];
+
     this.widgetChange$
-      .pipe(
-        debounceTime(500),         // aspetta 500ms dall'ultima modifica
-        takeUntil(this.destroy$)   // pulizia automatica
-      )
+      .pipe(debounceTime(500), takeUntil(this.destroy$))
       .subscribe(() => {
-        const clonedWidgets = JSON.parse(JSON.stringify(this._widgets));
-        this.widgetsChanged.emit(clonedWidgets); // emetti SOLO dopo il debounce
+        this.widgetsChanged.emit(JSON.parse(JSON.stringify(this._widgets)));
       });
   }
   isEditable(widget: Widget): boolean {
     // return true
-    return this.editableIndexes.includes(widget.index_id); 
+    return this.editableIndexes.includes(widget.name); 
   }
   increase(widget: Widget): void {
     const step = widget.step || 1;
-    const max = widget.max ?? Infinity;
+    const max = widget.max_value ?? Infinity;
     widget.v = Math.min(Number(widget.v ?? 0) + step, max);
     this.onWidgetChange(); 
   }
   
   decrease(widget: Widget): void {
     const step = widget.step || 1;
-    const min = widget.min ?? -Infinity;
+    const min = widget.min_value ?? -Infinity;
     widget.v = Math.max(Number(widget.v ?? 0) - step, min);
     this.onWidgetChange(); 
   }

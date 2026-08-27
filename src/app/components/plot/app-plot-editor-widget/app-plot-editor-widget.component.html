@@ -21,12 +21,12 @@
             [class.active]="activeTab === group" [class.fade]="true">
             <div class="row">
               <div *ngFor="let widget of widgets[group]" class="col-12 col-md-6 mb-4">
-                <div *ngIf="widget.editable">
+                <div>
                   <div class="p-2  rounded h-100">
                     <div class="d-flex justify-content-between align-items-center small">
                       <label class="form-label mb-0"
                         [itTooltip]="!isEditable(widget) ? 'Modifica non disponibile per questo indice' :  undefined ">
-                        {{ widget.index_name }}
+                        {{ widget.label }}
                       </label>
                       <span *ngIf="widget.description" class="material-icons text-muted ms-2"
                         style="font-size: 16px; cursor: pointer;" [itTooltip]="widget.description"
@@ -34,34 +34,60 @@
                         help_outline
                       </span>
                     </div>
-                    <!-- Se ha una scala (mostra ngx-slider) -->
-                    <ng-container
-                      *ngIf="widget.index_category !== '%' && widget.scale && widget.index_type !== 'lognorm'; else rangeBlock">
-                      <div class="custom-slider" [ngClass]="{
-      'disabled-slider': !isEditable(widget),
-      'disabled-slider-wrapper': !isEditable(widget)
-    }" [itTooltip]="!isEditable(widget) ? 'Modifica non disponibile per questo indice' : undefined">
-                        <ngx-slider [(value)]="widget.vMin!" [(highValue)]="widget.vMax!" [options]="{
-        floor: widget.min,
-        ceil: widget.max,
-        step: widget.step || 1
-      }" (userChangeEnd)="onWidgetChange()"></ngx-slider>
+                    <!-- CATEGORIALE -->
+                    <ng-container *ngIf="widget.kind === 'categorical'; else distributionBlock">
+                      <div class="mt-2" [ngClass]="{ 'disabled-slider-wrapper': !isEditable(widget) }">
+                        <select class="form-select form-select-sm"
+                                [(ngModel)]="widget.v"
+                                (ngModelChange)="onWidgetChange()"
+                                [disabled]="!isEditable(widget)">
+                          <option *ngFor="let opt of widget.support" [value]="opt">{{ opt }}</option>
+                        </select>
                       </div>
                     </ng-container>
 
-                    <!-- it-range come fallback o per lognorm -->
-                    <ng-template #rangeBlock>
-                      <div class="position-relative" [ngClass]="{ 'disabled-slider-wrapper': !isEditable(widget) }">
-                        <it-range [min]="widget.min" [max]="widget.max" [step]="widget.step" [(ngModel)]="widget.v"
-                          leftColor="var(--bs-primary)" rightColor="hsl(210, 100%, 70%)" [label]="''"
-                          (ngModelChange)="onWidgetChange()"
-                          [itTooltip]="!isEditable(widget) ? 'Modifica non disponibile per questo indice' : undefined"></it-range>
-                      </div>
-                      <div class="small text-end text-muted">
-                        {{ widget.v }} <span *ngIf="widget.index_category === '%'">%</span>
-                      </div>
+                    <!-- DISTRIBUTION (range doppio) -->
+                    <ng-template #distributionBlock>
+                      <ng-container *ngIf="widget.kind === 'distribution'; else scalarBlock">
+                        <div class="custom-slider" [ngClass]="{
+                          'disabled-slider': !isEditable(widget),
+                          'disabled-slider-wrapper': !isEditable(widget)
+                        }" [itTooltip]="!isEditable(widget) ? 'Modifica non disponibile per questo indice' : undefined">
+                          <ngx-slider
+                            [(value)]="widget.vMin!"
+                            [(highValue)]="widget.vMax!"
+                            [options]="{
+                              floor: widget.min_value ?? 0,
+                              ceil: widget.max_value ?? 1000,
+                              step: widget.step ?? 1
+                            }"
+                            (userChangeEnd)="onWidgetChange()">
+                          </ngx-slider>
+                        </div>
+                        <div class="small text-end text-muted">
+                          [{{ widget.vMin }}, {{ widget.vMax }}]
+                          <span *ngIf="widget.unit"> {{ widget.unit }}</span>
+                        </div>
+                      </ng-container>
                     </ng-template>
 
+                    <!-- SCALAR (valore singolo) -->
+                    <ng-template #scalarBlock>
+                      <div class="d-flex align-items-center gap-2 mt-2" [ngClass]="{ 'disabled-slider-wrapper': !isEditable(widget) }">
+                        <button class="btn btn-sm btn-outline-secondary" (click)="decrease(widget)" [disabled]="!isEditable(widget)">−</button>
+                        <input type="number"
+                               class="form-control form-control-sm text-center"
+                               style="width: 90px;"
+                               [(ngModel)]="widget.v"
+                               (ngModelChange)="onWidgetChange()"
+                               [min]="widget.min_value ?? 0"
+                               [max]="widget.max_value ?? 9999"
+                               [step]="widget.step ?? 1"
+                               [disabled]="!isEditable(widget)"/>
+                        <button class="btn btn-sm btn-outline-secondary" (click)="increase(widget)" [disabled]="!isEditable(widget)">+</button>
+                        <span *ngIf="widget.unit" class="text-muted small">{{ widget.unit }}</span>
+                      </div>
+                    </ng-template>
 
 
                   </div>

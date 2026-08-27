@@ -12,7 +12,7 @@ import { SharedHistogramPayload } from '../../../models/plot.model';
 export class SharedHistogramComponent implements AfterViewInit, OnChanges {
   @Input() payload!: SharedHistogramPayload | null;
   @Input() loading: boolean = false;
-
+  @Input() kpiMapper: Record<string, string> = {};
   @ViewChild('histogramChart', { static: false }) chartEl!: ElementRef<HTMLElement>;
 
   ngAfterViewInit(): void {
@@ -31,7 +31,14 @@ export class SharedHistogramComponent implements AfterViewInit, OnChanges {
       '$1<br>'
     );
   }
+  private getKpiLabel(key: string): string {
+    if (!this.kpiMapper) return key;
 
+    const mappedKeySpace = key.replace(/_/g, ' ');
+    const mappedKeyTrim = key.replace('constraint_level_', 'constraint level ');
+
+    return this.kpiMapper[key] || this.kpiMapper[mappedKeyTrim] || this.kpiMapper[mappedKeySpace] || key;
+  }
   private renderChart(): void {
     if (!this.chartEl?.nativeElement || !this.payload) return;
 
@@ -42,7 +49,7 @@ export class SharedHistogramComponent implements AfterViewInit, OnChanges {
       ...Object.keys(dataRight || {})
     ]));
     
-    const wrappedCategories = categories.map(c => this.wrapLabel(c));
+    const wrappedCategories = categories.map(c => this.wrapLabel(this.getKpiLabel(c)));
 
     const valuesLeft = categories.map(c => +(dataLeft[c]?.level ?? 0));
     const errorsLeft = categories.map(c => +(dataLeft[c]?.confidence ?? 0));

@@ -23,7 +23,7 @@ export class ScenariComponent {
   problemName: any;
   comparazioneAttiva = false;
   selectedScenari: any[] = [];
-  widgets: any;
+  widgets: Widget[] = []; 
   checkboxStates: { [id: string]: boolean } = {};
 
   constructor(
@@ -103,10 +103,9 @@ export class ScenariComponent {
       return key;
     }
   
-    for (const group of Object.keys(this.widgets)) {
-      const widget = this.widgets[group].find((w: { index_id: string; }) => w.index_id === key);
-      if (widget) return widget.index_name;
-    }
+    const widget = this.widgets.find((w: any) => w.name === key || w.index_id === key);
+    if (widget) return widget.label || widget.name || key;
+    
     return key;
   }
   
@@ -125,27 +124,27 @@ export class ScenariComponent {
   }
 
   loadWidgets() {
-    this.scenarioService.getWidgets().subscribe({
-      next: (data) => {
-        const initialized = this.initializeWidgetBounds(data);
+    this.scenarioService.getConfiguration().subscribe({
+      next: (config) => {
+        const initialized = this.initializeWidgetBounds(config.indexes || []);
         this.widgets = initialized;
       },
       error: (err) => {
-        console.error('Errore caricamento widget', err);
+        console.error('Errore caricamento configuration', err);
       }
     });
   }
 
-  private initializeWidgetBounds(widgets: Record<string, Widget[]>): Record<string, Widget[]> {
+  private initializeWidgetBounds(widgets: Widget[]): Widget[] {
     const clone = JSON.parse(JSON.stringify(widgets));
-    for (const key of Object.keys(clone)) {
-      for (const widget of clone[key]) {
-        if (widget.scale && widget.index_category !== '%') {
-          widget.vMin ??= widget.loc;
-          widget.vMax ??= widget.loc + widget.scale;
-        }
+    
+    for (const widget of clone) {
+      if (widget.scale && widget.index_category !== '%') {
+        widget.vMin ??= widget.loc;
+        widget.vMax ??= widget.loc + widget.scale;
       }
     }
+    
     return clone;
   }
 

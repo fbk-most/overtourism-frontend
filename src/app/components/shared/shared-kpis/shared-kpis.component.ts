@@ -12,7 +12,7 @@ import { DesignAngularKitModule } from 'design-angular-kit';
 export class SharedKpisComponent implements OnChanges {
   @Input() kpisMain: any = null;     // I KPI dello scenario base/sinistro
   @Input() kpisCompare?: any = null; // Se presente, attiva la modalità comparazione
-
+  @Input() kpiMapper: Record<string, string> = {};
   kpiKeys: string[] = [];
   criticalConstraintKey: string | null = null;
 
@@ -74,5 +74,13 @@ export class SharedKpisComponent implements OnChanges {
     if (Math.abs(deltaPerc) <= 2) return 'btn-outline-secondary';
     if (deltaPerc > 2) return 'btn-outline-danger';
     return 'btn-outline-success';
+  }
+  getKpiLabel(key: string): string {
+    if (!this.kpiMapper) return key;
+
+    const mappedKeySpace = key.replace(/_/g, ' ');
+    const mappedKeyTrim = key.replace('constraint_level_', 'constraint level ');
+
+    return this.kpiMapper[key] || this.kpiMapper[mappedKeyTrim] || this.kpiMapper[mappedKeySpace] || key;
   }
 }

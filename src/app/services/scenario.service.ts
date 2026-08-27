@@ -6,31 +6,41 @@ import dataExample from '../../assets/dataExample.json';
 import { ConfigService } from './config.service';
 import { environment } from '../../environments/environment';
 
-interface ScenarioResponse {
-  scenarios: Array<{
-    problem_id: string;
-    scenario_id: string;
-    scenario_name: string;
-    scenario_description: string;
-    index_diffs?: { [key: string]: number };
-  }>;
+// interface ScenarioResponse {
+//   scenarios: Array<{
+//     problem_id: string;
+//     scenario_id: string;
+//     scenario_name: string;
+//     scenario_description: string;
+//     index_diffs?: { [key: string]: number };
+//   }>;
+// }
+export interface AppConfiguration {
+  indexes: Widget[];
+  map: any[]; 
+  color_map: any[];
 }
 export interface Widget {
-scale?: any;
-  index_id: string;
-  index_name: string;
-  index_category?: string;
-  index_type?: string;
-  group: string;
-  editable: boolean;
+  name: string;
+  label: string;
+  kind?: string;
+  category?: string;
   description?: string;
-  min: number;
-  max: number;
-  step: number;
+  unit?: string;
+  min_value?: number | null;
+  max_value?: number | null;
+  step?: number | null;
+  support?: string[];
+  default?: any;
+  default_category?: string | null;
+  default_range?: any;
+  
+  // -- Proprietà interne salvate a runtime per la UI --
   v?: number;
-  loc?: number;
   vMin?: number;
   vMax?: number;
+  loc?: number;
+  scale?: number;
 }
 @Injectable({
   providedIn: 'root'
@@ -108,7 +118,7 @@ export class ScenarioService {
       base_scenario_id: baseScenarioId,
       // name: "Temp Session Scenario",
       // description: "Auto-generated for session preview",
-      values: values
+      param_overrides: values
     };
     return this.http.post<any>(`${this.baseUrl}/sessions/${sessionId}/scenarios`, payload, {
       params: { problem_id: problemId }
@@ -209,11 +219,11 @@ export class ScenarioService {
   //       })))
   //     );
   // }
-  
-  getWidgets(): Observable<Record<string, Widget[]>> {
-    return this.http.get<{ widgets: Record<string, Widget[]> }>(
-      `${this.baseUrl}/widgets`
-    ).pipe(map(res => res.widgets));
+  getConfiguration(): Observable<AppConfiguration> {
+    return this.http.get<AppConfiguration>(`${this.baseUrl}/configuration`);
+  }
+  getWidgets(): Observable<Widget[]> {
+    return this.getConfiguration().pipe(map(config => config.indexes || []));
   }
 
   private currentScenarioSubject = new BehaviorSubject<any>(null);

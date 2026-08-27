@@ -22,8 +22,8 @@ export class ReadingComponent implements OnInit, OnChanges {
   @Input() originalScenarioIds: string[] =[];
   @Input() sessionId?: string;        
   @Input() evaluationId?: string;  
-  categories = ['parcheggi', 'spiaggia', 'alberghi', 'ristoranti'];
-  selectedCategory = 'all';
+  @Input() sottosistemi: {value: string, label: string}[] = [];
+  selectedCategory = 'default';
   dataFactsParametersChanges: DataFact[] = [];
 
   aiSummary: SafeHtml | null = null;
@@ -90,9 +90,9 @@ export class ReadingComponent implements OnInit, OnChanges {
     if (!this.widgets) return key;
     
     for (const group of Object.values(this.widgets)) {
-      const widget = group.find(w => w.index_id === key);
+      const widget = group.find(w => w.name === key);
       if (widget) {
-        return widget.index_name || key;
+        return widget.label || key;
       }
     }
     return key;
@@ -119,7 +119,12 @@ export class ReadingComponent implements OnInit, OnChanges {
   }
 
   getIndexesListExplanation(): string {
-    return this.explanationService.explainIndexesList(this.dataFacts, this.categories);
+    // Estraiamo solo le chiavi saltando 'default' (restituisce ['parking', 'beach', ecc.])
+    const categorieAttive = this.sottosistemi
+      .filter(s => s.value !== 'default')
+      .map(s => s.value);
+      
+    return this.explanationService.explainIndexesList(this.dataFacts, categorieAttive);
   }
 
   getUncertaintyExplanation(): string {

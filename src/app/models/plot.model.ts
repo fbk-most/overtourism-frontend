@@ -66,6 +66,9 @@ export interface PlotInput {
   capacity_mean_by_constraint?: Record<string, number>;
   editable_indexes?: string[];
   dataFacts?: DataFact[];
+  colorScale?: any;
+  mapper?: any; 
+
 }
 
 export interface SharedHistogramPayload {

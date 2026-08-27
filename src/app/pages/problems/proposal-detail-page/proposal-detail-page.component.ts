@@ -136,10 +136,17 @@ export class ProposalDetailPageComponent implements OnInit, AfterViewInit {
     });
   }
 
-  loadWidgets(): void {
+  loadWidgets() {
     this.scenarioService.getWidgets().subscribe({
-      next: (data) => {
-        const initialized = this.initializeWidgetBounds(data);
+      next: (dataArray) => {
+        const dataDict: Record<string, Widget[]> = {};
+        dataArray.forEach(w => {
+          const cat = w.category || 'Generale';
+          if (!dataDict[cat]) dataDict[cat] = [];
+          dataDict[cat].push(w);
+        });
+
+        const initialized = this.initializeWidgetBounds(dataDict);
         this.widgets = initialized;
       },
       error: (err) => {

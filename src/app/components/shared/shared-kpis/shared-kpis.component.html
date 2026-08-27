@@ -11,7 +11,7 @@
     <ng-container *ngIf="!isComparison">
       <div class="mb-3 p-3" *ngFor="let key of kpiKeys">
         <h6 class="mb-1 text-primary d-flex align-items-center gap-2">
-          {{ ('kpi.' + key | translate) === ('kpi.' + key) ? key : ('kpi.' + key | translate) }}
+          {{ getKpiLabel(key) }}
           <span *ngIf="key === criticalConstraintKey" class="badge bg-danger text-white" style="font-size: 0.75rem;">
             ⚠️ Critico
           </span>
@@ -35,7 +35,7 @@
         <div class="col-6 border-end pe-3">
           <div *ngFor="let key of kpiKeys" class="mb-4 pb-3">
             <h6 class="text-primary mb-2">
-              {{ ('kpi.' + key | translate) === ('kpi.' + key) ? key : ('kpi.' + key | translate) }}
+              {{ getKpiLabel(key) }}
             </h6>
             <div class="d-flex justify-content-end align-items-baseline text-secondary">
               <p class="h3 text-secondary d-flex align-items-baseline gap-2 me-5">

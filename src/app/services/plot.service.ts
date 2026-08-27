@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { PlotInput, Curve, Point } from '../models/plot.model';
 import { ChartSummary, ChartSeriesSummary } from '../models/chart-summary.model';
 import Plotly from 'plotly.js-dist-min';
-import { DEFAULT_LAYOUT, PLOT_COLORS, RISK_COLOR_SCALE } from '../components/plot/plot.config';
+import { DEFAULT_LAYOUT, PLOT_COLORS } from '../components/plot/plot.config';
 import { DataFact } from '../models/data-fact.model';
 
 @Injectable({ providedIn: 'root' })
@@ -12,16 +12,27 @@ export class PlotService {
   constructor() {
 
   }
+  private dashStyles = ['dot', 'dashdot', 'dash', 'longdash', 'longdashdot'];
+  private dashMap = new Map<string, string>();
+  private dashIndex = 0;
 
+  getDashForGroup(group: string): string {
+    // La curva principale/totale è sempre 'solid'
+    if (!group || group === 'default' || group === 'all' || group === 'Tutti') {
+      return 'solid';
+    }
 
-  getDashForGroup(groupName: string): 'solid' | 'dot' | 'dash' | 'dashdot' {
-    const dashes: Record<string, 'solid' | 'dot' | 'dash' | 'dashdot'> = {
-      parcheggi: 'solid',
-      spiaggia: 'dot',
-      alberghi: 'dash',
-      ristoranti: 'dashdot',
-    };
-    return dashes[groupName] ?? 'solid';
+    // Se abbiamo già assegnato uno stile a questo gruppo, lo riutilizziamo
+    if (this.dashMap.has(group.toLowerCase())) {
+      return this.dashMap.get(group.toLowerCase())!;
+    }
+
+    // Altrimenti peschiamo il prossimo stile disponibile e lo memorizziamo
+    const style = this.dashStyles[this.dashIndex % this.dashStyles.length];
+    this.dashMap.set(group.toLowerCase(), style);
+    this.dashIndex++;
+
+    return style;
   }
   private buildHoverTemplate(labels: { x?: string; y?: string;  name?: string }): string {
     return (labels.name ? `<b>${labels.name}</b><br>` : '') +
@@ -36,13 +47,17 @@ export class PlotService {
       ? input.curves
       : input.curves.filter(c => c.name === sottosistemaSelezionato);
 
+      const mapper = (input as any).mapper || [];
 
     for (const curve of curvesToRender) {
+      const foundLabel = mapper.find((m: any) => m.value === curve.name);
+      const translatedName = foundLabel ? foundLabel.label : curve.name;
+
       data.push({
         x: curve.x,
         y: curve.y,
         mode: 'lines',
-        name: curve.name,
+        name: translatedName,
         line: {
           color: curve.color ?? 'black',
           dash: curve.dash ?? 'solid',
@@ -106,35 +121,37 @@ export class PlotService {
 
 
   }
-  private createDataFactsFromKpis(kpis: Record<string, { level: number; confidence: number }>): DataFact[] {
+  private createDataFactsFromKpis(kpis: Record<string, any>): DataFact[] {
     const dataFacts: DataFact[] = [];
   
     // Global overtourism level
     if (kpis['overtourism_level']) {
       dataFacts.push({
         category: 'all',
-        violations_percentage: +kpis['overtourism_level'].level.toFixed(1),
-        uncertainty: +kpis['overtourism_level'].confidence.toFixed(1),
-        violations_numerosity: kpis['overtourism_level'].level > 0 ? 1 : 0
+        violations_percentage: +(kpis['overtourism_level'].level ?? 0).toFixed(1),
+        uncertainty: +(kpis['overtourism_level'].confidence ?? 0).toFixed(1),
+        violations_numerosity: (kpis['overtourism_level'].level > 0) ? 1 : 0
       });
     }
   
     // Individual constraints
-    const constraints = ['parcheggi', 'spiaggia', 'alberghi', 'ristoranti'];
-  
-    for (const constraint of constraints) {
-      const keyUnderscore = `constraint_level_${constraint}`;
-      const keySpace = `constraint level ${constraint}`;
-      
-      // scegli quella che esiste
-      const kpi = kpis[keyUnderscore] ?? kpis[keySpace];
-      
-      if (kpi) {
+    const constraints = Object.keys(kpis)
+    .filter(key => key.startsWith('constraint_level_'))
+    .map(key => key.replace('constraint_level_', ''));
+
+    for (const c of constraints) {
+      // Ora val è un oggetto {level: number, confidence: number}
+      const valObj = kpis[`constraint_level_${c}`];
+
+      if (valObj !== undefined) {
         dataFacts.push({
-          category: constraint,
-          violations_percentage: +kpi.level.toFixed(1),
-          uncertainty: +kpi.confidence.toFixed(1),
-          violations_numerosity: kpi.level > 0 ? 1 : 0
+          category: c, 
+          parameter: '',
+          original_value: '',
+          new_value: '',
+          violations_percentage: +Number(valObj.level).toFixed(1),
+          uncertainty: +Number(valObj.confidence).toFixed(1),
+          violations_numerosity: Number(valObj.level) > 0 ? 1 : 0
         });
       }
     }
@@ -143,7 +160,7 @@ export class PlotService {
   }
   
   
-  preparePlotInput(module: any): PlotInput {
+  preparePlotInput(module: any, colorScale?: any, mapper?: any): PlotInput { 
 
     // Curves
     const curves: Curve[] = Object.entries(module.constraint_curves ?? {}).map(
@@ -152,34 +169,35 @@ export class PlotService {
         y: curveData[1],
         name: groupName,
         color: 'black',
-        dash: this.getDashForGroup(groupName),
+        dash: this.getDashForGroup(groupName) as 'dot' | 'dashdot' | 'dash' | 'solid' | undefined,
       })
     );
 
     // Heatmaps by function
-    const heatmapsByFunction: Record<string, number[][]> = module.uncertainty_constraint ?? {};
+    const heatmapsByFunction: Record<string, number[][]> = module.points.uncertainty_by_constraint ?? {};
 
     // Points
     const points = Array.isArray(module.kpis?.uncertainty)
-      ? [this.createUncertaintyPoint('Presenze', module.kpis?.uncertainty) as Point] : [];
+    ? [this.createUncertaintyPoint('Presenze', module.kpis?.uncertainty, false, colorScale) as Point] : [];
 
     // KPIs
-    const kpis = module.kpis && typeof module.kpis === 'object'
-      ? {
-        overtourism_level: module.kpis.overtourism_level ?? 0,
+    let kpis: any = undefined;
+    if (module.kpis && typeof module.kpis === 'object') {
+      kpis = {
+        // Manteniamo la struttura { level, confidence }!
+        overtourism_level: typeof module.kpis.overtourism_level === 'object' 
+          ? module.kpis.overtourism_level 
+          : { level: module.kpis.overtourism_level ?? 0, confidence: 0 },
+        
         critical_constraint: {
           name: module.kpis['critical constraint']?.name ?? '',
-          level: module.kpis['critical constraint']?.level ?? 0
+          level: module.kpis['critical constraint']?.level ?? 0,
+          confidence: module.kpis['critical constraint']?.confidence ?? 0
         },
-        constraint_level_parcheggi: module.kpis['constraint level parcheggi'] ?? 0,
-        constraint_level_spiaggia: module.kpis['constraint level spiaggia'] ?? 0,
-        constraint_level_alberghi: module.kpis['constraint level alberghi'] ?? 0,
-        constraint_level_ristoranti: module.kpis['constraint level ristoranti'] ?? 0,
-        uncertainty: Array.isArray(module.points.uncertainty)
-          ? module.points.uncertainty.map((u: {
-            usage: number;
-            usage_uncertainty: number; tourists: any; excursionists: any; index: any;
-          }) => ({
+        
+        uncertainty: Array.isArray(module.points?.uncertainty)
+          ? module.points.uncertainty.map((u: any) => ({
+
             tourists: u.tourists ?? 0,
             excursionists: u.excursionists ?? 0,
             index: u.index ?? 0,
@@ -187,27 +205,44 @@ export class PlotService {
             usage_uncertainty: u.usage_uncertainty ?? 0,
           }))
           : [],
-        uncertainty_by_constraint: module.points.uncertainty_by_constraint && typeof module.points.uncertainty_by_constraint === 'object'
+          
+        uncertainty_by_constraint: module.points?.uncertainty_by_constraint && typeof module.points.uncertainty_by_constraint === 'object'
           ? Object.fromEntries(
             Object.entries(module.points.uncertainty_by_constraint).map(([key, value]) => [
               key,
-              Array.isArray(value)
-                ? value.map(u => ({
-                  tourists: u.tourists ?? 0,
-                  excursionists: u.excursionists ?? 0,
-                  index: u.index ?? 0,
-                  usage: u.usage ?? 0,
-                  usage_uncertainty: u.usage_uncertainty ?? 0,
-                }))
-                : []
-            ])
-          )
-          : {}
-      }
-      : undefined;
-      const dataFacts = module.kpis ? this.createDataFactsFromKpis(module.kpis) : [];
+              Array.isArray(value) ? value.map((u: any) => ({
+                tourists: u.tourists ?? 0,
+                excursionists: u.excursionists ?? 0,
+                index: u.index ?? 0,
+                usage: u.usage ?? 0,
+                usage_uncertainty: u.usage_uncertainty ?? 0,
+              })) : []
+          ])
+        ) : {}
+    };
 
-    // Main return
+    Object.keys(module.kpis).forEach(key => {
+      if (key.startsWith('constraint level ')) {
+        const cat = key.replace('constraint level ', '');
+        const dataObj = module.kpis[key];
+        
+        if (typeof dataObj === 'object') {
+          kpis[`constraint_level_${cat}`] = { 
+            level: dataObj.level ?? 0, 
+            confidence: dataObj.confidence ?? 0 
+          };
+        } else {
+          kpis[`constraint_level_${cat}`] = { 
+            level: dataObj ?? 0, 
+            confidence: 0 
+          };
+        }
+      }
+    });
+  }
+
+  const dataFacts = module.kpis ? this.createDataFactsFromKpis(kpis) : [];
+// Main return
     return {
       curves,
       heatmap: module.uncertainty
@@ -230,15 +265,19 @@ export class PlotService {
       usage_by_constraint: module.usage_by_constraint ?? {},
       capacity_by_constraint: module.capacity_by_constraint ?? {},
       capacity_mean_by_constraint: module.capacity_mean_by_constraint ?? {},
-      dataFacts
+      dataFacts,
+      colorScale,
+      mapper
     };
-  }
-  renderBidimensionale(sottosistemaSelezionato: string, container: HTMLElement, cloned: PlotInput) {
+  }    
+  renderBidimensionale(sottosistemaSelezionato: string, container: HTMLElement, cloned: PlotInput, colorScale?: any) {
+    const targetScale = colorScale || (cloned as any).colorScale;
+
     const uncertaintyData = this.getUncertaintyData(sottosistemaSelezionato, cloned.kpis);
-    cloned.points = [this.createUncertaintyPoint('Presenze', uncertaintyData) as Point];
+    cloned.points = [this.createUncertaintyPoint('Presenze', uncertaintyData, false, targetScale) as Point];
     this.renderFunctionPlot(sottosistemaSelezionato, container, cloned);
   }
-  async renderMonoDimensionale(sottosistemaSelezionato: string, container: HTMLElement, input: PlotInput): Promise<void> {
+  async renderMonoDimensionale(sottosistemaSelezionato: string, container: HTMLElement, input: PlotInput, colorScale?: any): Promise<void> {
     if (!container || !input?.kpis) return;
 
     const uncertaintyData = this.getUncertaintyData(sottosistemaSelezionato, input.kpis);
@@ -250,8 +289,8 @@ export class PlotService {
 
     const x = sorted.map((_, i) => i);                      // 0,1,2,...
     const y = sorted.map(d => d.usage);                     // valore da plottare verticalmente
-    const colorValues = sorted.map(d => d.usage_uncertainty); // per colori
-    const risk = sorted.map(d => 100 * d.usage_uncertainty);
+    const colorValues = sorted.map(d => d.index); // per colori
+    const risk = sorted.map(d => 100 * d.index);
 
     const usageMax = Math.max(...y);
     const yAxisMax = usageMax * 1.2;
@@ -269,14 +308,18 @@ export class PlotService {
       name: 'Presenze',
       marker: {
         color: colorValues,
-        colorscale: RISK_COLOR_SCALE,
+        colorscale: colorScale || (input as any).colorScale, 
         cmin: 0,
         cmax: 1,
         size: 8,
+        reversescale: true,
 
       },
       hovertemplate: hoverTemplate
     };
+    const mapper = input.mapper || [];
+    const foundLabel = mapper.find((m: any) => m.value === sottosistemaSelezionato);
+    const titoloAsseY = foundLabel ? foundLabel.label : sottosistemaSelezionato;
 
     const layout: Partial<Plotly.Layout> = {
       ...DEFAULT_LAYOUT,
@@ -287,9 +330,9 @@ export class PlotService {
       yaxis: {
         title: {
           text:
-            sottosistemaSelezionato === 'default' ?
+          titoloAsseY === 'default' ?
               'Livello di utilizzo della destinazione' :
-              'Livello di utilizzo della risorsa ' + sottosistemaSelezionato
+              'Livello di utilizzo della risorsa ' + titoloAsseY
         },
         range: [0, yAxisMax],
         tickformat: '.0f',
@@ -356,16 +399,17 @@ export class PlotService {
   private createUncertaintyPoint(
     name: string,
     data: any[],
-    showScale: boolean = false
+    showScale: boolean = false,
+    colorScale?: any
   ): Point {
     return {
       name,
       x: data.map(p => p.tourists),
       y: data.map(p => p.excursionists),
-      customdata: data.map(p => 100 * (1 - p.index)),
+      customdata: data.map(p => 100 * (1 - p.usage_uncertainty)),
       marker: {
         color: data.map(p => p.index),
-        colorscale: RISK_COLOR_SCALE,
+        colorscale: colorScale,
         reversescale: true,
         cmin: 0,
         cmax: 1,

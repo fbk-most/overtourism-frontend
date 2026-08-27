@@ -21,7 +21,7 @@
         (ngModelChange)="heatmapAttivaChange.emit($event); heatmapToggle.emit()">
       </it-checkbox> -->
       <div class="gradient-legend mt-3">
-        <div class="gradient-bar"></div>
+        <div class="gradient-bar" [style.background]="gradientStyle"></div>
         <div class="gradient-labels d-flex justify-content-between">
           <small>0%</small>
           <small>50%</small>
@@ -29,15 +29,15 @@
         </div>
         <div class="risk-levels mt-2">
           <div class="risk-item">
-            <span class="risk-dot bg-success"></span>
+            <span class="risk-dot" [style.background-color]="getColorAt(0)"></span> 
             <span class="risk-text">0%: nessun rischio superamento capacità</span>
           </div>
           <div class="risk-item">
-            <span class="risk-dot" style="background-color: yellow;"></span>
+            <span class="risk-dot" [style.background-color]="getColorAt(0.5)"></span>
             <span class="risk-text">50%: rischio medio superamento capacità</span>
           </div>
           <div class="risk-item">
-            <span class="risk-dot bg-danger"></span>
+            <span class="risk-dot" [style.background-color]="getColorAt(1)"></span>
             <span class="risk-text">100%: certezza superamento capacità</span>
           </div>
         </div>

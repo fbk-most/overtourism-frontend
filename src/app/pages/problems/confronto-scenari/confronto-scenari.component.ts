@@ -5,9 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { KPIs, PlotInput, Curve } from '../../../models/plot.model';
 import { PlotService } from '../../../services/plot.service';
 import { ScenarioService, Widget } from '../../../services/scenario.service';
-import {
-  SUBSYSTEM_OPTIONS
-} from '../../../components/plot/plot.config';
+
 import { PdfService } from '../../../services/pdf.service';
 import { TranslateService } from '@ngx-translate/core';
 import { MatDialog } from '@angular/material/dialog';
@@ -37,7 +35,9 @@ export class ConfrontoScenariComponent {
   kpisRight?: KPIs;
   monoDimensionale = false;
   showAllSubsystems = true;
-  sottosistemi = SUBSYSTEM_OPTIONS;
+  sottosistemi: any[] = [];
+  colorMap: any[] = [];
+  kpiMapper: Record<string, string> = {};
   sottosistemaSelezionato = 'default';
   widgetsLeft: Record<string, Widget[]> = {};
   widgetsRight: Record<string, Widget[]> = {};
@@ -73,11 +73,33 @@ export class ConfrontoScenariComponent {
     this.problemId = this.route.snapshot.paramMap.get('problemId')!;
 
     try {
-      const data = await firstValueFrom(this.scenarioService.getWidgets());
-      this.baseWidgets = this.initializeWidgetBounds(data);
+      const config = await firstValueFrom(this.scenarioService.getConfiguration());
+      
+      const meta = (config as any).metadata || config;
+
+      if (meta.mapper && !Array.isArray(meta.mapper)) {
+        this.sottosistemi = Object.entries(meta.mapper).map(([key, label]) => ({
+          value: key,
+          label: label as string
+        }));
+      } else {
+        this.sottosistemi = meta.mapper || meta.map || [];
+      }
+
+      this.colorMap = meta.color_map || [];
+      this.kpiMapper = meta.kpi_mapper || {};
+      const dataDict: Record<string, Widget[]> = {};
+      (config.indexes || []).forEach(w => {
+        const cat = w.category || 'Generale';
+        if (!dataDict[cat]) dataDict[cat] = [];
+        dataDict[cat].push(w);
+      });
+
+      this.baseWidgets = this.initializeWidgetBounds(dataDict);
     } catch (err) {
-      console.error('Errore caricamento widget base', err);
+      console.error('Errore caricamento configurazione base', err);
     }
+
 
     this.scenarioService.getScenarios(this.problemId).subscribe(scenari => {
       this.scenari = scenari;
@@ -97,7 +119,7 @@ export class ConfrontoScenariComponent {
     const clone = JSON.parse(JSON.stringify(widgets));
     for (const key of Object.keys(clone)) {
       for (const widget of clone[key]) {
-        if (widget.scale && widget.index_category !== '%') {
+        if (widget.scale && widget.unit !== '%') {
           widget.vMin ??= widget.loc;
           widget.vMax ??= widget.loc + widget.scale;
         }
@@ -108,9 +130,17 @@ export class ConfrontoScenariComponent {
   private updateHistogramPayload() {
     // Basta che almeno uno dei due scenari sia selezionato (e abbia dati)
     if ((this.selectedScenario1Id && this.kpisLeft) || (this.selectedScenario2Id && this.kpisRight)) {
+      const cleanLeft = { ...this.kpisLeft };
+      const cleanRight = { ...this.kpisRight };
+
+      delete cleanLeft['critical_constraint'];
+      delete cleanLeft['critical constraint'];
+      delete cleanRight['critical_constraint'];
+      delete cleanRight['critical constraint'];
+
       this.histogramPayload = {
-        dataLeft: this.kpisLeft || {},
-        dataRight: this.kpisRight || {},
+        dataLeft: cleanLeft,
+        dataRight: cleanRight,
         labelLeft: this.selectedScenario1Id ? (this.getScenarioName(this.selectedScenario1Id) || '') : '',
         labelRight: this.selectedScenario2Id ? (this.getScenarioName(this.selectedScenario2Id) || '') : ''
       };
@@ -133,7 +163,7 @@ export class ConfrontoScenariComponent {
     const clone = JSON.parse(JSON.stringify(widgets));
     for (const key of Object.keys(clone)) {
       for (const widget of clone[key]) {
-        const newVal = indexVals[widget.index_id];
+        const newVal = indexVals[widget.name];
         if (newVal !== undefined) {
           if (Array.isArray(newVal)) {
             widget.vMin = newVal[0];
@@ -224,7 +254,7 @@ export class ConfrontoScenariComponent {
       const rawResponse = await firstValueFrom(this.scenarioService.getEvaluationData(currentEval.evaluation_id, this.problemId));
       const dataSet = rawResponse.data || {};
 
-      const input = this.plotService.preparePlotInput(dataSet);
+      const input = this.plotService.preparePlotInput(dataSet, this.colorMap, this.sottosistemi);
       const container = slot === 1 ? this.chartLeft.nativeElement : this.chartRight.nativeElement;
 
       if (slot === 1) {
@@ -305,13 +335,12 @@ export class ConfrontoScenariComponent {
   }
   filterKpis(rawData: Record<string, any>): Record<string, { level: number, confidence: number }> {
     return Object.keys(rawData)
-      .filter(key => key.includes('_level_') || key === 'overtourism_level')
-      .reduce((obj, key) => {
-        const translatedKey = this.translate.instant('kpi.' + key);
+    .filter(key => key.includes('constraint_level_') || key === 'overtourism_level' || key === 'critical_constraint')
+    .reduce((obj, key) => {
   
         const value = rawData[key];
         // se rawData[key] è un numero singolo, lo trasformiamo in oggetto level/confidence
-        obj[translatedKey] = typeof value === 'number'
+        obj[key] = typeof value === 'number'
           ? { level: value, confidence: 0 }
           : { level: value.level ?? 0, confidence: value.confidence ?? 0 };
   
@@ -325,24 +354,24 @@ export class ConfrontoScenariComponent {
   ): { index_id: string, index_name: string, value: any, otherValue: any }[] {
     const diffs: { index_id: string, index_name: string, value: any, otherValue: any }[] = [];
     const allIds = new Set<string>();
-    Object.values(widgetsA).forEach(group => group.forEach(w => allIds.add(w.index_id)));
-    Object.values(widgetsB).forEach(group => group.forEach(w => allIds.add(w.index_id)));
+    Object.values(widgetsA).forEach(group => group.forEach(w => allIds.add(w.name)));
+    Object.values(widgetsB).forEach(group => group.forEach(w => allIds.add(w.name)));
   
     for (const id of allIds) {
-      const widgetA = Object.values(widgetsA).flat().find(w => w.index_id === id);
-      const widgetB = Object.values(widgetsB).flat().find(w => w.index_id === id);
+      const widgetA = Object.values(widgetsA).flat().find(w => w.name === id);
+      const widgetB = Object.values(widgetsB).flat().find(w => w.name === id);
   
       if (widgetA && widgetB) {
         // Se è un range (ha scale e non è percentuale)
-        if (widgetA.scale && widgetA.index_category !== '%') {
+        if (widgetA.scale && widgetA.unit !== '%') {
           const aMin = widgetA.vMin ?? widgetA.loc;
-          const aMax = widgetA.vMax ?? (widgetA.loc + widgetA.scale);
+          const aMax = widgetA.vMax ?? ((widgetA.loc ?? 0) + (widgetA.scale  ?? 0));
           const bMin = widgetB.vMin ?? widgetB.loc;
-          const bMax = widgetB.vMax ?? (widgetB.loc + widgetB.scale);
+          const bMax = widgetB.vMax ?? ((widgetB.loc ?? 0) + (widgetB.scale ?? 0));
           if (aMin !== bMin || aMax !== bMax) {
             diffs.push({
               index_id: id,
-              index_name: widgetA.index_name,
+              index_name: widgetA.label,
               value: `${aMin} - ${aMax}`,
               otherValue: `${bMin} - ${bMax}`
             });
@@ -354,7 +383,7 @@ export class ConfrontoScenariComponent {
           if (String(valueA) !== String(valueB)) {
             diffs.push({
               index_id: id,
-              index_name: widgetA.index_name,
+              index_name: widgetA.label,
               value: valueA,
               otherValue: valueB
             });
@@ -365,23 +394,21 @@ export class ConfrontoScenariComponent {
     return diffs;
   }
   renderChart(container: HTMLElement, input: PlotInput) {
+    if (!container || !input) return;
+
     const cloned = JSON.parse(JSON.stringify(input)) as PlotInput;
 
-    // === MONODIMENSIONALE ===
     if (this.monoDimensionale) {
-      this.plotService.renderMonoDimensionale(
-        this.sottosistemaSelezionato,
-        container,
-        cloned
-      );
+      this.plotService.renderMonoDimensionale(this.sottosistemaSelezionato, container, cloned, this.colorMap);
       return;
     }
+
     this.plotService.renderBidimensionale(
       this.sottosistemaSelezionato,
       container,
-      cloned
+      cloned,
+      this.colorMap
     );
-
   }
   onScenarioSelect(slot: 1 | 2, selectedId: string) {
     if (slot === 1) {

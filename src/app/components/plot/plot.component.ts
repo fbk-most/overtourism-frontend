@@ -3,9 +3,6 @@ import { Component, ElementRef, AfterViewInit, ViewChild, Input } from '@angular
 import Plotly from 'plotly.js-dist-min';
 import { PlotService } from '../../services/plot.service';
 import { Curve, KPIs, PlotInput } from '../../models/plot.model';
-import {
-  SUBSYSTEM_OPTIONS
-} from './plot.config';
 import { ScenarioService, Widget } from '../../services/scenario.service';
 import { firstValueFrom } from 'rxjs';
 import { NotificationService } from '../../services/notifications.service';
@@ -44,7 +41,9 @@ export class PlotComponent implements AfterViewInit {
   noteUtente: string = '';
   originalWidgets: Record<string, Widget[]> = {};
   widgets: Record<string, Widget[]> = {};
-  sottosistemi = SUBSYSTEM_OPTIONS;
+  sottosistemi: any[] = [];
+  colorMap: any[] = []; 
+  kpiMapper: Record<string, string> = {};
   editableIndexes: string[] = [];
   objectKeys = Object.keys;
 
@@ -53,12 +52,12 @@ export class PlotComponent implements AfterViewInit {
   isEditing: boolean = false;
   showControls: boolean = false; // per 'settings'
   hasChanges: boolean = false;
-  changedWidgets!: Record<string, number | [number, number]>;
-  indexDiffs: Record<string, number> = {};
+  changedWidgets!: Record<string, any>;
+  indexDiffs: Record<string, any> = {};
   titolo: string = '';
   descrizione: string = '';
   //widget diversi ma non locali, usati per il reset locale
-  originalIndexDiffs: Record<string, string> = {};
+  originalIndexDiffs: Record<string, any> = {};
   pendingNavigationResolve: ((result: boolean) => void) | null = null;
   sessionId!: string;
   sessionScenarioId: string | null = null;
@@ -175,8 +174,8 @@ export class PlotComponent implements AfterViewInit {
   }
   getIndexNameFromKey(key: string): string {
     for (const group of Object.keys(this.widgets)) {
-      const widget = this.widgets[group].find(w => w.index_id === key);
-      if (widget) return widget.index_name;
+      const widget = this.widgets[group].find(w => w.name === key);
+      if (widget) return widget.label;
     }
     return key; // fallback se non trovato
   }
@@ -186,20 +185,39 @@ export class PlotComponent implements AfterViewInit {
 
   async loadWidgetsAsync(): Promise<void> {
     try {
-      const data = await firstValueFrom(this.scenarioService.getWidgets());
-      const initialized = this.initializeWidgetBounds(data);
-      this.originalWidgets = JSON.parse(JSON.stringify(initialized)); // copia profonda base
+      const config = await firstValueFrom(this.scenarioService.getConfiguration());
+      const meta = (config as any).metadata || config;
+      if (meta.mapper && !Array.isArray(meta.mapper)) {
+        this.sottosistemi = Object.entries(meta.mapper).map(([key, label]) => ({
+          value: key,
+          label: label as string
+        }));
+      } else {
+        this.sottosistemi = meta.mapper || meta.map || [];
+      }
+
+      this.colorMap = meta.color_map || []; 
+      this.kpiMapper = meta.kpi_mapper || {};
+      const dataDict: Record<string, Widget[]> = {};
+      (config.indexes || []).forEach(w => {
+        const cat = w.category || 'Generale';
+        if (!dataDict[cat]) dataDict[cat] = [];
+        dataDict[cat].push(w);
+      });
+
+      const initialized = this.initializeWidgetBounds(dataDict);
+      this.originalWidgets = JSON.parse(JSON.stringify(initialized));
       this.widgets = JSON.parse(JSON.stringify(this.originalWidgets));
     } catch (err) {
-      console.error('Errore caricamento widget', err);
-      this.notificationService.showError('Errore nel caricamento dei widget.');
+      console.error('Errore caricamento widget/configurazione', err);
+      this.notificationService.showError('Errore nel caricamento della configurazione.');
     }
   }
   private initializeWidgetBounds(widgets: Record<string, Widget[]>): Record<string, Widget[]> {
     const clone = JSON.parse(JSON.stringify(widgets));
     for (const key of Object.keys(clone)) {
       for (const widget of clone[key]) {
-        if (widget.scale && widget.index_category !== '%') {
+        if (widget.scale && widget.unit !== '%') {
           widget.vMin ??= widget.loc;
           widget.vMax ??= widget.loc + widget.scale;
         }
@@ -210,7 +228,7 @@ export class PlotComponent implements AfterViewInit {
   onWidgetsChanged(updatedWidgets: Record<string, Widget[]>) {
     console.log('Widgets changed:', updatedWidgets);
 
-    const changedValues: Record<string, number | [number, number]> = {};
+    const changedValues: Record<string, any> = {};
 
     for (const key of Object.keys(updatedWidgets)) {
       const currentGroup = this.originalWidgets[key] || [];
@@ -222,17 +240,17 @@ export class PlotComponent implements AfterViewInit {
 
         if (!original) {
           // Nuovo widget
-          changedValues[updated.index_id] = this.extractValue(updated);
+          changedValues[updated.name] = this.extractValue(updated);
           continue;
         }
-        const isLognorm = updated.index_type === 'lognorm';
+        const isLognorm = updated.kind === 'lognorm';
         const hasChanged =
           isLognorm
             ? updated.v !== original.v
             : updated.v !== original.v || updated.vMin !== original.vMin || updated.vMax !== original.vMax;
 
         if (hasChanged) {
-          changedValues[updated.index_id] = this.extractValue(updated);
+          changedValues[updated.name] = this.extractValue(updated);
         }
       }
     }
@@ -249,14 +267,27 @@ export class PlotComponent implements AfterViewInit {
   }
 
 
-  extractValue(widget: Widget): number | [number, number] {
-    if (widget.scale && widget.index_category !== '%' && widget.index_type !== 'lognorm') {
-      const vMin = widget.vMin ?? widget.loc;
-      const vMax = widget.vMax ?? (widget.loc + widget.scale);
-      return [vMin ?? 1, vMax ?? 1];
+  extractValue(widget: Widget): any {
+    switch (widget.kind) {
+      
+      case 'categorical':
+        // Manda la stringa selezionata (es. "monday", "bad", "very high")
+        return widget.v 
+          ?? (widget as any).default_category 
+          ?? (widget as any).support?.[0];
+      
+      case 'distribution':
+        // Manda un array [min, max] (es. [350, 450])
+        return [
+          widget.vMin ?? (widget as any).default_range?.[0] ?? widget.min_value ?? 0,
+          widget.vMax ?? (widget as any).default_range?.[1] ?? widget.max_value ?? 100
+        ];
+      
+      case 'scalar':
+      default:
+        // Manda il valore numerico fisso (es. 42)
+        return widget.v ?? (widget as any).default ?? widget.min_value ?? 0;
     }
-
-    return widget.v ?? widget.loc ?? 0;
   }
   async updateData(values: Record<string, number | [number, number]>) {
     this.loading = true;
@@ -283,8 +314,9 @@ export class PlotComponent implements AfterViewInit {
         )
       );
 
+
       const scenarioData = rawResponse.extras?.data || rawResponse.data || rawResponse;
-      this.inputData = this.plotService.preparePlotInput(scenarioData);
+      this.inputData = this.plotService.preparePlotInput(scenarioData, this.colorMap, this.sottosistemi); 
 
       const actualNumericalValues = this.arrayToDict(sessionScenario.index_values || []);
       let diffsValues = sessionScenario.extras?.index_diffs;
@@ -332,15 +364,26 @@ export class PlotComponent implements AfterViewInit {
     const clone = JSON.parse(JSON.stringify(widgets));
     for (const key of Object.keys(clone)) {
       for (const widget of clone[key]) {
-        const newVal = indexVals[widget.index_id];
+        const newVal = indexVals[widget.name];
+        if (newVal === undefined) continue;
 
-        if (newVal !== undefined) {
-          if (Array.isArray(newVal)) {
-            widget.vMin = newVal[0];
-            widget.vMax = newVal[1];
-          } else {
+        switch (widget.kind) {
+          case 'categorical':
+            // Valore stringa
+            widget.v = newVal;
+            break;
+          case 'distribution':
+            // Array [min, max]
+            if (Array.isArray(newVal)) {
+              widget.vMin = newVal[0];
+              widget.vMax = newVal[1];
+            }
+            break;
+          case 'scalar':
+          default:
+            // Numero fisso
             widget.v = typeof newVal === 'number' ? newVal : Number(newVal);
-          }
+            break;
         }
       }
     }
@@ -390,7 +433,7 @@ export class PlotComponent implements AfterViewInit {
       const dataSet = rawResponse.data || {};
 
       // Prepariamo i dati per il plot (le curve)
-      this.inputData = this.plotService.preparePlotInput(dataSet);
+      this.inputData = this.plotService.preparePlotInput(dataSet, this.colorMap, this.sottosistemi);
       this.kpisData = this.inputData.kpis;
 
       this.setupSelectOptions();
