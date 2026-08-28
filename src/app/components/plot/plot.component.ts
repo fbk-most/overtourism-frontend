@@ -217,9 +217,17 @@ export class PlotComponent implements AfterViewInit {
     const clone = JSON.parse(JSON.stringify(widgets));
     for (const key of Object.keys(clone)) {
       for (const widget of clone[key]) {
-        if (widget.scale && widget.unit !== '%') {
-          widget.vMin ??= widget.loc;
-          widget.vMax ??= widget.loc + widget.scale;
+        
+        if (widget.kind === 'distribution') {
+          widget.vMin = widget.vMin ?? (widget as any).default_range?.[0] ?? widget.min_value ?? 0;
+          widget.vMax = widget.vMax ?? (widget as any).default_range?.[1] ?? widget.max_value ?? 100;
+        } else if (widget.kind === 'scalar') {
+          widget.v = widget.v ?? (widget as any).default ?? widget.min_value ?? 0;
+        } else if (widget.kind === 'categorical') {
+          widget.v = widget.v ?? (widget as any).default_category ?? (widget as any).support?.[0];
+        } else if (widget.scale && widget.unit !== '%') {
+          widget.vMin = widget.vMin ?? widget.loc;
+          widget.vMax = widget.vMax ?? (widget.loc + widget.scale);
         }
       }
     }
