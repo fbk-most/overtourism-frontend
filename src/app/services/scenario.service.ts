@@ -36,7 +36,7 @@ export interface Widget {
   default_range?: any;
   
   // -- Proprietà interne salvate a runtime per la UI --
-  v?: number;
+  v?: string | number;
   vMin?: number;
   vMax?: number;
   loc?: number;
@@ -60,8 +60,7 @@ export class ScenarioService {
     proposalId: string,
     name: string,
     description: string,
-    changedWidgets: Record<string, number | [number, number]>
-  ): Observable<any> {
+    changedWidgets: Record<string, any>  ): Observable<any> {
     
     const indexValues = Object.keys(changedWidgets || {}).map(key => ({
       index_id: key,
@@ -112,7 +111,7 @@ export class ScenarioService {
     sessionId: string,
     problemId: string,
     baseScenarioId: string,
-    values: Record<string, number | [number, number]>
+    values: Record<string, any>
   ): Observable<any> {
     const payload = {
       base_scenario_id: baseScenarioId,
