@@ -243,28 +243,28 @@ export class PlotComponent implements AfterViewInit {
           changedValues[updated.name] = this.extractValue(updated);
           continue;
         }
-        const isLognorm = updated.kind === 'lognorm';
         const hasChanged =
-          isLognorm
-            ? updated.v !== original.v
-            : updated.v !== original.v || updated.vMin !== original.vMin || updated.vMax !== original.vMax;
+        updated.kind === 'categorical'
+          ? updated.v !== original.v
+          : updated.kind === 'distribution'
+            ? updated.vMin !== original.vMin || updated.vMax !== original.vMax
+            : updated.v !== original.v;
 
-        if (hasChanged) {
-          changedValues[updated.name] = this.extractValue(updated);
-        }
+      if (hasChanged) {
+        changedValues[updated.name] = this.extractValue(updated);
       }
     }
-
-    if (Object.keys(changedValues).length > 0) {
-      console.log('Sending changed widgets:', changedValues);
-      this.hasChanges = true;
-      this.changedWidgets = changedValues;
-      this.updateData(changedValues);
-    } else {
-      this.hasChanges = false;
-      console.log('Widgets are equal, no update needed');
-    }
   }
+  if (Object.keys(changedValues).length > 0) {
+    this.hasChanges = true;
+    
+    this.changedWidgets = { ...this.changedWidgets, ...changedValues };
+    
+    this.updateData(changedValues);
+  } else {
+    this.hasChanges = false;
+  }
+}
 
 
   extractValue(widget: Widget): any {
@@ -319,19 +319,25 @@ export class PlotComponent implements AfterViewInit {
       this.inputData = this.plotService.preparePlotInput(scenarioData, this.colorMap, this.sottosistemi); 
 
       const actualNumericalValues = this.arrayToDict(sessionScenario.index_values || []);
-      let diffsValues = sessionScenario.extras?.index_diffs;
-      if (!diffsValues && sessionScenario.index_values) {
-        diffsValues = actualNumericalValues;
-      }
+      const backendDiffs = sessionScenario.extras?.index_diffs;
 
-      this.indexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
+      this.indexDiffs = JSON.parse(JSON.stringify(
+        backendDiffs               
+        ?? values                  
+        ?? actualNumericalValues   
+        ?? {}
+      ));
+
       this.kpisData = this.inputData.kpis;
-
       this.sessionScenarioId = tempScenarioId;
       this.sessionEvaluationId = tempEvaluationId;
 
     } catch (err: any) {
       console.error('Errore aggiornamento dati di sessione:', err);
+      if (Object.keys(values).length > 0) {
+        this.indexDiffs = { ...this.originalIndexDiffs, ...values };
+      }
+
       this.notificationService.showError('Errore durante l\'aggiornamento iterativo del grafico.');
     } finally {
       this.loading = false;

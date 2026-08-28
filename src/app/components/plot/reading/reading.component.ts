@@ -54,13 +54,21 @@ export class ReadingComponent implements OnInit, OnChanges {
       if (this.sessionId && !this.evaluationId) {
         return; 
       }
+      
+      if (evalChanged && !this.evaluationId) {
+        return;
+      }
+
       this.loadAiSummary();
     }
   }
 
   loadAiSummary() {
     const ids = this.originalScenarioIds.length ? this.originalScenarioIds : this.scenarioIds;
+    
     if (!ids.length) return;
+    if (this.sessionId && !this.evaluationId) return;
+
     this.aiSummaryLoading = true;
     this.aiSummaryError = false;
     this.aiSummary = null;

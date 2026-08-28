@@ -75,8 +75,8 @@ export class ScenarioService {
       proposal_id: proposalId,
       name: name,
       description: description,
-      index_values: indexValues,
-    };
+      param_overrides: changedWidgets
+        };
 
     return this.http.post<any>(
       `${this.baseUrl}/sessions/${sessionId}/scenarios/${scenarioId}`,
