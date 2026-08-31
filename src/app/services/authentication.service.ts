@@ -4,6 +4,7 @@ import { environment } from '../../environments/environment';
 import { Router } from '@angular/router';
 import { NotificationService } from './notifications.service';
 import { ChatbotService } from './chatbot/chatbot.service';
+import { BehaviorSubject } from 'rxjs';
 
 export const authConfig: AuthConfig = {
   issuer: environment.auth.issuer,
@@ -22,6 +23,8 @@ export const authConfig: AuthConfig = {
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
   private readonly TENANT_KEY = 'active_tenant';
+  private activeTenantSubject = new BehaviorSubject<string | null>(localStorage.getItem(this.TENANT_KEY));
+  public activeTenant$ = this.activeTenantSubject.asObservable();
 
   constructor(private oauthService: OAuthService,
     private router: Router,
@@ -64,11 +67,11 @@ export class AuthenticationService {
 
       await this.oauthService.loadDiscoveryDocumentAndTryLogin();
       
-      if (this.isLoggedIn && this.availableTenants.length === 0) {
-        localStorage.setItem('auth_error', 'Utente non abilitato: nessun contesto associato al profilo.');
-        this.oauthService.logOut(); 
-        return; 
-      }
+      // if (this.isLoggedIn && this.availableTenants.length === 0) {
+      //   localStorage.setItem('auth_error', 'Utente non abilitato: nessun contesto associato al profilo.');
+      //   this.oauthService.logOut(); 
+      //   return; 
+      // }
     } catch (e: any) {
       if (e?.type === 'invalid_nonce_in_state') {
         console.warn('Ignorato errore di stato disallineato post-logout');
@@ -105,18 +108,22 @@ export class AuthenticationService {
     this.oauthService.logOut(true);
     this.router.navigate(['/login']);
   }
+  private _availableTenants: string[] = [];
+  
   get availableTenants(): string[] {
-    const claims: any = this.oauthService.getIdentityClaims();
-    const tenants = claims?.['tenant_id'];
-    if (!tenants) return [];
-    return Array.isArray(tenants) ? tenants : [tenants];
+    return this._availableTenants;
+  }
+
+  setAvailableTenants(tenants: string[]): void {
+    this._availableTenants = tenants;
   }
 
   get activeTenant(): string {
     let tenant = localStorage.getItem(this.TENANT_KEY);
-    if (!tenant || !this.availableTenants.includes(tenant)) {
-      if (this.availableTenants.length > 0) {
-        tenant = this.availableTenants[0];
+    // Se non c'è un tenant o quello salvato non fa più parte della lista
+    if (!tenant || (this._availableTenants.length > 0 && !this._availableTenants.includes(tenant))) {
+      if (this._availableTenants.length > 0) {
+        tenant = this._availableTenants[0];
         this.setActiveTenant(tenant, false);
       } else {
         return ''; 
@@ -127,7 +134,8 @@ export class AuthenticationService {
 
 setActiveTenant(tenant: string, reload: boolean = true) {
   localStorage.setItem(this.TENANT_KEY, tenant);
-  
+  this.activeTenantSubject.next(tenant);
+
   if (reload) {
     this.router.routeReuseStrategy.shouldReuseRoute = () => false;
     this.router.onSameUrlNavigation = 'reload';

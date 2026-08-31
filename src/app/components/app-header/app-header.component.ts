@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthenticationService } from '../../services/authentication.service';
+import { ScenarioService } from '../../services/scenario.service';
 
 @Component({
   selector: 'app-header',
@@ -10,9 +11,21 @@ import { AuthenticationService } from '../../services/authentication.service';
 })
 export class AppHeaderComponent {
   darkMode = false;
-constructor(public router: Router,    public authService: AuthenticationService 
+constructor(public router: Router,    public authService: AuthenticationService ,private scenarioService: ScenarioService
 ) {
 }
+ngOnInit() {
+   if (this.authService.isLoggedIn) {
+    this.scenarioService.getTenants().subscribe({
+      next: (res) => {
+        this.authService.setAvailableTenants(res);
+         const current = this.authService.activeTenant; 
+      },
+      error: (err) => console.error("Errore recupero lista tenant: ", err)
+    });
+  }
+}
+
   toggleTheme() {
     this.darkMode = !this.darkMode;
     document.body.classList.toggle('it-dark-mode', this.darkMode);

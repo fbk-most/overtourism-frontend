@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { ProblemScenario } from '../models/scenario.model';
-import { Observable, BehaviorSubject, map } from 'rxjs';
+import { Observable, BehaviorSubject, map, filter, shareReplay, switchMap } from 'rxjs';
 import dataExample from '../../assets/dataExample.json';
 import { ConfigService } from './config.service';
 import { environment } from '../../environments/environment';
+import { AuthenticationService } from './authentication.service';
 
 // interface ScenarioResponse {
 //   scenarios: Array<{
@@ -48,9 +49,18 @@ export interface Widget {
 export class ScenarioService {
 
   private baseUrl: string;
+  private configuration$: Observable<AppConfiguration>;
 
-  constructor(private http: HttpClient, private configService: ConfigService) {
+  constructor(private http: HttpClient, private configService: ConfigService,private authService: AuthenticationService) {
     this.baseUrl = environment.apiBaseUrl;
+
+    this.configuration$ = this.authService.activeTenant$.pipe(
+      filter(tenant => !!tenant),
+      switchMap(() => this.http.get<AppConfiguration>(`${this.baseUrl}/configuration`)),
+      shareReplay({ bufferSize: 1, refCount: false })
+    );
+
+    this.configuration$.subscribe(); 
   }
   saveSessionScenario(
     sessionId: string,
@@ -219,7 +229,10 @@ export class ScenarioService {
   //     );
   // }
   getConfiguration(): Observable<AppConfiguration> {
-    return this.http.get<AppConfiguration>(`${this.baseUrl}/configuration`);
+    return this.configuration$;
+  }
+  getTenants(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.baseUrl}/default/tenants`);
   }
   getWidgets(): Observable<Widget[]> {
     return this.getConfiguration().pipe(map(config => config.indexes || []));

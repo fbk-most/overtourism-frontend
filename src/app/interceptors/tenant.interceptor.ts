@@ -9,6 +9,9 @@ export class TenantInterceptor implements HttpInterceptor {
   constructor(private authService: AuthenticationService) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    if (req.url.includes('/default/tenants')) {
+      return next.handle(req);
+    }
     const activeTenant = this.authService.activeTenant;
     if (!activeTenant) {
       return next.handle(req);
