@@ -412,7 +412,7 @@ export class PlotComponent implements AfterViewInit {
     }
     try {
       const problemData = await firstValueFrom(this.problemService.getProblemById(this.problemId));
-      this.editableIndexes = problemData?.extras?.editable_indexes || [];
+      // this.editableIndexes = problemData?.extras?.editable_indexes || [];
       const scenarioMetadata = await firstValueFrom(this.scenarioService.getScenarioData(this.scenarioId, this.problemId));
 
       const actualNumericalValues = this.arrayToDict(scenarioMetadata.index_values || []);

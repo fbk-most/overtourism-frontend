@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable,Injector } from '@angular/core';
 import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthenticationService } from '../services/authentication.service';
@@ -6,13 +6,14 @@ import { environment } from '../../environments/environment';
 
 @Injectable()
 export class TenantInterceptor implements HttpInterceptor {
-  constructor(private authService: AuthenticationService) {}
+  constructor(private injector: Injector) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    const authService = this.injector.get(AuthenticationService);
+    const activeTenant = authService.activeTenant;
     if (req.url.includes('/default/tenants')) {
       return next.handle(req);
     }
-    const activeTenant = this.authService.activeTenant;
     if (!activeTenant) {
       return next.handle(req);
     }

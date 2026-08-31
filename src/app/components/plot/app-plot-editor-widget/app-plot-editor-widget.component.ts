@@ -78,8 +78,8 @@ export class AppPlotEditorWidgetComponent implements OnInit, OnDestroy {
   //   this.onWidgetChange();
   // }
   isEditable(widget: Widget): boolean {
-    // return true
-    return this.editableIndexes.includes(widget.name); 
+    return true
+    // return this.editableIndexes.includes(widget.name); 
   }
   increase(widget: Widget): void {
     const step = widget.step || 1;

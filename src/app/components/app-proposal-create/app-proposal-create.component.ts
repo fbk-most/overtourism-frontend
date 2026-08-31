@@ -124,19 +124,16 @@ export class ProposalCreateComponent {
 
 
   loadScenarios() {
-    // CAMBIATO: Usa la nuova funzione getScenarios
     this.scenarioSvc.getScenarios(this.problemId).subscribe({
       next: (scenarios: ProblemScenario[]) => {
-        // 🔹 Mappiamo ProblemScenario → ProposalScenario
         this.availableScenarios = scenarios.map(s => ({
           scenario_id: s.id,
           scenario_name: s.name
         } as ProposalScenario));
 
-        // Sincronizza i chip dopo il caricamento degli scenari (se stiamo modificando)
         this.syncRelatedScenarios();
 
-        const baseScenario = this.availableScenarios.find(s => s.scenario_id === 'model_0');
+        const baseScenario = this.availableScenarios.find(s => s.scenario_id.endsWith('_base_scenario'));
 
 
         if (
@@ -187,7 +184,7 @@ export class ProposalCreateComponent {
       this.scenarioAuto.clear();
     }
 
-    const baseScenario = this.availableScenarios.find(s => s.scenario_id === 'model_0');
+    const baseScenario = this.availableScenarios.find(s => s.scenario_id.endsWith('_base_scenario'));
     if (baseScenario) {
       this.model.related_scenarios.push(baseScenario);
     }
