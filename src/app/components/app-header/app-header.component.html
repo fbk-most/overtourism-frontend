@@ -47,8 +47,9 @@
     <a href="#" class="d-flex align-items-center">
       <img src="assets/images/logo.png" alt="IAxPA Logo" class="responsive-logo me-2" />
       <div class="it-brand-text">
-        <div class="it-brand-title responsive-title">Analisi dell'affollamento turistico</div>
-        <div class="it-brand-tagline d-none d-md-block"></div>
+        <div class="it-brand-title responsive-title">
+          Analisi dell'affollamento turistico<span *ngIf="currentTenant">: {{ currentTenant | uppercase }}</span>
+        </div>        <div class="it-brand-tagline d-none d-md-block"></div>
       </div>
     </a>
   </ng-container>

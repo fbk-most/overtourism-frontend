@@ -263,7 +263,7 @@
       label="Grafici" 
       icon="chart-line" 
       [active]="showOption === 'chart'"
-      [disabled]="enableVariation ">
+      [disabled]="enableVariation || enableImpactPercentage">
 
 <div class="p-3">  
   <!-- BARRA FILTRI GRAFICO: sempre visibile quando si è nel tab grafici -->
