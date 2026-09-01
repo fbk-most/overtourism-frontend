@@ -33,34 +33,15 @@ export class ChatbotService {
   // E' importante che i messaggi vengano salvati in modo asincrono
   // perche' la funzione saveMessages puo' essere chiamata piu' volte
   // contemporaneamente
-  saveMessages(msgs: ChatMessage[]): void {
+   saveMessages(msgs: ChatMessage[]): void {
     try {
-      // Creiamo una copia leggera della cronologia rimuovendo l'enorme mole di dati dei grafici
-      const lightMsgs = msgs.map(m => {
-        const lightMsg: any = { role: m.role, content: m.content };
-        
-        if (m.inlineActions && m.inlineActions.length > 0) {
-          lightMsg.inlineActions = m.inlineActions.map(action => {
-            if (action.type === 'SHOW_WIDGET') {
-              return {
-                ...action,
-                payload: {
-                  widgetName: action.payload['widgetName'],
-                  data: null 
-                }
-              };
-            }
-            return action;
-          });
-        }
-        return lightMsg as ChatMessage;
-      });
+      const msgsToSave = msgs.map(m => ({ ...m }));
 
-      let stringified = JSON.stringify(lightMsgs);
+      let stringified = JSON.stringify(msgsToSave);
 
-      while (stringified.length > 4000000 && lightMsgs.length > 1) {
-        lightMsgs.shift();
-        stringified = JSON.stringify(lightMsgs);
+      while (stringified.length > 4000000 && msgsToSave.length > 1) {
+        msgsToSave.shift();
+        stringified = JSON.stringify(msgsToSave);
       }
 
       localStorage.setItem(this.STORAGE_KEY, stringified);

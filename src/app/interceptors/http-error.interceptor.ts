@@ -14,7 +14,7 @@ export class HttpErrorInterceptor implements HttpInterceptor {
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(
-      timeout(20000),
+      timeout(40000),
       catchError((error: any) => {
         let message = 'Errore imprevisto.';
 
