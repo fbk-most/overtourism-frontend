@@ -1,18 +1,25 @@
 <div class="message user" *ngIf="msg.role === 'user'">{{ msg.content }}</div>
 
 <div class="message assistant" *ngIf="msg.role === 'assistant'">
+  
+  <!-- DEBUG temporaneo -->
+  <!-- <pre style="font-size: 10px; background: #f0f0f0; padding: 8px; max-height: 200px; overflow: auto;">{{ msg | json }}</pre> -->
+
   <div class="message-content" [innerHTML]="msg.content | markdown"></div>
-  <!-- <app-chat-chart-panel *ngIf="msg.chartData" [figure]="msg.chartData"></app-chat-chart-panel> -->
-  <!-- <app-shared-plot 
-  *ngIf="msg.chartDataAsPlotInput" 
-  [inputData]="msg.chartDataAsPlotInput"
-  [sottosistemaSelezionato]="msg.subsystem || 'default'"
-  [monoDimensionale]="msg.isMono || false"
-  [loading]="false"> -->
-    <app-shared-plot 
-    *ngIf="msg.chartData"
-    [payload]="msg.chartData">
-  </app-shared-plot>
+
+  <ng-container *ngIf="msg.inlineActions?.length">
+    <div *ngFor="let action of msg.inlineActions" class="mt-3">
+
+      <ng-container *ngIf="action.type === 'SHOW_WIDGET' && action.payload['widgetName'] === 'loadPlot'">
+        <app-shared-plot
+          *ngIf="action.payload['data']?.payload as plotPayload"
+          [payload]="plotPayload">
+        </app-shared-plot>
+      </ng-container>
+
+    </div>
+  </ng-container>
+
   <app-chat-sliders-panel *ngIf="msg.slidersData" [slidersData]="msg.slidersData" [sessionId]="sessionId"
     (sliderSubmit)="sliderSubmit.emit($event)">
   </app-chat-sliders-panel>

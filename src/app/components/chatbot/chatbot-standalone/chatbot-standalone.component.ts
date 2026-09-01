@@ -96,12 +96,16 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
       this.chatbotSvc.saveMessages(msgs);    }
 
     /** Gestisce risposta: traduce DomainEvents in UIActions inline */
-  private handleAgentResponse(currentMessages: ChatMessage[], data: AgentResponse): void {
+  private async handleAgentResponse(currentMessages: ChatMessage[], data: AgentResponse): Promise<void> {
     const rawEvents = data.assistant_action_data || [];
-    const inlineActions: UIAction[] = rawEvents.length
-      ? rawEvents.flatMap(e => this.translator.translateForStandalone(e))
-                   .filter(a => a.type === 'SHOW_WIDGET')
+    const translatedArrays = rawEvents.length
+      ? await Promise.all(rawEvents.map(e => this.translator.translateForStandalone(e)))
       : [];
+
+    const inlineActions: UIAction[] = translatedArrays
+      .flat()
+      .filter(a => a.type === 'SHOW_WIDGET');
+
 
     const updated: ChatMessage[] = [...currentMessages, {
       role: 'assistant',
@@ -155,7 +159,8 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
             const data = await firstValueFrom(this.agentSvc.getResult(this.sessionId));
             this.activeContext = data.active_context || '-';
             this.handleAgentResponse(newMessages, data);
-          } catch {
+          } catch (e) {
+            console.error('Errore nel recuperare la risposta:', e);
             this.messages = [...newMessages, { role: 'assistant', content: 'Errore nel recuperare la risposta.' }];
           }
           this.loading = false;

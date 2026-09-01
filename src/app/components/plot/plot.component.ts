@@ -62,6 +62,7 @@ export class PlotComponent implements AfterViewInit {
   sessionId!: string;
   sessionScenarioId: string | null = null;
   sessionEvaluationId: string | null = null;
+  plotMapper: any;
 
   constructor(private plotService: PlotService,
     private scenarioService: ScenarioService,
@@ -198,6 +199,8 @@ export class PlotComponent implements AfterViewInit {
 
       this.colorMap = meta.color_map || []; 
       this.kpiMapper = meta.kpi_mapper || {};
+      this.plotMapper = meta.plot_mapper || {}; 
+
       const dataDict: Record<string, Widget[]> = {};
       (config.indexes || []).forEach(w => {
         const cat = w.category || 'Generale';
@@ -324,7 +327,7 @@ export class PlotComponent implements AfterViewInit {
 
 
       const scenarioData = rawResponse.extras?.data || rawResponse.data || rawResponse;
-      this.inputData = this.plotService.preparePlotInput(scenarioData, this.colorMap, this.sottosistemi); 
+      this.inputData = this.plotService.preparePlotInput(scenarioData, this.colorMap, this.sottosistemi,this.plotMapper); 
 
       const actualNumericalValues = this.arrayToDict(sessionScenario.index_values || []);
       const backendDiffs = sessionScenario.extras?.index_diffs;
@@ -447,7 +450,7 @@ export class PlotComponent implements AfterViewInit {
       const dataSet = rawResponse.data || {};
 
       // Prepariamo i dati per il plot (le curve)
-      this.inputData = this.plotService.preparePlotInput(dataSet, this.colorMap, this.sottosistemi);
+      this.inputData = this.plotService.preparePlotInput(dataSet, this.colorMap, this.sottosistemi,this.plotMapper);
       this.kpisData = this.inputData.kpis;
 
       this.setupSelectOptions();

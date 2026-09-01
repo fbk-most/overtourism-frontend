@@ -34,6 +34,24 @@ export class PlotService {
 
     return style;
   }
+  private getBiLabel(plotMapper: any, axis: 'x' | 'y', fallback: string): string {
+    return plotMapper?.bidimensional?.[axis]?.label ?? fallback;
+  }
+
+  private getMonoLabel(plotMapper: any, axis: 'x' | 'y', fallback: string): string {
+    return plotMapper?.monodimensional?.[axis]?.label ?? fallback;
+  }
+
+  private extractField(point: any, configuredField: string | undefined, fallbackKeys: string[]): number {
+    if (configuredField && point[configuredField] !== undefined) {
+      return point[configuredField];
+    }
+    for (const key of fallbackKeys) {
+      if (point[key] !== undefined) return point[key];
+    }
+    return 0;
+  }
+
   private buildHoverTemplate(labels: { x?: string; y?: string;  name?: string }): string {
     return (labels.name ? `<b>${labels.name}</b><br>` : '') +
            (labels.x ? `<b>${labels.x}:</b> %{x}<br>` : '') +
@@ -48,6 +66,10 @@ export class PlotService {
       : input.curves.filter(c => c.name === sottosistemaSelezionato);
 
       const mapper = (input as any).mapper || [];
+const plotMapper = (input as any).plotMapper;
+
+    const xLabel = this.getBiLabel(plotMapper, 'x', 'Turisti');
+    const yLabel = this.getBiLabel(plotMapper, 'y', 'Escursionisti');
 
     for (const curve of curvesToRender) {
       const foundLabel = mapper.find((m: any) => m.value === curve.name);
@@ -70,15 +92,13 @@ export class PlotService {
 
     if (input.points?.length) {
       for (const pt of input.points) {
-        // if (!this.showAllSubsystems && pt.name !== this.sottosistemaSelezionato) continue;
-
         data.push({
           x: pt.x,
           y: pt.y,
           type: 'scatter',
           mode: 'markers',
           name: pt.name,
-          text: pt.name, // così %{text} funziona
+          text: pt.name,
           marker: pt.marker ?? {
             color: pt.color ?? 'black',
             size: 8,
@@ -86,8 +106,8 @@ export class PlotService {
           },
           hovertemplate: this.buildHoverTemplate({
             name: 'Presenze',
-            x: 'Turisti',
-            y: 'Escursionisti'
+            x: xLabel,
+            y: yLabel
           })
         });
       }
@@ -95,14 +115,14 @@ export class PlotService {
     const layout: Partial<Plotly.Layout> = {
       margin: { t: 30, l: 50, r: 30, b: 50 },
       yaxis: {
-        title: { text: 'Escursionisti' },
+        title: { text: yLabel },
         range: [0, input.yMax ?? undefined],
         scaleanchor: 'x',
         scaleratio: 1,
         layer: 'below traces'
       },
       xaxis: {
-        title: { text: 'Turisti' },
+        title: { text: xLabel },
         range: [0, input.xMax ?? undefined],
         layer: 'below traces'
       },
@@ -118,8 +138,6 @@ export class PlotService {
     };
 
     this.renderPlot(container, data, layout);
-
-
   }
   private createDataFactsFromKpis(kpis: Record<string, any>): DataFact[] {
     const dataFacts: DataFact[] = [];
@@ -160,7 +178,12 @@ export class PlotService {
   }
   
   
-  preparePlotInput(module: any, colorScale?: any, mapper?: any): PlotInput { 
+  preparePlotInput(module: any, colorScale?: any, mapper?: any, plotMapper?: any): PlotInput { 
+
+    // 🔴 Leggi i field configurati per il bidimensionale (con fallback ai nomi noti)
+    const xField = plotMapper?.bidimensional?.x?.field;
+    const yField = plotMapper?.bidimensional?.y?.field;
+    const usageField = plotMapper?.monodimensional?.y?.field;
 
     // Curves
     const curves: Curve[] = Object.entries(module.constraint_curves ?? {}).map(
@@ -173,18 +196,14 @@ export class PlotService {
       })
     );
 
-    // Heatmaps by function
     const heatmapsByFunction: Record<string, number[][]> = module.points.uncertainty_by_constraint ?? {};
 
-    // Points
     const points = Array.isArray(module.kpis?.uncertainty)
-    ? [this.createUncertaintyPoint('Presenze', module.kpis?.uncertainty, false, colorScale) as Point] : [];
+    ? [this.createUncertaintyPoint('Presenze', module.kpis?.uncertainty, false, colorScale, plotMapper) as Point] : [];
 
-    // KPIs
     let kpis: any = undefined;
     if (module.kpis && typeof module.kpis === 'object') {
       kpis = {
-        // Manteniamo la struttura { level, confidence }!
         overtourism_level: typeof module.kpis.overtourism_level === 'object' 
           ? module.kpis.overtourism_level 
           : { level: module.kpis.overtourism_level ?? 0, confidence: 0 },
@@ -195,13 +214,13 @@ export class PlotService {
           confidence: module.kpis['critical constraint']?.confidence ?? 0
         },
         
+        // 🔴 Usa extractField con fallback ai nomi storici tourists/excursionists/usage
         uncertainty: Array.isArray(module.points?.uncertainty)
           ? module.points.uncertainty.map((u: any) => ({
-
-            tourists: u.tourists ?? 0,
-            excursionists: u.excursionists ?? 0,
+            tourists: this.extractField(u, xField, ['tourists', 'tourist']),
+            excursionists: this.extractField(u, yField, ['excursionists', 'excursionist']),
             index: u.index ?? 0,
-            usage: u.usage ?? 0,
+            usage: this.extractField(u, usageField, ['usage']),
             usage_uncertainty: u.usage_uncertainty ?? 0,
           }))
           : [],
@@ -211,38 +230,38 @@ export class PlotService {
             Object.entries(module.points.uncertainty_by_constraint).map(([key, value]) => [
               key,
               Array.isArray(value) ? value.map((u: any) => ({
-                tourists: u.tourists ?? 0,
-                excursionists: u.excursionists ?? 0,
+                tourists: this.extractField(u, xField, ['tourists', 'tourist']),
+                excursionists: this.extractField(u, yField, ['excursionists', 'excursionist']),
                 index: u.index ?? 0,
-                usage: u.usage ?? 0,
+                usage: this.extractField(u, usageField, ['usage']),
                 usage_uncertainty: u.usage_uncertainty ?? 0,
               })) : []
           ])
         ) : {}
-    };
+      };
 
-    Object.keys(module.kpis).forEach(key => {
-      if (key.startsWith('constraint level ')) {
-        const cat = key.replace('constraint level ', '');
-        const dataObj = module.kpis[key];
-        
-        if (typeof dataObj === 'object') {
-          kpis[`constraint_level_${cat}`] = { 
-            level: dataObj.level ?? 0, 
-            confidence: dataObj.confidence ?? 0 
-          };
-        } else {
-          kpis[`constraint_level_${cat}`] = { 
-            level: dataObj ?? 0, 
-            confidence: 0 
-          };
+      Object.keys(module.kpis).forEach(key => {
+        if (key.startsWith('constraint level ')) {
+          const cat = key.replace('constraint level ', '');
+          const dataObj = module.kpis[key];
+          
+          if (typeof dataObj === 'object') {
+            kpis[`constraint_level_${cat}`] = { 
+              level: dataObj.level ?? 0, 
+              confidence: dataObj.confidence ?? 0 
+            };
+          } else {
+            kpis[`constraint_level_${cat}`] = { 
+              level: dataObj ?? 0, 
+              confidence: 0 
+            };
+          }
         }
-      }
-    });
-  }
+      });
+    }
 
-  const dataFacts = module.kpis ? this.createDataFactsFromKpis(kpis) : [];
-// Main return
+    const dataFacts = module.kpis ? this.createDataFactsFromKpis(kpis) : [];
+
     return {
       curves,
       heatmap: module.uncertainty
@@ -267,14 +286,16 @@ export class PlotService {
       capacity_mean_by_constraint: module.capacity_mean_by_constraint ?? {},
       dataFacts,
       colorScale,
-      mapper
+      mapper,
+      plotMapper 
     };
-  }    
+  }
   renderBidimensionale(sottosistemaSelezionato: string, container: HTMLElement, cloned: PlotInput, colorScale?: any) {
     const targetScale = colorScale || (cloned as any).colorScale;
+    const plotMapper = (cloned as any).plotMapper;
 
     const uncertaintyData = this.getUncertaintyData(sottosistemaSelezionato, cloned.kpis);
-    cloned.points = [this.createUncertaintyPoint('Presenze', uncertaintyData, false, targetScale) as Point];
+    cloned.points = [this.createUncertaintyPoint('Presenze', uncertaintyData, false, targetScale, plotMapper) as Point];
     this.renderFunctionPlot(sottosistemaSelezionato, container, cloned);
   }
   async renderMonoDimensionale(sottosistemaSelezionato: string, container: HTMLElement, input: PlotInput, colorScale?: any): Promise<void> {
@@ -284,16 +305,21 @@ export class PlotService {
 
     if (!uncertaintyData.length) return;
 
-    // Ordina per usage crescente
     const sorted = [...uncertaintyData].sort((a, b) => a.usage - b.usage);
 
-    const x = sorted.map((_, i) => i);                      // 0,1,2,...
-    const y = sorted.map(d => d.usage);                     // valore da plottare verticalmente
-    const colorValues = sorted.map(d => d.index); // per colori
+    const x = sorted.map((_, i) => i);
+    const y = sorted.map(d => d.usage);
+    const colorValues = sorted.map(d => d.index);
     const risk = sorted.map(d => 100 * d.index);
 
     const usageMax = Math.max(...y);
     const yAxisMax = usageMax * 1.2;
+
+    const plotMapper = (input as any).plotMapper;
+    // 🔴 Label dinamiche per mono-dimensionale
+    const xAxisLabel = this.getMonoLabel(plotMapper, 'x', 'Giorni (ordinati per utilizzo)');
+    const yAxisLabelDefault = this.getMonoLabel(plotMapper, 'y', 'Livello di utilizzo della destinazione');
+
     const hoverTemplate =
     sottosistemaSelezionato === 'default'
       ? 'Giorno: %{x}<br>Utilizzo: %{y:.1f}%<br>Livello di rischio: %{customdata:.1f}%<extra></extra>'
@@ -313,7 +339,6 @@ export class PlotService {
         cmax: 1,
         size: 8,
         reversescale: true,
-
       },
       hovertemplate: hoverTemplate
     };
@@ -324,14 +349,14 @@ export class PlotService {
     const layout: Partial<Plotly.Layout> = {
       ...DEFAULT_LAYOUT,
       xaxis: {
-        title: { text: 'Giorni (ordinati per utilizzo)' },
+        title: { text: xAxisLabel },
         tickformat: '.0f'
       },
       yaxis: {
         title: {
           text:
           titoloAsseY === 'default' ?
-              'Livello di utilizzo della destinazione' :
+              yAxisLabelDefault :
               'Livello di utilizzo della risorsa ' + titoloAsseY
         },
         range: [0, yAxisMax],
@@ -384,10 +409,12 @@ export class PlotService {
     container.on?.('plotly_legendclick', () => false);
     container.on?.('plotly_legenddoubleclick', () => false);
   }
-  private getDefaultHoverTemplate(): string {
+  private getDefaultHoverTemplate(plotMapper?: any): string {
+    const xLabel = this.getBiLabel(plotMapper, 'x', 'Turisti');
+    const yLabel = this.getBiLabel(plotMapper, 'y', 'Escursionisti');
     return '<b>Livello di rischio:</b> %{customdata:.4f}%<br>' +
-      '<b>Turisti:</b> %{x}<br>' +
-      '<b>Escursionisti:</b> %{y}<br>' +
+      `<b>${xLabel}:</b> %{x}<br>` +
+      `<b>${yLabel}:</b> %{y}<br>` +
       '<extra></extra>';
   }
   private getUncertaintyData(sottosistema: string, points: any): any[] {
@@ -400,7 +427,8 @@ export class PlotService {
     name: string,
     data: any[],
     showScale: boolean = false,
-    colorScale?: any
+    colorScale?: any,
+    plotMapper?: any // 🔴 nuovo parametro
   ): Point {
     return {
       name,
@@ -415,11 +443,10 @@ export class PlotService {
         cmax: 1,
         size: 6,
         showscale: showScale,
-
       },
       mode: 'markers',
       type: 'scatter',
-      hovertemplate: this.getDefaultHoverTemplate(),
+      hovertemplate: this.getDefaultHoverTemplate(plotMapper), // 🔴 label dinamiche
       showlegend: false
     };
   }

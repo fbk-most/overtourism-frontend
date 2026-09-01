@@ -27,8 +27,47 @@ export class ChatbotService {
     localStorage.removeItem(this.SESSION_KEY);
   }
 
+  // Salva i messaggi nel localStorage ogni volta che cambiano
+  // In questo modo i messaggi non vengono persi se si chiude il browser
+  // o si riavvia il sistema
+  // E' importante che i messaggi vengano salvati in modo asincrono
+  // perche' la funzione saveMessages puo' essere chiamata piu' volte
+  // contemporaneamente
   saveMessages(msgs: ChatMessage[]): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(msgs));
+    try {
+      // Creiamo una copia leggera della cronologia rimuovendo l'enorme mole di dati dei grafici
+      const lightMsgs = msgs.map(m => {
+        const lightMsg: any = { role: m.role, content: m.content };
+        
+        if (m.inlineActions && m.inlineActions.length > 0) {
+          lightMsg.inlineActions = m.inlineActions.map(action => {
+            if (action.type === 'SHOW_WIDGET') {
+              return {
+                ...action,
+                payload: {
+                  widgetName: action.payload['widgetName'],
+                  data: null 
+                }
+              };
+            }
+            return action;
+          });
+        }
+        return lightMsg as ChatMessage;
+      });
+
+      let stringified = JSON.stringify(lightMsgs);
+
+      while (stringified.length > 4000000 && lightMsgs.length > 1) {
+        lightMsgs.shift();
+        stringified = JSON.stringify(lightMsgs);
+      }
+
+      localStorage.setItem(this.STORAGE_KEY, stringified);
+    } catch (error) {
+      console.error('Impossibile salvare la cronologia della chat in localStorage (Quota superata):', error);
+      localStorage.removeItem(this.STORAGE_KEY); 
+    }
   }
 
   loadMessages(): ChatMessage[] {

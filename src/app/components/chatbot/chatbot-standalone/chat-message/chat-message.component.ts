@@ -21,3 +21,4 @@ export class ChatMessageComponent {
   @Output() voteChange = new EventEmitter<string | null>();
   @Output() commentChange = new EventEmitter<string>();
 }
+

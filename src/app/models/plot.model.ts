@@ -47,7 +47,15 @@ export interface CriticalConstraint {
 export interface KPIs {
   [key: string]: any;
 }
+export interface PlotAxisMapper {
+  label: string;
+  field?: string;
+}
 
+export interface PlotMapper {
+  monodimensional?: { x?: PlotAxisMapper; y?: PlotAxisMapper };
+  bidimensional?: { x?: PlotAxisMapper; y?: PlotAxisMapper };
+}
 export interface PlotInput {
   curves: Curve[];
   heatmap?: { x: number[]; y: number[]; z: number[][] };
@@ -68,7 +76,7 @@ export interface PlotInput {
   dataFacts?: DataFact[];
   colorScale?: any;
   mapper?: any; 
-
+  plotMapper?: PlotMapper;
 }
 
 export interface SharedHistogramPayload {

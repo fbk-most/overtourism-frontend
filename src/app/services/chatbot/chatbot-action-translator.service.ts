@@ -1,8 +1,14 @@
 import { Injectable } from '@angular/core';
 import { DomainEvent, UIAction } from '../../models/chat.model';
+import { PlotService } from '../plot.service'; 
+import { firstValueFrom } from 'rxjs';
+import { ScenarioService } from '../scenario.service';
 
 @Injectable({ providedIn: 'root' })
 export class ChatbotActionTranslatorService {
+  constructor(private plotService: PlotService,
+    private scenarioService: ScenarioService
+  ) {}
 
   /**
    * Traduce un DomainEvent in UIActions per il chatbot INTEGRATO.
@@ -61,123 +67,104 @@ export class ChatbotActionTranslatorService {
    * Traduce un DomainEvent in UIActions per il chatbot STANDALONE.
    * Lo standalone mostra widget inline nel flusso della chat.
    */
-  translateForStandalone(event: DomainEvent): UIAction[] {
+  async translateForStandalone(event: DomainEvent): Promise<UIAction[]> {
     switch (event.type) {
 
-      // case 'SHOW_WIDGET': {
-      //   const { widget, ...componentInputs } = event.payload;
-      //   let mappedInputs: Record<string, any> = { ...componentInputs };
+     
+      case 'SHOW_WIDGET': {
+        const widgetName = event.payload['widgetName'];
+        let mappedData = event.payload['data'] || {};
 
-      //   // ── MAPPIAMO I DATI ──
-        
-      //   if (widget === 'indexComparison') {
-      //     // SharedKpisComponent si aspetta kpisMain e kpisCompare
-      //     mappedInputs = { 
-      //       kpisMain: componentInputs['payload1'], 
-      //       kpisCompare: componentInputs['payload2'] 
-      //     };
-      //   } 
-      //   else if (widget === 'histogramComparison') {
-      //     // SharedHistogramComponent si aspetta un oggetto `payload` unico
-      //     mappedInputs = { 
-      //       payload: {
-      //         labelLeft: 'Scenario Attuale',
-      //         labelRight: 'Scenario Proposto',
-      //         dataLeft: componentInputs['payload1'],
-      //         dataRight: componentInputs['payload2']
-      //       }
-      //     };
-      //   } 
-      //   else if (widget === 'plot') {
-      //     mappedInputs = { 
-      //       payload: componentInputs['payload1'] 
-      //     };
-      //   } 
-      //   else if (widget === 'map' || widget === 'variationMap') {
-      //     // Placeholder per IndiciMapComponent o OvertourismMapComponent
-      //     // Puoi mappare qui gli @Input se la mappa è pronta
-      //     mappedInputs = { geojsonStr: JSON.stringify(componentInputs['geodata']) };
-      //   }
+        if (widgetName === 'histogramComparison') {
+          const innerPayload = mappedData['payload'] ?? mappedData;
+          
+          if (innerPayload.scenarioIds && Array.isArray(innerPayload.scenarioIds)) {
+            const id1 = innerPayload.scenarioIds[0];
+            const id2 = innerPayload.scenarioIds[1];
+            
+            const rawData = innerPayload.data || {};
+            const k1 = Object.keys(rawData).find(k => k.includes(id1));
+            const k2 = Object.keys(rawData).find(k => k.includes(id2));
 
-      //   return [{
-      //     type: 'SHOW_WIDGET',
-      //     payload: {
-      //       widgetName: widget,
-      //       data: mappedInputs
-      //     }
-      //   }];
-      // }
-      case 'SHOW_WIDGET': 
-        // Il backend manda già format { widgetName: '...', data: { ... } }
-        // Passiamo direttamente il payload!
+            const extractKpis = (source: any) => {
+              return source?.data || source?.plot_data?.kpis || {};
+            };
+
+            const dataLeftRaw = k1 ? extractKpis(rawData[k1]) : {};
+            const dataRightRaw = k2 ? extractKpis(rawData[k2]) : {};
+
+            delete dataLeftRaw['critical constraint'];
+            delete dataLeftRaw['critical_constraint'];
+            delete dataRightRaw['critical constraint'];
+            delete dataRightRaw['critical_constraint'];
+
+            mappedData = {
+              payload: {
+                labelLeft: innerPayload.labels?.[id1] || 'Scenario 1',
+                labelRight: innerPayload.labels?.[id2] || 'Scenario 2',
+                dataLeft: dataLeftRaw,
+                dataRight: dataRightRaw
+              }
+            };
+          }
+        }
+        if (widgetName === 'loadPlot') {
+          const innerPayload = mappedData['payload'] ?? mappedData;
+          
+          if (innerPayload.scenarioIds && Array.isArray(innerPayload.scenarioIds)) {
+            const id1 = innerPayload.scenarioIds[0];
+            const rawData = innerPayload.data || {};
+            const k1 = Object.keys(rawData).find(k => k.includes(id1));
+
+            if (k1 && rawData[k1]) {
+              const scenarioData = rawData[k1];
+              const plotRawData = scenarioData.plot_data || scenarioData;
+
+              // 🔴 RECUPERA config, colorMap e sottosistemi esattamente come PlotComponent
+              const config = await firstValueFrom(this.scenarioService.getConfiguration());
+              const meta = (config as any).metadata || config;
+              
+              
+              let sottosistemi: any[] = [];
+              if (meta.mapper && !Array.isArray(meta.mapper)) {
+                sottosistemi = Object.entries(meta.mapper).map(([key, label]) => ({
+                  value: key,
+                  label: label as string
+                }));
+              } else {
+                sottosistemi = meta.mapper || meta.map || [];
+              }
+
+              const colorMap = meta.color_map || [];
+              const plotMapper = meta.plot_mapper || {};
+
+              const processedPlotInput = this.plotService.preparePlotInput(
+                plotRawData, 
+                colorMap, 
+                sottosistemi,
+                plotMapper
+              );
+
+              mappedData = {
+                payload: {
+                  type: innerPayload.type || 'bi',
+                  subsystem: innerPayload.subsystem || 'default',
+                  data: processedPlotInput
+                }
+              };
+            }
+          }
+        }
+
         return [{
           type: 'SHOW_WIDGET',
-          payload: event.payload
+          payload: {
+            widgetName,
+            data: mappedData
+          }
         }];
-      // case 'COMPARISON_READY':
-      //   const actions: UIAction[] = [];
-
-      //   // Se c'è histogram_data → mostra istogramma
-      //   if (event.payload['histogram_data']) {
-      //     actions.push({
-      //       type: 'SHOW_WIDGET',
-      //       payload: {
-      //         widgetName: 'histogramComparison',
-      //         data: {
-      //           payload: event.payload['histogram_data'],
-      //           loading: false
-      //         }
-      //       }
-      //     });
-      //   }
-
-      //   // Se ci sono kpis_left + kpis_right → mostra KPI comparazione
-      //   if (event.payload['kpis_left'] && event.payload['kpis_right']) {
-      //     actions.push({
-      //       type: 'SHOW_WIDGET',
-      //       payload: {
-      //         widgetName: 'kpiList',
-      //         data: {
-      //           kpisMain: event.payload['kpis_left'],
-      //           kpisCompare: event.payload['kpis_right']
-      //         }
-      //       }
-      //     });
-      //   }
-      //   return actions;
-
-      // case 'EVALUATION_READY':
-      //   const evalActions: UIAction[] = [];
-
-      //   // Se ci sono kpis → mostra KPI singolo
-      //   if (event.payload['kpis']) {
-      //     evalActions.push({
-      //       type: 'SHOW_WIDGET',
-      //       payload: {
-      //         widgetName: 'kpiList',
-      //         data: { kpisMain: event.payload['kpis'] }
-      //       }
-      //     });
-      //   }
-
-      //   // Se c'è plot → mostra grafico
-      //   if (event.payload['plot']) {
-      //     evalActions.push({
-      //       type: 'SHOW_WIDGET',
-      //       payload: {
-      //         widgetName: 'plot',
-      //         data: {
-      //           payload: event.payload['plot'],
-      //           loading: false
-      //         }
-      //       }
-      //     });
-      //   }
-      //   return evalActions;
-
-      // case 'SCENARIO_CREATED':
-      //   return []; // Standalone non naviga, mostra solo il messaggio testuale
-
+      }
+      
       default:
         return [];
     }
