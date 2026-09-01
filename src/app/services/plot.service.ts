@@ -116,15 +116,21 @@ const plotMapper = (input as any).plotMapper;
       margin: { t: 30, l: 50, r: 30, b: 50 },
       yaxis: {
         title: { text: yLabel },
-        range: [0, input.yMax ?? undefined],
+        range: [0, input.yMax || 10000],
+        autorange: false,
         scaleanchor: 'x',
         scaleratio: 1,
-        layer: 'below traces'
+        constrain: 'domain',       
+        layer: 'below traces',
+        rangemode: 'tozero'        
       },
       xaxis: {
         title: { text: xLabel },
-        range: [0, input.xMax ?? undefined],
-        layer: 'below traces'
+        range: [0, input.xMax || 10000],
+        autorange: false,
+        constrain: 'domain',       
+        layer: 'below traces',
+        rangemode: 'tozero'        
       },
       title: { text: '' },
       showlegend: true,
