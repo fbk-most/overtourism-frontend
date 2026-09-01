@@ -32,15 +32,18 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Filtri ─────────────────────────────────────────────────────────────────
   showOption: ShowOption = 'map';
-  enableVariation: boolean = false;  //Confronto temporale
+  enableVariation: boolean = false;        // Tasso di variazione
+  enableImpactPercentage: boolean = false; // Percentuale impatto (mutuamente esclusivo)
+  impactSeasonality: string = 'weekend';       // Valore periodo impatto
   selectedIndicator = '';
   startDate = '';
   endDate = '';
-  seasonality = '';
+  seasonality = 'all';
   granularity: TemporalGranularity = 'annuale';
   startDateComparison = '';
   endDateComparison = '';
   spatialGranularity: 'comune' | 'macro_area' = 'comune';
+
 
   // ── Comuni selector ────────────────────────────────────────────────────────
   comuniQuery = '';
@@ -161,11 +164,21 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onVariationToggle(): void {
+    if (this.enableVariation) {
+      this.enableImpactPercentage = false; //  Mutua esclusività
+    }
     this.updateVisibleIndicators();
     this.geoEnvelope = null;
     this.markDirty();
   }
-
+  onImpactPercentageToggle(): void {
+    if (this.enableImpactPercentage) {
+      this.enableVariation = false; //  Mutua esclusività
+    }
+    this.updateVisibleIndicators();
+    this.geoEnvelope = null;
+    this.markDirty();
+  }
   onIndicatorChange(): void {
     this.applyYearsRange();
 
@@ -267,9 +280,11 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
     } else if (this.showOption === 'map') {
+
+      const effectiveSeasonality = (this.seasonality && this.seasonality !== 'all') ? this.seasonality : undefined;
+
       if (this.enableVariation) {
-        // Mappa tasso di variazione: chiama getIndexData con index='tasso-variazione'
-        // e indicator=selectedIndicator + date confronto
+        // 1. Caso Tasso di variazione (index = 'tasso-variazione')
         if (!this.startDate || !this.endDate || !this.startDateComparison || !this.endDateComparison) {
           this.loading = false; return;
         }
@@ -277,7 +292,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
           'tasso-variazione',
           this.startDate,
           this.endDate,
-          this.seasonality ? this.seasonality : undefined,
+          effectiveSeasonality,
           this.spatialGranularity,
           this.selectedIndicator,
           this.startDateComparison,
@@ -286,17 +301,35 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
           next: res => { this.geoEnvelope = res.geo_data; this.loading = false; this.isDirty = false; },
           error: () => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
         });
+
+      } else if (this.enableImpactPercentage) {
+        // 2. Caso Percentuale impatto (index = 'incidenza-periodo')
+        if (!this.startDate || !this.endDate) {
+          this.loading = false; return;
+        }
+        this.svc.getIndexData(
+          'incidenza-periodo',
+          this.startDate,
+          this.endDate,
+          this.impactSeasonality, // 
+          this.spatialGranularity,
+          this.selectedIndicator // 
+        ).subscribe({
+          next: res => { this.geoEnvelope = res.geo_data; this.loading = false; this.isDirty = false; },
+          error: () => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
+        });
+
       } else {
-        // Mappa normale indicatore
+        // 3. Caso Mappa normale indicatore
         this.svc.getIndexData(
           this.selectedIndicator,
           this.startDate || undefined,
           this.endDate || undefined,
-          this.seasonality ? this.seasonality : undefined,
+          effectiveSeasonality,
           this.spatialGranularity
         ).subscribe({
           next: res => { this.geoEnvelope = res.geo_data; this.loading = false; this.isDirty = false; },
-          error: e => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
+          error: () => { this.error = 'Errore nel caricamento dati.'; this.loading = false; }
         });
       }
     }

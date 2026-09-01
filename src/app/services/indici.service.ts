@@ -31,7 +31,7 @@ export class IndiciService {
     spatialGranularity = 'comune',
     indicator?: string,           
     startDateComparison?: string,  
-    endDateComparison?: string    
+    endDateComparison?: string,
   ): Observable<IndexDataResponse> {
     let params = new HttpParams()
       .set('index', index)
@@ -42,6 +42,7 @@ export class IndiciService {
     if (indicator)            params = params.set('indicator', indicator);
     if (startDateComparison)  params = params.set('start_date_comparison', startDateComparison);
     if (endDateComparison)    params = params.set('end_date_comparison', endDateComparison);
+
     return this.http.get<IndexDataResponse>(`${this.base}/get_index_data`, { params });
   }
 

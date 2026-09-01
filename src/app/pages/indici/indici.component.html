@@ -73,28 +73,28 @@
       </div>
     </div>
 
-  <!-- 4. Stagionalità (Sempre visibile) -->
-  <div class="col-12 col-md-auto">
-    <label class="form-label fw-bold mb-1" style="font-size:13px;">Stagionalità</label>
-    <div class="dropdown">
-      <button class="btn btn-outline-primary d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        <span class="text-start me-2">
-          {{ seasonality === 'high' ? 'Alta stagione (lug–ago)' : (seasonality === 'shoulder' ? 'Stagioni spalla' : (seasonality === 'weekend' ? 'Weekend' : 'Tutte le stagioni')) }}
-        </span>
-        <span class="material-icons ms-auto" style="font-size: 18px;">expand_more</span>
-      </button>
-      <div class="dropdown-menu shadow">
-        <div class="link-list-wrapper">
-          <ul class="link-list">
-            <li><a class="list-item" (click)="seasonality = ''; markDirty()" style="cursor:pointer"><span>Tutte le stagioni</span></a></li>
-            <li><a class="list-item" (click)="seasonality = 'high'; markDirty()" style="cursor:pointer"><span>Alta stagione (lug–ago)</span></a></li>
-            <li><a class="list-item" (click)="seasonality = 'shoulder'; markDirty()" style="cursor:pointer"><span>Stagioni spalla</span></a></li>
-            <li><a class="list-item" (click)="seasonality = 'weekend'; markDirty()" style="cursor:pointer"><span>Weekend</span></a></li>
-          </ul>
+    <!-- 4. Filtro Periodo (Ex Stagionalità) -->
+    <div class="col-12 col-md-auto">
+      <label class="form-label fw-bold mb-1" style="font-size:13px;">Filtro periodo</label>
+      <div class="dropdown">
+        <button class="btn btn-outline-primary d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <span class="text-start me-2">
+            {{ seasonality === 'weekend' ? 'Weekend' : (seasonality === 'weekdays' ? 'Giorni feriali' : (seasonality === 'festivities' ? 'Festività' : 'Tutti i periodi')) }}
+          </span>
+          <span class="material-icons ms-auto" style="font-size: 18px;">expand_more</span>
+        </button>
+        <div class="dropdown-menu shadow">
+          <div class="link-list-wrapper">
+            <ul class="link-list">
+              <li><a class="list-item" (click)="seasonality = 'all'; markDirty()" style="cursor:pointer"><span>Tutti i periodi</span></a></li>
+              <li><a class="list-item" (click)="seasonality = 'weekend'; markDirty()" style="cursor:pointer"><span>Weekend</span></a></li>
+              <li><a class="list-item" (click)="seasonality = 'weekdays'; markDirty()" style="cursor:pointer"><span>Giorni feriali</span></a></li>
+              <li><a class="list-item" (click)="seasonality = 'festivities'; markDirty()" style="cursor:pointer"><span>Festività</span></a></li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
   <!-- 5. Granularità Temp. (Solo Grafico) -->
   <div class="col-12 col-md-auto" *ngIf="showChart">
@@ -120,45 +120,90 @@
 
 </div>
 
-   <!-- RIGA 2 (Filtro Mappa + Applica) -->
-   <div class="filtri-row2 d-flex flex-wrap align-items-center gap-3">
+    <!-- RIGA 2 (Filtro Mappa + Applica) -->
+    <div class="filtri-row2 d-flex flex-wrap align-items-center gap-3">
       
-    <!-- Sezione MAPPA (Confronto Storico) -->
-    <ng-container> 
-      
-      <span [title]="showOption !== 'map' ? 'Il tasso di variazione è disponibile solo nella vista Mappa.' : ''" class="d-inline-flex">
-        <div class="form-check mb-0 d-flex align-items-center">
-          <input type="checkbox" 
-                 class="form-check-input me-2" 
-                 [(ngModel)]="enableVariation" 
-                 [disabled]="showOption !== 'map'" 
-                 id="varCheck" 
-                 (change)="onVariationToggle()">
-          
-          <label class="form-check-label fw-bold mb-0" 
-                 [ngClass]="showOption === 'map' ? 'text-primary' : 'text-muted opacity-50'" 
-                 [style.cursor]="showOption === 'map' ? 'pointer' : 'not-allowed'"
-                 style="font-size:14px;" 
-                 for="varCheck">
-            Tasso di variazione
-          </label>
-        </div>
-      </span>
-
-      <ng-container *ngIf="enableVariation">
-        <div class="d-flex align-items-center gap-2 border-start ps-3 ms-2">
-          <label class="form-label fw-bold mb-0" style="font-size:13px;">Inizio confronto</label>
-            <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
-                   [(ngModel)]="startDateComparison" (ngModelChange)="markDirty()"
-                   [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="height: auto; min-height: 48px; min-width: 150px;">
+      <!-- Sezione Confronti (Tasso di variazione & Percentuale impatto) -->
+      <ng-container> 
+        
+        <!-- 1. Tasso di variazione (Solo Mappa) -->
+        <span [title]="showOption !== 'map' ? 'Il tasso di variazione è disponibile solo nella vista Mappa.' : ''" class="d-inline-flex">
+          <div class="form-check mb-0 d-flex align-items-center">
+            <input type="checkbox" 
+                   class="form-check-input me-2" 
+                   [(ngModel)]="enableVariation" 
+                   [disabled]="showOption !== 'map'" 
+                   id="varCheck" 
+                   (change)="onVariationToggle()">
             
-            <label class="form-label fw-bold mb-0 ms-2" style="font-size:13px;">Fine confronto</label>
-            <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
-                   [(ngModel)]="endDateComparison" (ngModelChange)="markDirty()"
-                   [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="height: auto; min-height: 48px; min-width: 150px;">
+            <label class="form-check-label fw-bold mb-0" 
+                   [ngClass]="showOption === 'map' ? 'text-primary' : 'text-muted opacity-50'" 
+                   [style.cursor]="showOption === 'map' ? 'pointer' : 'not-allowed'"
+                   style="font-size:14px;" 
+                   for="varCheck">
+              Tasso di variazione
+            </label>
           </div>
+        </span>
+  
+        <ng-container *ngIf="enableVariation">
+          <div class="d-flex align-items-center gap-2 border-start ps-3 ms-2">
+            <label class="form-label fw-bold mb-0" style="font-size:13px;">Inizio confronto</label>
+              <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
+                     [(ngModel)]="startDateComparison" (ngModelChange)="markDirty()"
+                     [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="height: auto; min-height: 48px; min-width: 150px;">
+              
+              <label class="form-label fw-bold mb-0 ms-2" style="font-size:13px;">Fine confronto</label>
+              <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
+                     [(ngModel)]="endDateComparison" (ngModelChange)="markDirty()"
+                     [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="height: auto; min-height: 48px; min-width: 150px;">
+            </div>
+          </ng-container>
+  
+          <!-- 2. Percentuale impatto (Disponibile sia su Mappa che Grafici) -->
+          <span class="d-inline-flex ms-2">
+            <div class="form-check mb-0 d-flex align-items-center">
+              <input type="checkbox" 
+                     class="form-check-input me-2" 
+                     [(ngModel)]="enableImpactPercentage" 
+                     id="impactCheck" 
+                     (change)="onImpactPercentageToggle()">
+              
+              <label class="form-check-label fw-bold mb-0 text-primary" 
+                     style="cursor: pointer; font-size:14px;" 
+                     for="impactCheck">
+                Percentuale impatto
+              </label>
+            </div>
+          </span>
+    
+          <ng-container *ngIf="enableImpactPercentage">
+            <div class="dropdown ms-1">
+              <button class="btn btn-outline-primary d-flex align-items-center py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="min-height: 38px;">
+                <span class="text-start me-2" style="font-size: 13px;">
+                  {{ impactSeasonality === 'weekend' ? 'Weekend' : 
+                     (impactSeasonality === 'weekdays' ? 'Giorni feriali' : 
+                     (impactSeasonality === 'festivities' ? 'Festività' : 
+                     (impactSeasonality === 'summer-months' ? 'Mesi estivi' : 
+                     (impactSeasonality === 'winter-months' ? 'Mesi invernali' : impactSeasonality)))) }}
+                </span>
+                <span class="material-icons ms-auto" style="font-size: 18px;">expand_more</span>
+              </button>
+              <div class="dropdown-menu shadow">
+                <div class="link-list-wrapper">
+                  <ul class="link-list">
+                    <li><a class="list-item" (click)="impactSeasonality = 'weekend'; markDirty()" style="cursor:pointer"><span>Weekend</span></a></li>
+                    <li><a class="list-item" (click)="impactSeasonality = 'weekdays'; markDirty()" style="cursor:pointer"><span>Giorni feriali</span></a></li>
+                    <li><a class="list-item" (click)="impactSeasonality = 'festivities'; markDirty()" style="cursor:pointer"><span>Festività</span></a></li>
+                    <li><a class="list-item" (click)="impactSeasonality = 'summer-months'; markDirty()" style="cursor:pointer"><span>Mesi estivi</span></a></li>
+                    <li><a class="list-item" (click)="impactSeasonality = 'winter-months'; markDirty()" style="cursor:pointer"><span>Mesi invernali</span></a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+    
         </ng-container>
-      </ng-container>
 
       <!-- Placeholder per allineare a destra il bottone se siamo nei grafici -->
       <div *ngIf="showChart" class="flex-grow-1"></div>
@@ -218,7 +263,8 @@
       label="Grafici" 
       icon="chart-line" 
       [active]="showOption === 'chart'"
-      [disabled]="enableVariation">
+      [disabled]="enableVariation ">
+
 <div class="p-3">  
   <!-- BARRA FILTRI GRAFICO: sempre visibile quando si è nel tab grafici -->
   <div class="chart-wrapper" *ngIf="showChart">
