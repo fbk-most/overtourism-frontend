@@ -108,8 +108,16 @@ export class PlotComponent implements AfterViewInit {
     return dict;
   }
   formatValue(val: any): string {
-    if (Array.isArray(val)) return `${val[0]} - ${val[1]}`;
-    return String(val ?? '');
+    if (val === null || val === undefined || val === '' || val === 'None') {
+      return '-';
+    }
+    if (Array.isArray(val)) {
+      return `${val[0]} - ${val[1]}`;
+    }
+    if (typeof val === 'string') {
+      return val.replace(/\bNone\b/g, 'Non impostato');
+    }
+    return String(val);
   }
 
   openSaveModal(): void {
@@ -227,7 +235,7 @@ export class PlotComponent implements AfterViewInit {
         } else if (widget.kind === 'scalar') {
           widget.v = widget.v ?? (widget as any).default ?? widget.min_value ?? 0;
         } else if (widget.kind === 'categorical') {
-          widget.v = widget.v ?? (widget as any).default_category ?? (widget as any).support?.[0];
+          widget.v = widget.v ?? (widget as any).default_category ?? (widget as any).default ?? null;
         } else if (widget.scale && widget.unit !== '%') {
           widget.vMin = widget.vMin ?? widget.loc;
           widget.vMax = widget.vMax ?? (widget.loc + widget.scale);
@@ -285,7 +293,8 @@ export class PlotComponent implements AfterViewInit {
         // Manda la stringa selezionata (es. "monday", "bad", "very high")
         return widget.v 
           ?? (widget as any).default_category 
-          ?? (widget as any).support?.[0];
+          ?? (widget as any).default 
+          ?? null;
       
       case 'distribution':
         // Manda un array [min, max] (es. [350, 450])
@@ -415,14 +424,13 @@ export class PlotComponent implements AfterViewInit {
     }
     try {
       const problemData = await firstValueFrom(this.problemService.getProblemById(this.problemId));
-      // this.editableIndexes = problemData?.extras?.editable_indexes || [];
       const scenarioMetadata = await firstValueFrom(this.scenarioService.getScenarioData(this.scenarioId, this.problemId));
 
-      const actualNumericalValues = this.arrayToDict(scenarioMetadata.index_values || []);
+      const rawOverrides = scenarioMetadata.param_overrides || scenarioMetadata.index_values || {};
+      const actualNumericalValues = Array.isArray(rawOverrides) ? this.arrayToDict(rawOverrides) : rawOverrides;
 
       let diffsValues = scenarioMetadata.extras?.index_diffs;
-
-      if (!diffsValues && scenarioMetadata.index_values) {
+      if (!diffsValues && (scenarioMetadata.param_overrides || scenarioMetadata.index_values)) {
         diffsValues = actualNumericalValues;
       }
       this.originalIndexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));

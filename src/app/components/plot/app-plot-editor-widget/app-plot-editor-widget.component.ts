@@ -58,7 +58,7 @@ export class AppPlotEditorWidgetComponent implements OnInit, OnDestroy {
           widget.v = widget.v ?? (widget as any).default ?? widget.min_value ?? 0;
         } else if (widget.kind === 'categorical') {
           // Select: legge default_category oppure primo support
-          widget.v = widget.v ?? (widget as any).default_category ?? (widget as any).support?.[0];
+          widget.v = widget.v ?? (widget as any).default_category ?? (widget as any).default ?? null;
         }
       }
     }
@@ -97,8 +97,9 @@ export class AppPlotEditorWidgetComponent implements OnInit, OnDestroy {
     this.openDropdown[widgetName] = false;
   }
 
-  selectCategorical(widget: Widget, value: string): void {
-    widget.v = value;
+
+  selectCategorical(widget: Widget, value: string | null): void {
+    widget.v = value ?? undefined;
     this.closeDropdown(widget.name);
     this.onWidgetChange();
   }

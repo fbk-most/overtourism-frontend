@@ -348,7 +348,18 @@ export class ConfrontoScenariComponent {
         return obj;
       }, {} as Record<string, { level: number, confidence: number }>);
   }
-  
+  formatDiffValue(val: any): string {
+    if (val === null || val === undefined || val === '' || val === 'None') {
+      return '-';
+    }
+    if (Array.isArray(val)) {
+      return `${val[0]} - ${val[1]}`;
+    }
+    if (typeof val === 'string') {
+      return val.replace(/\bNone\b/g, '-');
+    }
+    return String(val);
+  }
   getWidgetDiffs(
     widgetsA: Record<string, Widget[]>,
     widgetsB: Record<string, Widget[]>
@@ -382,15 +393,19 @@ export class ConfrontoScenariComponent {
           }
         } else {
           // Valore singolo (categorico o numerico)
-          const valueA = widgetA.v !== undefined ? widgetA.v : (widgetA.default ?? widgetA.default_category ?? widgetA.loc ?? '');
-          const valueB = widgetB.v !== undefined ? widgetB.v : (widgetB.default ?? widgetB.default_category ?? widgetB.loc ?? '');
-          
-          if (String(valueA) !== String(valueB)) {
+          const rawA = widgetA.v !== undefined ? widgetA.v : (widgetA.default ?? widgetA.default_category ?? widgetA.loc ?? null);
+          const rawB = widgetB.v !== undefined ? widgetB.v : (widgetB.default ?? widgetB.default_category ?? widgetB.loc ?? null);
+
+          // Normalizza null, undefined e 'None' a stringa vuota per il confronto
+          const strA = (rawA === null || rawA === undefined || rawA === 'None') ? '' : String(rawA);
+          const strB = (rawB === null || rawB === undefined || rawB === 'None') ? '' : String(rawB);
+
+          if (strA !== strB) {
             diffs.push({
               index_id: id,
               index_name: widgetA.label || id,
-              value: valueA,
-              otherValue: valueB
+              value: this.formatDiffValue(rawA),
+              otherValue: this.formatDiffValue(rawB)
             });
           }
         }
@@ -398,6 +413,7 @@ export class ConfrontoScenariComponent {
     }
     return diffs;
   }
+  
   renderChart(container: HTMLElement, input: PlotInput) {
     if (!container || !input) return;
 

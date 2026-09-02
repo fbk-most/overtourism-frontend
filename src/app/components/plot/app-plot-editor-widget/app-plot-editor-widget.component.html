@@ -44,7 +44,7 @@
                           type="button"
                           [disabled]="!isEditable(widget)"
                           (click)="toggleDropdown(widget.name)">
-                          <span>{{ widget.v ?? 'Seleziona...' }}</span>
+                          <span>{{ widget.v ? widget.v : 'Seleziona...' }}</span>
                           <span class="material-icons ms-2">expand_more</span>
                         </button>
 
@@ -53,6 +53,13 @@
                              style="position: absolute; top: 100%; left: 0; z-index: 9999; max-height: 200px; overflow-y: auto;">
                           <div class="link-list-wrapper">
                             <ul class="link-list">
+                              <li>
+                                <a class="list-item text-muted"
+                                   [class.active]="!widget.v"
+                                   (click)="selectCategorical(widget, null)">
+                                  <span><em>Nessuna selezione</em></span>
+                                </a>
+                              </li>
                               <li *ngFor="let opt of widget.support">
                                 <a class="list-item"
                                    [class.active]="widget.v === opt"
