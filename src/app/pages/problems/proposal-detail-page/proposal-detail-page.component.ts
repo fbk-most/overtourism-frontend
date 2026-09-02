@@ -43,7 +43,8 @@ export class ProposalDetailPageComponent implements OnInit, AfterViewInit {
     private scenarioService: ScenarioService,
     private notificationService: NotificationService,
     private translate: TranslateService,
-    private modalCleanup: ModalCleanupService
+    private modalCleanup: ModalCleanupService,
+    
   ) { }
   onProposalEdited() {
     this.editProposalModal.hide();
@@ -64,6 +65,12 @@ export class ProposalDetailPageComponent implements OnInit, AfterViewInit {
 
     this.loadProposal();
     this.loadWidgets();
+    this.scenarioService.getWidgets().subscribe({
+      next: (widgets) => {
+        this.widgets = widgets;
+      },
+      error: (err) => console.error('Errore caricamento widgets', err)
+    });
   }
   ngAfterViewInit(): void {
     if (this.deleteScenarioModal) {
@@ -221,26 +228,29 @@ export class ProposalDetailPageComponent implements OnInit, AfterViewInit {
     return !!scenario.extras?.index_diffs && Object.keys(scenario.extras?.index_diffs).length > 0;
   }
 
+  formatDiffValue(val: any): string {
+    if (val === null || val === undefined || val === '' || val === 'None') return '-';
+    if (Array.isArray(val)) return `${val[0]} - ${val[1]}`;
+    if (typeof val === 'string') return val.replace(/\bNone\b/g, '-');
+    return String(val);
+  }
+
   getDiffDescription(scenario: any): string {
     if (!scenario.extras?.index_diffs) return '';
-    const diffs = Object.entries(scenario.extras?.index_diffs).map(([key, value]) => {
-      const name = this.getIndexNameFromKey(key);
-      return `<div width="300px"><strong>${name}</strong>: ${value}</div>`;
+
+    const diffs = Object.entries(scenario.extras.index_diffs).map(([key, value]) => {
+      const label = this.getIndexNameFromKey(key);
+      const formattedValue = this.formatDiffValue(value);
+      return `<div style="min-width: 250px;"><strong>${label}</strong>: ${formattedValue}</div>`;
     });
 
     return diffs.join('');
   }
 
   getIndexNameFromKey(key: string): string {
-    if (!this.widgets) {
-      return key;
-    }
-
-    for (const group of Object.keys(this.widgets)) {
-      const widget = this.widgets[group].find((w: { index_id: string; }) => w.index_id === key);
-      if (widget) return widget.index_name;
-    }
-    return key;
+    if (!this.widgets?.length) return key;
+    const widget = this.widgets.find((w: any) => w.name === key || w.index_id === key);
+    return widget?.label || widget?.name || key;
   }
 
   openDeleteModalProposal(): void {
