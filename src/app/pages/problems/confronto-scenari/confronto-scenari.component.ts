@@ -169,7 +169,7 @@ export class ConfrontoScenariComponent {
             widget.vMin = newVal[0];
             widget.vMax = newVal[1];
           } else {
-            widget.v = typeof newVal === 'number' ? newVal : Number(newVal);
+            widget.v = newVal;
           }
         }
       }
@@ -239,10 +239,11 @@ export class ConfrontoScenariComponent {
     this.isLoading = true;
     try {
       const scenarioRes = await firstValueFrom(this.scenarioService.getScenarioData(id, this.problemId));
-      const indexArray = scenarioRes.index_values || [];
-      
-      const valuesDict = this.arrayToDict(indexArray);
+
+      const rawOverrides = scenarioRes.param_overrides || scenarioRes.index_values || {};
+      const valuesDict = this.arrayToDict(rawOverrides);
       const specificWidgets = this.applyIndexDiffsToWidgets(this.baseWidgets, valuesDict);
+
 
       const evaluations = await firstValueFrom(this.scenarioService.getEvaluations(this.problemId, id));
       const completedEvals = evaluations.filter(e => e.scenario_id === id && e.state === 'COMPLETED');
@@ -362,28 +363,32 @@ export class ConfrontoScenariComponent {
       const widgetB = Object.values(widgetsB).flat().find(w => w.name === id);
   
       if (widgetA && widgetB) {
-        // Se è un range (ha scale e non è percentuale)
-        if (widgetA.scale && widgetA.unit !== '%') {
-          const aMin = widgetA.vMin ?? widgetA.loc;
-          const aMax = widgetA.vMax ?? ((widgetA.loc ?? 0) + (widgetA.scale  ?? 0));
-          const bMin = widgetB.vMin ?? widgetB.loc;
-          const bMax = widgetB.vMax ?? ((widgetB.loc ?? 0) + (widgetB.scale ?? 0));
+        // Controllo se è un range [min, max]
+        const isRange = widgetA.kind === 'distribution' || (widgetA.scale && widgetA.unit !== '%') || widgetA.vMin !== undefined || widgetB.vMin !== undefined;
+
+        if (isRange) {
+          const aMin = widgetA.vMin ?? widgetA.default_range?.[0] ?? widgetA.loc ?? '';
+          const aMax = widgetA.vMax ?? widgetA.default_range?.[1] ?? ((widgetA.loc ?? 0) + (widgetA.scale ?? 0));
+          const bMin = widgetB.vMin ?? widgetB.default_range?.[0] ?? widgetB.loc ?? '';
+          const bMax = widgetB.vMax ?? widgetB.default_range?.[1] ?? ((widgetB.loc ?? 0) + (widgetB.scale ?? 0));
+
           if (aMin !== bMin || aMax !== bMax) {
             diffs.push({
               index_id: id,
-              index_name: widgetA.label,
+              index_name: widgetA.label || id,
               value: `${aMin} - ${aMax}`,
               otherValue: `${bMin} - ${bMax}`
             });
           }
         } else {
-          // Valore singolo
-          const valueA = widgetA.v ?? widgetA.loc ?? '';
-          const valueB = widgetB.v ?? widgetB.loc ?? '';
+          // Valore singolo (categorico o numerico)
+          const valueA = widgetA.v !== undefined ? widgetA.v : (widgetA.default ?? widgetA.default_category ?? widgetA.loc ?? '');
+          const valueB = widgetB.v !== undefined ? widgetB.v : (widgetB.default ?? widgetB.default_category ?? widgetB.loc ?? '');
+          
           if (String(valueA) !== String(valueB)) {
             diffs.push({
               index_id: id,
-              index_name: widgetA.label,
+              index_name: widgetA.label || id,
               value: valueA,
               otherValue: valueB
             });
