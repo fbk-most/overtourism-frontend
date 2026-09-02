@@ -4,6 +4,17 @@
     
     <h3 class="mb-3">{{ 'login.title' | translate }}</h3>
     <p class="mb-4 text-light">{{ 'login.subtitle' | translate }}</p>
+
+    <!-- 🔴 Alert Utente Non Autorizzato -->
+    <div class="alert alert-danger text-dark text-start mb-4 py-2 px-3 shadow-sm" *ngIf="isUnauthorized">
+      <div class="d-flex align-items-center">
+        <span class="material-icons me-2 text-danger">gpp_bad</span>
+        <strong>Accesso non autorizzato</strong>
+      </div>
+      <small class="d-block mt-1">
+        L'account utilizzato non dispone dei permessi per accedere. Clicca su <em>Accedi</em> per selezionare un altro account.
+      </small>
+    </div>
     
     <button class="btn btn-light btn-lg w-100 mt-2" (click)="login()">
       {{ 'login.button' | translate }}

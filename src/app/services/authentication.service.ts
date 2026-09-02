@@ -67,17 +67,34 @@ export class AuthenticationService {
 
       await this.oauthService.loadDiscoveryDocumentAndTryLogin();
       
-      // if (this.isLoggedIn && this.availableTenants.length === 0) {
-      //   localStorage.setItem('auth_error', 'Utente non abilitato: nessun contesto associato al profilo.');
-      //   this.oauthService.logOut(); 
-      //   return; 
-      // }
+      if (this.isLoggedIn) {
+        this.extractTenantsFromClaims();
+
+        if (this.availableTenants.length === 0) {
+          localStorage.setItem('auth_error', 'Utente non autorizzato ad accedere all\'applicazione.');
+          this.logout()
+                    return;
+        }
+      }
     } catch (e: any) {
       if (e?.type === 'invalid_nonce_in_state') {
         console.warn('Ignorato errore di stato disallineato post-logout');
         this.oauthService.logOut(true); 
       
       }
+    }
+  }
+
+  private extractTenantsFromClaims(): void {
+    const claims: any = this.oauthService.getIdentityClaims() || {};
+    const tenants = claims['tenant_id'];
+
+    if (Array.isArray(tenants)) {
+      this.setAvailableTenants(tenants);
+    } else if (typeof tenants === 'string' && tenants.length > 0) {
+      this.setAvailableTenants([tenants]);
+    } else {
+      this.setAvailableTenants([]);
     }
   }
 
@@ -105,6 +122,7 @@ export class AuthenticationService {
     });
   }
   forceLocalLogout() {
+    this.chatbotService.clearSession();
     this.oauthService.logOut(true);
     this.router.navigate(['/login']);
   }

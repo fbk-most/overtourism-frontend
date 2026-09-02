@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { AuthenticationService } from '../../services/authentication.service';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -8,7 +9,18 @@ import { AuthenticationService } from '../../services/authentication.service';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
-  constructor(private authService: AuthenticationService) {}
+  isUnauthorized = false;
+
+  constructor(
+    private authService: AuthenticationService,
+    private route: ActivatedRoute
+  ) {}
+
+  ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      this.isUnauthorized = params['error'] === 'unauthorized';
+    });
+  }
 
   login() {
     this.authService.login();
