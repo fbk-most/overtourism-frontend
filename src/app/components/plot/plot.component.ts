@@ -216,7 +216,7 @@ export class PlotComponent implements AfterViewInit {
         dataDict[cat].push(w);
       });
 
-      const initialized = this.initializeWidgetBounds(dataDict);
+      const initialized = this.scenarioService.initializeWidgetBounds(dataDict);
       this.originalWidgets = JSON.parse(JSON.stringify(initialized));
       this.widgets = JSON.parse(JSON.stringify(this.originalWidgets));
     } catch (err) {
@@ -224,26 +224,7 @@ export class PlotComponent implements AfterViewInit {
       this.notificationService.showError('Errore nel caricamento della configurazione.');
     }
   }
-  private initializeWidgetBounds(widgets: Record<string, Widget[]>): Record<string, Widget[]> {
-    const clone = JSON.parse(JSON.stringify(widgets));
-    for (const key of Object.keys(clone)) {
-      for (const widget of clone[key]) {
-        
-        if (widget.kind === 'distribution') {
-          widget.vMin = widget.vMin ?? (widget as any).default_range?.[0] ?? widget.min_value ?? 0;
-          widget.vMax = widget.vMax ?? (widget as any).default_range?.[1] ?? widget.max_value ?? 100;
-        } else if (widget.kind === 'scalar') {
-          widget.v = widget.v ?? (widget as any).default ?? widget.min_value ?? 0;
-        } else if (widget.kind === 'categorical') {
-          widget.v = widget.v ?? (widget as any).default_category ?? (widget as any).default ?? null;
-        } else if (widget.scale && widget.unit !== '%') {
-          widget.vMin = widget.vMin ?? widget.loc;
-          widget.vMax = widget.vMax ?? (widget.loc + widget.scale);
-        }
-      }
-    }
-    return clone;
-  }
+  
   onWidgetsChanged(updatedWidgets: Record<string, Widget[]>) {
     console.log('Widgets changed:', updatedWidgets);
 
@@ -383,38 +364,7 @@ export class PlotComponent implements AfterViewInit {
     ]);
     console.log('Vai alla pagina di confronto');
   }
-  private applyIndexDiffsToWidgets(
-    widgets: Record<string, Widget[]>,
-    indexVals: Record<string, any>
-  ): Record<string, Widget[]> {
-    const clone = JSON.parse(JSON.stringify(widgets));
-    for (const key of Object.keys(clone)) {
-      for (const widget of clone[key]) {
-        const newVal = indexVals[widget.name];
-        if (newVal === undefined) continue;
-
-        switch (widget.kind) {
-          case 'categorical':
-            // Valore stringa
-            widget.v = newVal;
-            break;
-          case 'distribution':
-            // Array [min, max]
-            if (Array.isArray(newVal)) {
-              widget.vMin = newVal[0];
-              widget.vMax = newVal[1];
-            }
-            break;
-          case 'scalar':
-          default:
-            // Numero fisso
-            widget.v = typeof newVal === 'number' ? newVal : Number(newVal);
-            break;
-        }
-      }
-    }
-    return clone;
-  }
+  
   async loadData() {
     this.loading = true;
     if (!this.scenarioId || !this.problemId) {
@@ -435,7 +385,7 @@ export class PlotComponent implements AfterViewInit {
       }
       this.originalIndexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
       this.indexDiffs = JSON.parse(JSON.stringify(diffsValues || {}));
-      this.widgets = this.applyIndexDiffsToWidgets(this.originalWidgets, actualNumericalValues);
+      this.widgets = this.scenarioService.applyIndexDiffsToWidgets(this.originalWidgets, actualNumericalValues);
       const evaluations = await firstValueFrom(this.scenarioService.getEvaluations(this.problemId, this.scenarioId));
       const completedEvals = evaluations.filter(e =>
         e.scenario_id === this.scenarioId && e.state === 'COMPLETED'

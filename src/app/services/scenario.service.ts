@@ -6,6 +6,7 @@ import dataExample from '../../assets/dataExample.json';
 import { ConfigService } from './config.service';
 import { environment } from '../../environments/environment';
 import { AuthenticationService } from './authentication.service';
+import { PlotMapper } from '../models/plot.model';
 
 // interface ScenarioResponse {
 //   scenarios: Array<{
@@ -42,6 +43,14 @@ export interface Widget {
   vMax?: number;
   loc?: number;
   scale?: number;
+}
+export interface ParsedScenarioConfig {
+  sottosistemi: { value: string; label: string }[];
+  colorMap: any[];
+  kpiMapper: Record<string, string>;
+  plotMapper: PlotMapper;
+  baseWidgets: Record<string, Widget[]>;
+  raw: AppConfiguration;
 }
 @Injectable({
   providedIn: 'root'
@@ -118,7 +127,52 @@ export class ScenarioService {
       params: { problem_id: problemId }
     });
   }
-  
+  applyIndexDiffsToWidgets(widgets: Record<string, Widget[]>, indexVals: Record<string, any>): Record<string, Widget[]> {
+    const clone = JSON.parse(JSON.stringify(widgets));
+    for (const key of Object.keys(clone)) {
+      for (const widget of clone[key]) {
+        const newVal = indexVals[widget.name];
+        if (newVal === undefined) continue;
+        switch (widget.kind) {
+          case 'categorical': widget.v = newVal; break;
+          case 'distribution':
+            if (Array.isArray(newVal)) { widget.vMin = newVal[0]; widget.vMax = newVal[1]; }
+            break;
+          default: widget.v = typeof newVal === 'number' ? newVal : Number(newVal);
+        }
+      }
+    }
+    return clone;
+  }
+
+  initializeWidgetBounds(widgets: Record<string, Widget[]>): Record<string, Widget[]> {
+    const clone = JSON.parse(JSON.stringify(widgets));
+    for (const key of Object.keys(clone)) {
+      for (const widget of clone[key]) {
+        if (widget.kind === 'distribution') {
+          widget.vMin = widget.vMin ?? widget.default_range?.[0] ?? widget.min_value ?? 0;
+          widget.vMax = widget.vMax ?? widget.default_range?.[1] ?? widget.max_value ?? 100;
+        } else if (widget.kind === 'scalar') {
+          widget.v = widget.v ?? widget.default ?? widget.min_value ?? 0;
+        } else if (widget.kind === 'categorical') {
+          widget.v = widget.v ?? widget.default_category ?? widget.default ?? null;
+        } else if (widget.scale && widget.unit !== '%') {
+          widget.vMin = widget.vMin ?? widget.loc;
+          widget.vMax = widget.vMax ?? (widget.loc + widget.scale);
+        }
+      }
+    }
+    return clone;
+  }
+  groupWidgetsByCategory(indexes: Widget[]): Record<string, Widget[]> {
+    const dataDict: Record<string, Widget[]> = {};
+    (indexes || []).forEach(w => {
+      const cat = w.category || 'Generale';
+      if (!dataDict[cat]) dataDict[cat] = [];
+      dataDict[cat].push(w);
+    });
+    return dataDict;
+  }
   createSessionScenario(
     sessionId: string,
     problemId: string,
@@ -232,6 +286,35 @@ export class ScenarioService {
   // }
   getConfiguration(): Observable<AppConfiguration> {
     return this.configuration$;
+  }
+  getParsedConfiguration(): Observable<ParsedScenarioConfig> {
+    return this.getConfiguration().pipe(
+      map(config => {
+        const meta = (config as any).metadata || config;
+
+        let sottosistemi: { value: string; label: string }[] = [];
+        if (meta.mapper && !Array.isArray(meta.mapper)) {
+          sottosistemi = Object.entries(meta.mapper).map(([key, label]) => ({
+            value: key,
+            label: label as string
+          }));
+        } else {
+          sottosistemi = meta.mapper || meta.map || config.map || [];
+        }
+
+        const grouped = this.groupWidgetsByCategory(config.indexes || []);
+        const baseWidgets = this.initializeWidgetBounds(grouped);
+
+        return {
+          sottosistemi,
+          colorMap: meta.color_map || config.color_map || [],
+          kpiMapper: meta.kpi_mapper || {},
+          plotMapper: meta.plot_mapper || {},
+          baseWidgets,
+          raw: config
+        };
+      })
+    );
   }
   getTenants(): Observable<string[]> {
     return this.http.get<string[]>(`${this.baseUrl}/default/tenants`);

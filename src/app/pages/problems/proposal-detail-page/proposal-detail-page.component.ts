@@ -153,7 +153,7 @@ export class ProposalDetailPageComponent implements OnInit, AfterViewInit {
           dataDict[cat].push(w);
         });
 
-        const initialized = this.initializeWidgetBounds(dataDict);
+        const initialized = this.scenarioService.initializeWidgetBounds(dataDict);
         this.widgets = initialized;
       },
       error: (err) => {
@@ -162,18 +162,7 @@ export class ProposalDetailPageComponent implements OnInit, AfterViewInit {
     });
   }
 
-  private initializeWidgetBounds(widgets: Record<string, Widget[]>): Record<string, Widget[]> {
-    const clone = JSON.parse(JSON.stringify(widgets));
-    for (const key of Object.keys(clone)) {
-      for (const widget of clone[key]) {
-        if (widget.scale && widget.index_category !== '%') {
-          widget.vMin ??= widget.loc;
-          widget.vMax ??= widget.loc + widget.scale;
-        }
-      }
-    }
-    return clone;
-  }
+  
 
   toggleComparazione(): void {
     this.comparazioneAttiva = !this.comparazioneAttiva;

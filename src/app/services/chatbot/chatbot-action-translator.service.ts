@@ -3,6 +3,7 @@ import { DomainEvent, UIAction } from '../../models/chat.model';
 import { PlotService } from '../plot.service'; 
 import { firstValueFrom } from 'rxjs';
 import { ScenarioService } from '../scenario.service';
+import { stripSystemKpis } from '../../utils/kpi.utils';
 
 @Injectable({ providedIn: 'root' })
 export class ChatbotActionTranslatorService {
@@ -93,17 +94,12 @@ export class ChatbotActionTranslatorService {
             const dataLeftRaw = k1 ? extractKpis(rawData[k1]) : {};
             const dataRightRaw = k2 ? extractKpis(rawData[k2]) : {};
 
-            delete dataLeftRaw['critical constraint'];
-            delete dataLeftRaw['critical_constraint'];
-            delete dataRightRaw['critical constraint'];
-            delete dataRightRaw['critical_constraint'];
-
             mappedData = {
               payload: {
                 labelLeft: innerPayload.labels?.[id1] || 'Scenario 1',
                 labelRight: innerPayload.labels?.[id2] || 'Scenario 2',
-                dataLeft: dataLeftRaw,
-                dataRight: dataRightRaw
+                dataLeft: stripSystemKpis(dataLeftRaw),
+                dataRight: stripSystemKpis(dataRightRaw)
               }
             };
           }

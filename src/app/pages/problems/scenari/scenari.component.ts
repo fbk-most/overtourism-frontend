@@ -122,12 +122,19 @@ export class ScenariComponent {
       s2.id
     ]);
   }
-
   loadWidgets() {
     this.scenarioService.getConfiguration().subscribe({
       next: (config) => {
-        const initialized = this.initializeWidgetBounds(config.indexes || []);
-        this.widgets = initialized;
+        // 🔴 Raggruppa i widget per categoria prima di inizializzare i bounds
+        const dataDict: Record<string, Widget[]> = {};
+        (config.indexes || []).forEach(w => {
+          const cat = w.category || 'Generale';
+          if (!dataDict[cat]) dataDict[cat] = [];
+          dataDict[cat].push(w);
+        });
+
+        const initialized = this.scenarioService.initializeWidgetBounds(dataDict);
+        this.widgets = Object.values(initialized).flat();
       },
       error: (err) => {
         console.error('Errore caricamento configuration', err);
@@ -135,18 +142,7 @@ export class ScenariComponent {
     });
   }
 
-  private initializeWidgetBounds(widgets: Widget[]): Widget[] {
-    const clone = JSON.parse(JSON.stringify(widgets));
-    
-    for (const widget of clone) {
-      if (widget.scale && widget.index_category !== '%') {
-        widget.vMin ??= widget.loc;
-        widget.vMax ??= widget.loc + widget.scale;
-      }
-    }
-    
-    return clone;
-  }
+
 
   loadScenarios(problemId: string, proposalId: string): void {
     this.loading = true;

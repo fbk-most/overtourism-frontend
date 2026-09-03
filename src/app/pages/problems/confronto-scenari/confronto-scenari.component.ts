@@ -14,6 +14,8 @@ import { ChatbotDialogComponent } from '../../../components/chatbot/chatbot-inte
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AgentService } from '../../../services/agent.service';
 import { marked } from 'marked';
+import { stripSystemKpis } from '../../../utils/kpi.utils';
+import { PlotMapper } from '../../../models/plot.model';
 
 @Component({
   selector: 'app-confronto-scenari',
@@ -58,6 +60,7 @@ export class ConfrontoScenariComponent {
   aiSummary: SafeHtml | null = null;
   aiSummaryLoading = false;
   aiSummaryError = false;
+  plotMapper: PlotMapper = {};
   constructor(
     private scenarioService: ScenarioService,
     private plotService: PlotService,
@@ -71,31 +74,13 @@ export class ConfrontoScenariComponent {
 
   async ngOnInit() {
     this.problemId = this.route.snapshot.paramMap.get('problemId')!;
-
     try {
-      const config = await firstValueFrom(this.scenarioService.getConfiguration());
-      
-      const meta = (config as any).metadata || config;
-
-      if (meta.mapper && !Array.isArray(meta.mapper)) {
-        this.sottosistemi = Object.entries(meta.mapper).map(([key, label]) => ({
-          value: key,
-          label: label as string
-        }));
-      } else {
-        this.sottosistemi = meta.mapper || meta.map || [];
-      }
-
-      this.colorMap = meta.color_map || [];
-      this.kpiMapper = meta.kpi_mapper || {};
-      const dataDict: Record<string, Widget[]> = {};
-      (config.indexes || []).forEach(w => {
-        const cat = w.category || 'Generale';
-        if (!dataDict[cat]) dataDict[cat] = [];
-        dataDict[cat].push(w);
-      });
-
-      this.baseWidgets = this.initializeWidgetBounds(dataDict);
+      const parsed = await firstValueFrom(this.scenarioService.getParsedConfiguration());
+      this.sottosistemi = parsed.sottosistemi;
+      this.colorMap = parsed.colorMap;
+      this.kpiMapper = parsed.kpiMapper;
+      this.plotMapper = parsed.plotMapper;
+      this.baseWidgets = parsed.baseWidgets; // già "initialized" se getParsedConfiguration lo fa internamente
     } catch (err) {
       console.error('Errore caricamento configurazione base', err);
     }
@@ -115,28 +100,10 @@ export class ConfrontoScenariComponent {
       }
     });
   }
-  private initializeWidgetBounds(widgets: Record<string, Widget[]>): Record<string, Widget[]> {
-    const clone = JSON.parse(JSON.stringify(widgets));
-    for (const key of Object.keys(clone)) {
-      for (const widget of clone[key]) {
-        if (widget.scale && widget.unit !== '%') {
-          widget.vMin ??= widget.loc;
-          widget.vMax ??= widget.loc + widget.scale;
-        }
-      }
-    }
-    return clone;
-  }
   private updateHistogramPayload() {
-    // Basta che almeno uno dei due scenari sia selezionato (e abbia dati)
     if ((this.selectedScenario1Id && this.kpisLeft) || (this.selectedScenario2Id && this.kpisRight)) {
-      const cleanLeft = { ...this.kpisLeft };
-      const cleanRight = { ...this.kpisRight };
-
-      delete cleanLeft['critical_constraint'];
-      delete cleanLeft['critical constraint'];
-      delete cleanRight['critical_constraint'];
-      delete cleanRight['critical constraint'];
+      const cleanLeft = stripSystemKpis(this.kpisLeft);
+      const cleanRight = stripSystemKpis(this.kpisRight);
 
       this.histogramPayload = {
         dataLeft: cleanLeft,
@@ -156,26 +123,7 @@ export class ConfrontoScenariComponent {
   //   return dict;
   // }
 
-  private applyIndexDiffsToWidgets(
-    widgets: Record<string, Widget[]>,
-    indexVals: Record<string, any>  
-  ): Record<string, Widget[]> {
-    const clone = JSON.parse(JSON.stringify(widgets));
-    for (const key of Object.keys(clone)) {
-      for (const widget of clone[key]) {
-        const newVal = indexVals[widget.name];
-        if (newVal !== undefined) {
-          if (Array.isArray(newVal)) {
-            widget.vMin = newVal[0];
-            widget.vMax = newVal[1];
-          } else {
-            widget.v = newVal;
-          }
-        }
-      }
-    }
-    return clone;
-  }
+  
   getScenarioName(id: string | undefined): string | undefined {
     return this.scenari.find(s => s.id === id)?.name;
   }
@@ -242,7 +190,7 @@ export class ConfrontoScenariComponent {
 
       const rawOverrides = scenarioRes.param_overrides || scenarioRes.index_values || {};
       const valuesDict = this.scenarioService.arrayToDict(rawOverrides);
-      const specificWidgets = this.applyIndexDiffsToWidgets(this.baseWidgets, valuesDict);
+      const specificWidgets = this.scenarioService.applyIndexDiffsToWidgets(this.baseWidgets, valuesDict);
 
 
       const evaluations = await firstValueFrom(this.scenarioService.getEvaluations(this.problemId, id));
