@@ -168,15 +168,37 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
           this.shouldScroll = true;
         });
 
-        eventSource.onerror = () => {
+        eventSource.onerror = (err: any) => {
+          console.error('Errore SSE durante lo streaming:', err);
           eventSource.close();
+          
+          this.messages = [
+            ...newMessages,
+            { 
+              role: 'assistant', 
+              content: '⚠️ La connessione con il server è stata interrotta durante la generazione della risposta. Riprova tra poco.' 
+            }
+          ];
+          this.chatbotSvc.saveMessages(this.messages);
+
           this.loading = false;
           this.statusMessage = null;
+          this.shouldScroll = true;
         };
       },
-      error: () => {
-        this.messages = [...newMessages, { role: 'assistant', content: 'Errore nel contattare il server.' }];
+      error: (err) => {
+        console.error('Errore invio messaggio:', err);
+        this.messages = [
+          ...newMessages, 
+          { 
+            role: 'assistant', 
+            content: '⚠️ Impossibile contattare il server. Verifica la connessione e riprova.' 
+          }
+        ];
+        this.chatbotSvc.saveMessages(this.messages);
         this.loading = false;
+        this.statusMessage = null;
+        this.shouldScroll = true;
       }
     });
   }
