@@ -93,18 +93,20 @@ export class ScenarioService {
       { params: { problem_id: problemId } }
     );
   }
-  // saveNewScenario(scenarioId: string, problemId: string, proposalId:string, values: Record<string, number | [number, number]>, titolo: string, descrizione: string)
-  //   : Observable<any> {
-  //   return this.http.post<any>(
-  //     `${this.baseUrl}/scenarios/${scenarioId}`,
-  //     { 
-  //       values, 
-  //       name: titolo,             
-  //       description: descrizione   
-  //      },  
-  //     { params: { problem_id: problemId, proposal_id:proposalId } }  
-  //   );
-  // }
+  arrayToDict(values: any): Record<string, any> {
+    if (!values) return {};
+    if (Array.isArray(values)) {
+      const dict: Record<string, any> = {};
+      values.forEach(v => {
+        if (!v) return;
+        const key = v.index_id || v.index_name;
+        const val = v.index_value !== undefined ? v.index_value : v.value;
+        if (key && val !== undefined) dict[key] = val;
+      });
+      return dict;
+    }
+    return typeof values === 'object' ? values : {};
+  }
   getScenarioData(scenarioId: string, problemId: string): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/scenarios/${scenarioId}`,{
       params: { problem_id: problemId }

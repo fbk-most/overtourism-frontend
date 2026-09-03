@@ -100,13 +100,13 @@ export class PlotComponent implements AfterViewInit {
     sessionStorage.removeItem('overtourism_session_id');
     console.log('Session ID removed');
   }
-  private arrayToDict(values: any[]): Record<string, any> {
-    const dict: Record<string, any> = {};
-    (values || []).forEach(v => {
-      if (v.index_name) dict[v.index_name] = v.index_value;
-    });
-    return dict;
-  }
+  // private arrayToDict(values: any[]): Record<string, any> {
+  //   const dict: Record<string, any> = {};
+  //   (values || []).forEach(v => {
+  //     if (v.index_name) dict[v.index_name] = v.index_value;
+  //   });
+  //   return dict;
+  // }
   formatValue(val: any): string {
     if (val === null || val === undefined || val === '' || val === 'None') {
       return '-';
@@ -338,7 +338,7 @@ export class PlotComponent implements AfterViewInit {
       const scenarioData = rawResponse.extras?.data || rawResponse.data || rawResponse;
       this.inputData = this.plotService.preparePlotInput(scenarioData, this.colorMap, this.sottosistemi,this.plotMapper); 
 
-      const actualNumericalValues = this.arrayToDict(sessionScenario.index_values || []);
+      const actualNumericalValues = this.scenarioService.arrayToDict(sessionScenario.index_values || []);
       const backendDiffs = sessionScenario.extras?.index_diffs;
 
       this.indexDiffs = JSON.parse(JSON.stringify(
@@ -427,7 +427,7 @@ export class PlotComponent implements AfterViewInit {
       const scenarioMetadata = await firstValueFrom(this.scenarioService.getScenarioData(this.scenarioId, this.problemId));
 
       const rawOverrides = scenarioMetadata.param_overrides || scenarioMetadata.index_values || {};
-      const actualNumericalValues = Array.isArray(rawOverrides) ? this.arrayToDict(rawOverrides) : rawOverrides;
+      const actualNumericalValues = Array.isArray(rawOverrides) ? this.scenarioService.arrayToDict(rawOverrides) : rawOverrides;
 
       let diffsValues = scenarioMetadata.extras?.index_diffs;
       if (!diffsValues && (scenarioMetadata.param_overrides || scenarioMetadata.index_values)) {

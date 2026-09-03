@@ -241,7 +241,7 @@ export class ConfrontoScenariComponent {
       const scenarioRes = await firstValueFrom(this.scenarioService.getScenarioData(id, this.problemId));
 
       const rawOverrides = scenarioRes.param_overrides || scenarioRes.index_values || {};
-      const valuesDict = this.arrayToDict(rawOverrides);
+      const valuesDict = this.scenarioService.arrayToDict(rawOverrides);
       const specificWidgets = this.applyIndexDiffsToWidgets(this.baseWidgets, valuesDict);
 
 
@@ -302,29 +302,29 @@ export class ConfrontoScenariComponent {
       }
     });
   }
-  private arrayToDict(values: any): Record<string, any> {
-    if (!values) return {};
+  // private arrayToDict(values: any): Record<string, any> {
+  //   if (!values) return {};
     
-    if (Array.isArray(values)) {
-      const dict: Record<string, any> = {};
-      values.forEach(v => {
-        if (!v) return;
-        // Compatibilità con V1 (index_id, value) e V2 (index_name, index_value)
-        const key = v.index_id || v.index_name;
-        const val = v.index_value !== undefined ? v.index_value : v.value;
-        if (key && val !== undefined) {
-          dict[key] = val;
-        }
-      });
-      return dict;
-    }
+  //   if (Array.isArray(values)) {
+  //     const dict: Record<string, any> = {};
+  //     values.forEach(v => {
+  //       if (!v) return;
+  //       // Compatibilità con V1 (index_id, value) e V2 (index_name, index_value)
+  //       const key = v.index_id || v.index_name;
+  //       const val = v.index_value !== undefined ? v.index_value : v.value;
+  //       if (key && val !== undefined) {
+  //         dict[key] = val;
+  //       }
+  //     });
+  //     return dict;
+  //   }
     
-    if (typeof values === 'object') {
-      return values;
-    }
+  //   if (typeof values === 'object') {
+  //     return values;
+  //   }
 
-    return {};
-  }
+  //   return {};
+  // }
   updateDiffs() {
     console.log('Widgets Left:', this.widgetsLeft);
     console.log('Widgets Right:', this.widgetsRight);
