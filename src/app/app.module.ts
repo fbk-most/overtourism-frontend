@@ -71,8 +71,10 @@ import { ChatbotIntegratedComponent } from './components/chatbot/chatbot-integra
 
 //Indici
 import { IndiciComponent } from './pages/indici/indici.component';
+import { IndiciFiltersComponent } from './pages/indici/components/indici-fitlers/indici-filters.component';
 import { IndiciMapComponent } from './components/indici-map/indici-map.component';
 import { AgentStatsComponent } from './pages/agent-stats/agent-stats.component';
+import { IndiciChartComponent } from './pages/indici/components/indici-charts/indici-charts.component';
 
 // Funzioni Factory
 export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
@@ -96,7 +98,7 @@ export function initializeAuth(authService: AuthenticationService) {
     ProposalDetailComponent, ProposalDetailPageComponent, OvertourismComponent, OvertourismChartsComponent, 
     OvertourismMapComponent, ToastComponent, AutocompleteComponent, CapacityComponent, FlowsComponent, 
     RedistributionComponent, HiddenComponent, ProposalListPageComponent, EmptyFieldPipe, LoginComponent,IndiciComponent,
-    IndiciMapComponent, AgentStatsComponent
+    IndiciMapComponent, AgentStatsComponent,IndiciFiltersComponent,IndiciChartComponent
 
   ],
   imports: [

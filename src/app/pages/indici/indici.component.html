@@ -1,271 +1,30 @@
 <div class="container-fluid my-2">
 
-  <!-- ── Pannello filtri principale ─────────────────────────────────────── -->
-  <div class="filtri-panel">
+  <!-- BARRA FILTRI ESTRATTA -->
+  <app-indici-filters *ngIf="allIndicators.length"
+    [allIndicators]="allIndicators"
+    [additionalLabels]="additionalLabels"
+    [showOption]="showOption"
+    [loading]="loading"
+    [hasData]="!!geoEnvelope || chartSeries.length > 0"
+    (stateChange)="onFilterStateChange($event)"
+    (apply)="onApplyFilters($event)">
+  </app-indici-filters>
 
-    <!-- RIGA 1: Dropdown Indici, Granularità, Date, Stagionalità o Temp. -->
-    <div class="row g-3 align-items-start">
-
-      <!-- 1. Dropdown Indicatore -->
-      <div class="col-12 col-md-auto">
-        <label class="form-label fw-bold mb-1" style="font-size:13px;">Indici territoriali</label>
-        <div class="dropdown">
-          <button class="btn btn-outline-primary d-flex align-items-center position-relative" type="button"
-            data-bs-toggle="dropdown" aria-expanded="false">
-            <span class="text-truncate text-start me-2">{{ currentMeta?.label || 'Seleziona Indice' }}</span>
-            <div class="info-hover-wrapper me-1 d-flex align-items-center" *ngIf="currentMeta?.index_description">
-              <span class="material-icons" style="font-size: 18px; cursor: help;">info</span>
-              <div class="html-tooltip shadow border rounded bg-white text-dark p-2 text-start"
-                [innerHTML]="currentMeta?.index_description">
-              </div>
-            </div>
-            <span class="material-icons ms-auto" style="font-size: 18px;">expand_more</span>
-          </button>
-          <div class="dropdown-menu shadow">
-            <div class="link-list-wrapper">
-              <ul class="link-list">
-                <li *ngFor="let ind of visibleIndicators">
-                  <a class="list-item" (click)="selectIndicator(ind.value)" style="cursor:pointer">
-                    <span>{{ ind.label }}</span>
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. Granularità terr. -->
-      <div class="col-12 col-md-auto">
-        <label class="form-label fw-bold mb-1" style="font-size:13px;">Granularità territoriale</label>
-        <div class="dropdown">
-          <button class="btn btn-outline-primary d-flex align-items-center" type="button" data-bs-toggle="dropdown"
-            aria-expanded="false">
-            <span class="text-start me-2">{{ spatialGranularity === 'comune' ? 'Comunale' : 'Macro area' }}</span>
-            <span class="material-icons ms-auto" style="font-size: 18px;">expand_more</span>
-          </button>
-          <div class="dropdown-menu shadow">
-            <div class="link-list-wrapper">
-              <ul class="link-list">
-                <li><a class="list-item" (click)="spatialGranularity = 'comune'; markDirty()"
-                    style="cursor:pointer"><span>Comunale</span></a></li>
-                <li><a class="list-item" (click)="spatialGranularity = 'macro_area'; markDirty()"
-                    style="cursor:pointer"><span>Macro area</span></a></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3. Date Inizio e Fine -->
-      <div class="col-12 col-md-auto">
-        <div class="d-flex gap-2">
-          <div>
-            <label class="form-label fw-bold mb-1" style="font-size:13px;">Inizio periodo</label>
-            <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
-              [(ngModel)]="startDate" (ngModelChange)="markDirty()" [attr.min]="minDateBound || null"
-              [attr.max]="maxDateBound || null" style="height: auto; min-height: 48px;">
-          </div>
-          <div>
-            <label class="form-label fw-bold mb-1" style="font-size:13px;">Fine periodo</label>
-            <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
-              [(ngModel)]="endDate" (ngModelChange)="markDirty()" [attr.min]="minDateBound || null"
-              [attr.max]="maxDateBound || null" style="height: auto; min-height: 48px;">
-          </div>
-        </div>
-        <div class="text-muted mt-1" style="font-size: 11px;" *ngIf="currentMeta?.years_range">
-          Periodo valido: da {{currentMeta!.years_range.min_year}} a {{currentMeta!.years_range.max_year}}
-        </div>
-      </div>
-
-      <!-- 4. Filtro Periodo (Ex Stagionalità) -->
-      <!-- <div class="col-12 col-md-auto">
-      <label class="form-label fw-bold mb-1" style="font-size:13px;">Filtro periodo</label>
-      <div class="dropdown">
-        <button class="btn btn-outline-primary d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <span class="text-start me-2">
-            {{ seasonality === 'weekend' ? 'Weekend' : (seasonality === 'weekdays' ? 'Giorni feriali' : (seasonality === 'festivities' ? 'Festività' : 'Tutti i periodi')) }}
-          </span>
-          <span class="material-icons ms-auto" style="font-size: 18px;">expand_more</span>
-        </button>
-        <div class="dropdown-menu shadow">
-          <div class="link-list-wrapper">
-            <ul class="link-list">
-              <li><a class="list-item" (click)="seasonality = 'all'; markDirty()" style="cursor:pointer"><span>Tutti i periodi</span></a></li>
-              <li><a class="list-item" (click)="seasonality = 'weekend'; markDirty()" style="cursor:pointer"><span>Weekend</span></a></li>
-              <li><a class="list-item" (click)="seasonality = 'weekdays'; markDirty()" style="cursor:pointer"><span>Giorni feriali</span></a></li>
-              <li><a class="list-item" (click)="seasonality = 'festivities'; markDirty()" style="cursor:pointer"><span>Festività</span></a></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div> -->
-
-      <!-- 5. Granularità Temp. (Solo Grafico) -->
-      <div class="col-12 col-md-auto" *ngIf="showChart">
-        <label class="form-label fw-bold mb-1" style="font-size:13px;">Granularità temp.</label>
-        <div class="dropdown">
-          <button class="btn btn-outline-primary d-flex align-items-center" type="button" data-bs-toggle="dropdown"
-            aria-expanded="false">
-            <span class="text-start me-2">
-              {{ granularity === 'mensile' ? 'Mensile' : (granularity === 'giornaliero' ? 'Giornaliero' : 'Annuale') }}
-            </span>
-            <span class="material-icons ms-auto" style="font-size: 18px;">expand_more</span>
-          </button>
-          <div class="dropdown-menu shadow">
-            <div class="link-list-wrapper">
-              <ul class="link-list">
-                <li><a class="list-item" (click)="granularity = 'annuale'; markDirty()"
-                    style="cursor:pointer"><span>Annuale</span></a></li>
-                <li><a class="list-item" (click)="granularity = 'mensile'; markDirty()"
-                    style="cursor:pointer"><span>Mensile</span></a></li>
-                <li><a class="list-item" (click)="granularity = 'giornaliero'; markDirty()"
-                    style="cursor:pointer"><span>Giornaliero</span></a></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- RIGA 2 (Filtro Mappa + Applica) -->
-    <div class="filtri-row2 d-flex flex-wrap align-items-center gap-3">
-
-      <!-- Sezione Confronti (Tasso di variazione & Percentuale impatto) -->
-      <ng-container>
-
-        <!-- 1. Tasso di variazione (Solo Mappa) -->
-        <span [title]="showOption !== 'map' ? 'Il tasso di variazione è disponibile solo nella vista Mappa.' : ''"
-          class="d-inline-flex">
-          <div class="form-check mb-0 d-flex align-items-center">
-            <input type="checkbox" class="form-check-input me-2" [(ngModel)]="enableVariation"
-              [disabled]="showOption !== 'map'" id="varCheck" (change)="onVariationToggle()">
-
-            <label class="form-check-label fw-bold mb-0"
-              [ngClass]="showOption === 'map' ? 'text-primary' : 'text-muted opacity-50'"
-              [style.cursor]="showOption === 'map' ? 'pointer' : 'not-allowed'" style="font-size:14px;" for="varCheck">
-              {{ variationMeta?.label || 'Tasso di variazione' }}
-            </label>
-            <div class="info-hover-wrapper ms-1 d-flex align-items-center" *ngIf="variationMeta?.index_description">
-              <span class="material-icons text-primary" style="font-size: 16px; cursor: help;">info</span>
-              <div class="html-tooltip shadow border rounded bg-white text-dark p-2 text-start"
-                [innerHTML]="variationMeta?.index_description">
-              </div>
-            </div>
-          </div>
-        </span>
-
-        <ng-container *ngIf="enableVariation">
-          <div class="d-flex align-items-center gap-2 border-start ps-3 ms-2">
-            <label class="form-label fw-bold mb-0" style="font-size:13px;">Inizio confronto</label>
-            <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
-              [(ngModel)]="startDateComparison" (ngModelChange)="markDirty()" [attr.min]="minDateBound || null"
-              [attr.max]="maxDateBound || null" style="height: auto; min-height: 48px; min-width: 150px;">
-
-            <label class="form-label fw-bold mb-0 ms-2" style="font-size:13px;">Fine confronto</label>
-            <input type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
-              [(ngModel)]="endDateComparison" (ngModelChange)="markDirty()" [attr.min]="minDateBound || null"
-              [attr.max]="maxDateBound || null" style="height: auto; min-height: 48px; min-width: 150px;">
-          </div>
-        </ng-container>
-
-        <!-- 2. Percentuale impatto (Disponibile sia su Mappa che Grafici) -->
-        <span class="d-inline-flex ms-2">
-          <div class="form-check mb-0 d-flex align-items-center">
-            <input type="checkbox" class="form-check-input me-2" [(ngModel)]="enableImpactPercentage"
-              [disabled]="showOption !== 'map'" id="impactCheck" (change)="onImpactPercentageToggle()">
-            <label class="form-check-label fw-bold mb-0 text-primary"
-              [ngClass]="showOption === 'map' ? 'text-primary' : 'text-muted opacity-50'"
-              style="cursor: pointer; font-size:14px;" for="impactCheck">
-              {{ impactMeta?.label || 'Percentuale impatto' }}
-            </label>
-            <div class="info-hover-wrapper ms-1 d-flex align-items-center" *ngIf="impactMeta?.index_description">
-              <span class="material-icons text-primary" style="font-size: 16px; cursor: help;">info</span>
-              <div class="html-tooltip shadow border rounded bg-white text-dark p-2 text-start"
-                [innerHTML]="impactMeta?.index_description">
-              </div>
-            </div>
-          </div>
-        </span> 
-
-        <ng-container *ngIf="enableImpactPercentage">
-          <div class="dropdown ms-1">
-            <button class="btn btn-outline-primary d-flex align-items-center py-1" type="button"
-              data-bs-toggle="dropdown" aria-expanded="false" style="min-height: 38px;">
-              <span class="text-start me-2" style="font-size: 13px;">
-                {{ impactSeasonality === 'weekend' ? 'Weekend' :
-                (impactSeasonality === 'weekdays' ? 'Giorni feriali' :
-                (impactSeasonality === 'festivities' ? 'Festività' :
-                (impactSeasonality === 'summer-months' ? 'Mesi estivi' :
-                (impactSeasonality === 'winter-months' ? 'Mesi invernali' : impactSeasonality)))) }}
-              </span>
-              <span class="material-icons ms-auto" style="font-size: 18px;">expand_more</span>
-            </button>
-            <div class="dropdown-menu shadow">
-              <div class="link-list-wrapper">
-                <ul class="link-list">
-                  <li><a class="list-item" (click)="impactSeasonality = 'weekend'; markDirty()"
-                      style="cursor:pointer"><span>Weekend</span></a></li>
-                  <li><a class="list-item" (click)="impactSeasonality = 'weekdays'; markDirty()"
-                      style="cursor:pointer"><span>Giorni feriali</span></a></li>
-                  <li><a class="list-item" (click)="impactSeasonality = 'festivities'; markDirty()"
-                      style="cursor:pointer"><span>Festività</span></a></li>
-                  <li><a class="list-item" (click)="impactSeasonality = 'summer-months'; markDirty()"
-                      style="cursor:pointer"><span>Mesi estivi</span></a></li>
-                  <li><a class="list-item" (click)="impactSeasonality = 'winter-months'; markDirty()"
-                      style="cursor:pointer"><span>Mesi invernali</span></a></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </ng-container>
-
-      </ng-container>
-
-      <!-- Placeholder per allineare a destra il bottone se siamo nei grafici -->
-      <div *ngIf="showChart" class="flex-grow-1"></div>
-
-      <!-- Bottone Esegui -->
-      <div class="ms-auto pt-1">
-        <button itButton="primary" [attr.itButton]="isDirty ? 'warning' : 'primary'" (click)="getData()"
-          [disabled]="loading">
-          <ng-container *ngIf="!loading">
-            <span *ngIf="isDirty" class="material-icons align-middle me-1" style="font-size: 18px;">refresh</span>
-            {{ isDirty ? 'Aggiorna dati' : 'Applica filtri' }}
-          </ng-container>
-          <ng-container *ngIf="loading">
-            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-            Caricamento...
-          </ng-container>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Alert Errori ───────────────────────────────────────────────────────── -->
-  <div class="alert alert-danger py-2 px-3 mb-2" *ngIf="error">
-    <span class="material-icons align-middle me-2">error_outline</span>{{ error }}
-  </div>
-
-  <!-- ── Alert Filtri Modificati ────────────────────────────────────────────── -->
-  <div class="alert alert-warning py-2 px-3 mb-2 d-flex align-items-center"
-    *ngIf="isDirty && !error && !loading && (geoEnvelope || chartSeries.length)">
-    <span class="material-icons align-middle me-2">warning_amber</span>
-    <span>I filtri sono stati modificati. I dati attualmente visibili non sono aggiornati con la nuova selezione. Premi
-      <strong>Aggiorna dati</strong>.</span>
-  </div>
-
-  <!-- ── Visualizzazione Tabs ───────────────────────────────────────────── -->
-  <div class="indici-content">
+  <!-- CONTENUTO TABS -->
+  <div class="indici-content position-relative">
 
     <it-tab-container (tabSelected)="onTabSelected($event)">
-      <!-- TAB MAPPA -->
+      <!-- TAB 1: MAPPA -->
       <it-tab-item label="Mappa" icon="map-marker" [active]="showOption === 'map'">
         <div class="p-2">
-          <app-indici-map *ngIf="geoEnvelope; else mapHint" [geojsonStr]="geoEnvelope.data"
-            [minValue]="geoEnvelope.min_value" [maxValue]="geoEnvelope.max_value" [colorScaleMode]="colorScaleMode"
-            [unitDescription]="unitDescription" [mapTitle]="currentMapTitle">
+          <app-indici-map *ngIf="geoEnvelope; else mapHint" 
+            [geojsonStr]="geoEnvelope.data"
+            [minValue]="geoEnvelope.min_value" 
+            [maxValue]="geoEnvelope.max_value" 
+            [colorScaleMode]="colorScaleMode"
+            [unitDescription]="unitDescription" 
+            [mapTitle]="currentMapTitle">
           </app-indici-map>
           <ng-template #mapHint>
             <div class="empty-hint p-5 text-center text-muted mt-5" *ngIf="!loading">
@@ -275,83 +34,30 @@
         </div>
       </it-tab-item>
 
-      <!-- TAB GRAFICI -->
+      <!-- TAB 2: GRAFICI -->
       <it-tab-item label="Grafici" icon="chart-line" [active]="showOption === 'chart'"
-        [disabled]="enableVariation || enableImpactPercentage">
-
-        <div class="p-3">
-          <!-- BARRA FILTRI GRAFICO: sempre visibile quando si è nel tab grafici -->
-          <div class="chart-wrapper" *ngIf="showChart">
-
-            <!-- Riga: Autocomplete + Toggle Linee/Barre -->
-            <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-2">
-
-              <!-- Autocomplete Comuni o Macro Area in base alla granularità -->
-              <div style="min-width: 250px; max-width: 350px;">
-                <ng-container *ngIf="spatialGranularity === 'comune'; else macroAreaTemplate">
-                  <app-autocomplete [source]="availableComuniNames" [minLength]="0" label="Comune"
-                    placeholder="Seleziona Comune" (selected)="onComuneSelectedByName($event)">
-                  </app-autocomplete>
-                </ng-container>
-
-                <ng-template #macroAreaTemplate>
-                  <app-autocomplete [source]="availableAreaNames" [minLength]="0" label="Area"
-                    placeholder="Seleziona Area" (selected)="onAreaSelectedByName($event)">
-                  </app-autocomplete>
-                </ng-template>
-              </div>
-
-              <!-- Toggle Linee / Barre: visibile solo se ci sono già dati -->
-              <div class="d-flex align-items-center gap-2 mt-auto" *ngIf="chartSeries.length">
-                <button class="btn btn-sm"
-                  [ngClass]="{'btn-primary': chartType === 'scatter', 'btn-outline-primary': chartType !== 'scatter'}"
-                  (click)="chartType = 'scatter'; renderChart()">
-                  Linee
-                </button>
-                <button class="btn btn-sm"
-                  [ngClass]="{'btn-primary': chartType === 'bar', 'btn-outline-primary': chartType !== 'bar'}"
-                  (click)="chartType = 'bar'; renderChart()">
-                  Barre
-                </button>
-              </div>
-            </div>
-
-            <!-- Badge comuni selezionati -->
-            <div class="mt-2 d-flex flex-wrap gap-2" *ngIf="currentSelection.length > 0">
-              <span *ngFor="let code of currentSelection" class="badge bg-primary d-inline-flex align-items-center">
-                {{ codeToName.get(code) || code }}
-                <button type="button" class="btn-close btn-close-white ms-1" aria-label="Rimuovi"
-                  (click)="spatialGranularity === 'comune' ? removeComune(code) : removeArea(code)">
-                </button>
-              </span>
-            </div>
-
-          </div>
-          <!-- FINE BARRA FILTRI GRAFICO -->
-
-          <!-- Messaggi stato -->
-          <div class="text-center text-muted mt-5 p-5" *ngIf="!loading">
-            <ng-container *ngIf="!chartSeries.length">
-              Seleziona i parametri e clicca <strong>Applica filtri</strong> per generare il grafico.
-            </ng-container>
-            <ng-container *ngIf="chartSeries.length && spatialGranularity === 'comune' && !selectedComuni.length">
-              Seleziona uno o più <strong>comuni</strong> dal filtro qui sopra per visualizzare il grafico.
-            </ng-container>
-          </div>
-
-          <!-- Canvas Plotly -->
-          <div #chartEl [hidden]="!chartSeries.length || (spatialGranularity === 'comune' && !selectedComuni.length)">
-          </div>
-
-        </div>
+        [disabled]="filterState?.enableVariation || filterState?.enableImpactPercentage">
+        <app-indici-chart
+          [chartLabels]="chartLabels"
+          [chartSeries]="chartSeries"
+          [allComuni]="allComuni"
+          [allAreas]="allAreas"
+          [(selectedComuni)]="selectedComuni"
+          [(selectedAreas)]="selectedAreas"
+          [spatialGranularity]="filterState?.spatialGranularity || 'comune'"
+          [granularity]="filterState?.granularity || 'annuale'"
+          [chartTitle]="currentMeta?.label || ''"
+          [unitDescription]="unitDescription"
+          [codeToName]="codeToName"
+          [loading]="loading">
+        </app-indici-chart>
       </it-tab-item>
     </it-tab-container>
 
-    <!-- Overlay Loading unificato -->
+    <!-- Overlay caricamento -->
     <div class="d-flex justify-content-center align-items-center w-100 h-100 position-absolute top-0 start-0 bg-white"
-      *ngIf="loading" style="z-index: 10; opacity: 0.8; height: 100% !important;">
+      *ngIf="loading" style="z-index: 10; opacity: 0.8;">
       <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
     </div>
-
   </div>
 </div>

@@ -50,3 +50,17 @@ export interface IndicatorMeta {
   export interface VariationOverTimeResponse {
     geo_data: GeoDataEnvelope;
   }
+  
+  export interface IndiciFilterState {
+    indicator: string;
+    spatialGranularity: 'comune' | 'macro_area';
+    startDate: string;
+    endDate: string;
+    granularity: TemporalGranularity;
+    enableVariation: boolean;
+    startDateComparison?: string;
+    endDateComparison?: string;
+    enableImpactPercentage: boolean;
+    impactSeasonality?: string;
+    showOption: ShowOption;
+  }

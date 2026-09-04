@@ -12,11 +12,6 @@ import { ScenariComponent } from './pages/problems/scenari/scenari.component';
 import { ScenarioDetailComponent } from './pages/problems/scenario-detail/scenario-detail.component';
 import { ConfrontoScenariComponent } from './pages/problems/confronto-scenari/confronto-scenari.component';
 
-import { CapacityComponent } from './pages/overtourism/capacity/capacity.component';
-import { FlowsComponent } from './pages/overtourism/flows/flows.component';
-import { HiddenComponent } from './pages/overtourism/hidden/hidden.component';
-import { RedistributionComponent } from './pages/overtourism/redistribution/redistribution.component';
-import { OvertourismComponent } from './pages/overtourism/overtourism/overtourism.component';
 
 import { UnsavedChangesGuard } from './guards/plot-unsaved-changes.guard';
 import { LoginComponent } from './pages/login/login.component';

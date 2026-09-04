@@ -1,0 +1,52 @@
+<div class="p-3">
+  <div class="chart-wrapper">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-2">
+      <div style="min-width: 250px; max-width: 350px;">
+        <ng-container *ngIf="spatialGranularity === 'comune'; else macroAreaTemplate">
+          <app-autocomplete [source]="availableComuniNames" [minLength]="0" label="Comune"
+            placeholder="Seleziona Comune" (selected)="onComuneSelected($event)">
+          </app-autocomplete>
+        </ng-container>
+        <ng-template #macroAreaTemplate>
+          <app-autocomplete [source]="availableAreaNames" [minLength]="0" label="Area"
+            placeholder="Seleziona Area" (selected)="onAreaSelected($event)">
+          </app-autocomplete>
+        </ng-template>
+      </div>
+
+      <div class="d-flex align-items-center gap-2 mt-auto" *ngIf="chartSeries.length">
+        <button class="btn btn-sm"
+          [ngClass]="{'btn-primary': chartType === 'scatter', 'btn-outline-primary': chartType !== 'scatter'}"
+          (click)="chartType = 'scatter'; render()">
+          Linee
+        </button>
+        <button class="btn btn-sm"
+          [ngClass]="{'btn-primary': chartType === 'bar', 'btn-outline-primary': chartType !== 'bar'}"
+          (click)="chartType = 'bar'; render()">
+          Barre
+        </button>
+      </div>
+    </div>
+
+    <!-- Badge Comuni / Aree -->
+    <div class="mt-2 d-flex flex-wrap gap-2" *ngIf="currentSelection.length > 0">
+      <span *ngFor="let code of currentSelection" class="badge bg-primary d-inline-flex align-items-center">
+        {{ codeToName.get(code) || code }}
+        <button type="button" class="btn-close btn-close-white ms-1" aria-label="Rimuovi"
+          (click)="removeSelection(code)">
+        </button>
+      </span>
+    </div>
+  </div>
+
+  <div class="text-center text-muted mt-5 p-5" *ngIf="!loading">
+    <ng-container *ngIf="!chartSeries.length">
+      Seleziona i parametri e clicca <strong>Applica filtri</strong> per generare il grafico.
+    </ng-container>
+    <ng-container *ngIf="chartSeries.length && spatialGranularity === 'comune' && !selectedComuni.length">
+      Seleziona uno o più <strong>comuni</strong> dal filtro qui sopra per visualizzare il grafico.
+    </ng-container>
+  </div>
+
+  <div #chartEl [hidden]="!chartSeries.length || (spatialGranularity === 'comune' && !selectedComuni.length)"></div>
+</div>
