@@ -4,7 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   IndicatorMeta, Comune,
-  IndexDataResponse, VariationDataResponse, VariationOverTimeResponse
+  IndexDataResponse, VariationDataResponse, VariationOverTimeResponse,
+  AdditionalLabelMeta
 } from '../models/indici.model';
 
 @Injectable({ providedIn: 'root' })
@@ -15,8 +16,8 @@ export class IndiciService {
 
   constructor(private http: HttpClient) {}
 
-  getIndicatorList(): Observable<{ indicators: IndicatorMeta[] }> {
-    return this.http.get<{ indicators: IndicatorMeta[] }>(`${this.base}/get-index-list`);
+  getIndicatorList(): Observable<{ indicators: IndicatorMeta[]; additional_labels?: AdditionalLabelMeta[] }> {
+    return this.http.get<{ indicators: IndicatorMeta[]; additional_labels?: AdditionalLabelMeta[] }>(`${this.base}/get-index-list`);
   }
 
   getSpatialAreas(): Observable<{ comuni: Comune[], areas: Comune[] }> {

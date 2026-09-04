@@ -145,8 +145,14 @@
             <label class="form-check-label fw-bold mb-0"
               [ngClass]="showOption === 'map' ? 'text-primary' : 'text-muted opacity-50'"
               [style.cursor]="showOption === 'map' ? 'pointer' : 'not-allowed'" style="font-size:14px;" for="varCheck">
-              Tasso di variazione
+              {{ variationMeta?.label || 'Tasso di variazione' }}
             </label>
+            <div class="info-hover-wrapper ms-1 d-flex align-items-center" *ngIf="variationMeta?.index_description">
+              <span class="material-icons text-primary" style="font-size: 16px; cursor: help;">info</span>
+              <div class="html-tooltip shadow border rounded bg-white text-dark p-2 text-start"
+                [innerHTML]="variationMeta?.index_description">
+              </div>
+            </div>
           </div>
         </span>
 
@@ -172,10 +178,16 @@
             <label class="form-check-label fw-bold mb-0 text-primary"
               [ngClass]="showOption === 'map' ? 'text-primary' : 'text-muted opacity-50'"
               style="cursor: pointer; font-size:14px;" for="impactCheck">
-              Percentuale impatto
+              {{ impactMeta?.label || 'Percentuale impatto' }}
             </label>
+            <div class="info-hover-wrapper ms-1 d-flex align-items-center" *ngIf="impactMeta?.index_description">
+              <span class="material-icons text-primary" style="font-size: 16px; cursor: help;">info</span>
+              <div class="html-tooltip shadow border rounded bg-white text-dark p-2 text-start"
+                [innerHTML]="impactMeta?.index_description">
+              </div>
+            </div>
           </div>
-        </span>
+        </span> 
 
         <ng-container *ngIf="enableImpactPercentage">
           <div class="dropdown ms-1">
@@ -253,7 +265,7 @@
         <div class="p-2">
           <app-indici-map *ngIf="geoEnvelope; else mapHint" [geojsonStr]="geoEnvelope.data"
             [minValue]="geoEnvelope.min_value" [maxValue]="geoEnvelope.max_value" [colorScaleMode]="colorScaleMode"
-            [unitDescription]="unitDescription" [mapTitle]="currentMeta?.label || ''">
+            [unitDescription]="unitDescription" [mapTitle]="currentMapTitle">
           </app-indici-map>
           <ng-template #mapHint>
             <div class="empty-hint p-5 text-center text-muted mt-5" *ngIf="!loading">

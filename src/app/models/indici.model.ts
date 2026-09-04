@@ -7,7 +7,17 @@ export interface IndicatorMeta {
     extraFields: string[];
     years_range: { min_year: number; max_year: number };
   }
+  export interface AdditionalLabelMeta {
+    value: string;
+    label: string;
+    index_description?: string;
+    index_value_unit_description?: string;
+  }
   
+  export interface IndicatorListResponse {
+    indicators: IndicatorMeta[];
+    additional_labels?: AdditionalLabelMeta[];
+  }
   export interface Comune {
     code: string;
     name: string;

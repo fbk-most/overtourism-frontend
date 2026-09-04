@@ -6,7 +6,7 @@ import Plotly from 'plotly.js-dist-min';
 import * as itLocale from 'plotly.js-locales/it';
 (Plotly as any).register(itLocale);
 
-import { IndicatorMeta, Comune, ShowOption, TemporalGranularity, GeoDataEnvelope, VariationSeries } from '../../models/indici.model';
+import { IndicatorMeta, Comune, ShowOption, TemporalGranularity, GeoDataEnvelope, VariationSeries, AdditionalLabelMeta } from '../../models/indici.model';
 import { IndiciService } from '../../services/indici.service';
 
 
@@ -26,6 +26,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   // ── Dati catalogo ──────────────────────────────────────────────────────────
   allIndicators: IndicatorMeta[] = [];
   visibleIndicators: IndicatorMeta[] = [];
+  additionalLabels: AdditionalLabelMeta[] = [];
   allComuni: Comune[] = [];
   allAreas: Comune[] = [];
   codeToName = new Map<string, string>();
@@ -51,6 +52,14 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   selectedComuni: string[] = [];
   selectedAreas: string[] = [];
 
+    // Helper per accedere agli indici speciali della riga 2
+    get variationMeta(): AdditionalLabelMeta | undefined {
+      return this.additionalLabels.find(l => l.value === 'tasso-variazione');
+    }
+  
+    get impactMeta(): AdditionalLabelMeta | undefined {
+      return this.additionalLabels.find(l => l.value === 'incidenza-periodo');
+    }
   get currentSelection(): string[] {
     return this.spatialGranularity === 'comune' ? this.selectedComuni : this.selectedAreas;
   }
@@ -68,13 +77,39 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
   isDirty = false;
   // ── Dati mappa ─────────────────────────────────────────────────────────────
   geoEnvelope: GeoDataEnvelope | null = null;
-  get unitDescription(): string {
-    return this.currentMeta?.index_value_unit_description || '';
+ // ── Unità di misura dinamica ───────────────────────────────────────────────
+ get unitDescription(): string {
+  if (this.showOption === 'map') {
+    if (this.enableVariation) {
+      return this.variationMeta?.index_value_unit_description || 'Percentuale di variazione';
+    }
+    if (this.enableImpactPercentage) {
+      return this.impactMeta?.index_value_unit_description || 'Percentuale di impatto';
+    }
   }
-  get colorScaleMode(): 'linear' | 'log' {
-    return ['indice-densita-turistica', 'turismo-sommerso'].includes(this.selectedIndicator)
-      ? 'log' : 'linear';
+  return this.currentMeta?.index_value_unit_description || '';
+}
+  // ── Titolo dinamico Mappa ──────────────────────────────────────────────────
+  get currentMapTitle(): string {
+    if (this.showOption === 'map') {
+      if (this.enableVariation) {
+        const prefix = this.variationMeta?.label || 'Tasso di variazione';
+        return this.currentMeta?.label ? `${prefix}: ${this.currentMeta.label}` : prefix;
+      }
+      if (this.enableImpactPercentage) {
+        const prefix = this.impactMeta?.label || 'Incidenza percentuale del periodo';
+        return this.currentMeta?.label ? `${prefix}: ${this.currentMeta.label}` : prefix;
+      }
+    }
+    return this.currentMeta?.label || '';
   }
+get colorScaleMode(): 'linear' | 'log' {
+  if (this.enableVariation || this.enableImpactPercentage) {
+    return 'linear';
+  }
+  return ['indice-densita-turistica', 'turismo-sommerso'].includes(this.selectedIndicator)
+    ? 'log' : 'linear';
+}
 
   // ── Dati chart ─────────────────────────────────────────────────────────────
   @ViewChild('chartEl') chartEl?: ElementRef;
@@ -96,6 +131,7 @@ export class IndiciComponent implements OnInit, AfterViewInit, OnDestroy {
     this.svc.getIndicatorList().subscribe({
       next: res => {
         this.allIndicators = res.indicators;
+        this.additionalLabels = res.additional_labels || [];
         this.updateVisibleIndicators();
         if (this.visibleIndicators.length) {
           const defaultInd = this.visibleIndicators.find(i => i.value !== 'tasso-variazione') || this.visibleIndicators[0];
