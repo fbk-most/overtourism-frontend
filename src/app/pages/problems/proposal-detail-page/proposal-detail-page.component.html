@@ -43,12 +43,12 @@
           <td class="fw-bold w-25" >{{ 'problems.proposals.tableHeader.impact' | translate }}</td>
           <td [ngClass]="{'text-muted fst-italic': ! proposal?.extras?.impact}">{{proposal?.extras?.impact| emptyField:'(vuoto)'}}</td>
         </tr>
-        <tr>
+        <!-- <tr>
           <td class="fw-bold w-25">{{ 'problems.proposals.tableHeader.status' | translate }}</td>
           <td>
             <span class="badge bg-secondary">{{ proposal?.status }}</span>
           </td>
-        </tr>
+        </tr> -->
         <tr>
           <td class="fw-bold w-25">{{ 'problems.proposals.tableHeader.resources' | translate }}</td>
           <td>
