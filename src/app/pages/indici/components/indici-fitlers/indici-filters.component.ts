@@ -27,10 +27,21 @@ export class IndiciFiltersComponent implements OnInit {
   endDateComparison = '';
   enableImpactPercentage = false;
   impactSeasonality = 'weekend';
-
   visibleIndicators: IndicatorMeta[] = [];
   isDirty = false;
   error = '';
+
+  private impactSeasonalityLabels: Record<string, string> = {
+    'weekend': 'Weekend',
+    'weekdays': 'Giorni feriali',
+    'festivities': 'Festività',
+    'summer-months': 'Mesi estivi',
+    'winter-months': 'Mesi invernali'
+  };
+
+  get impactSeasonalityLabel(): string {
+    return this.impactSeasonalityLabels[this.impactSeasonality] || this.impactSeasonality;
+  }
 
   get currentMeta(): IndicatorMeta | undefined {
     return this.allIndicators.find(i => i.value === this.selectedIndicator);

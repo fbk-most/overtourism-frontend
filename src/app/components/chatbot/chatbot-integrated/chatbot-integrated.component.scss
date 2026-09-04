@@ -68,6 +68,7 @@ $primary-color: var(--bs-primary);
   max-width: 75%;
   word-wrap: break-word;
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
   padding: 6px 10px;
   border-radius: 8px;
   line-height: 1.4;
@@ -77,6 +78,7 @@ $primary-color: var(--bs-primary);
   background: #a0c4f2;
   color: #000;
   border-top-right-radius: 0;
+  white-space: pre-wrap; 
 }
 
 .chatbot-messages .bot .message-text {

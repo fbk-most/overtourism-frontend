@@ -1,4 +1,4 @@
-<div class="message user" *ngIf="msg.role === 'user'">{{ msg.content }}</div>
+<div class="message user" *ngIf="msg.role === 'user'" style="white-space: pre-wrap;">{{ msg.content }}</div>
 
 <div class="message assistant" *ngIf="msg.role === 'assistant'">
   
