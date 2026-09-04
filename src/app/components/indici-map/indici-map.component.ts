@@ -90,8 +90,9 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
         const mainIndex = `<strong>VALORE INDICE</strong>: ${fmt}`;
 
         // Estrai attributi extra
+        const excludedKeys = ['INDICE', 'AREA_NAME', 'COMUNE', 'COM_CODE', 'COD_COM']; 
         const extraFields = Object.entries(props)
-          .filter(([k]) => !k.toUpperCase().includes('COM') && !['INDICE', 'AREA_NAME'].includes(k))
+          .filter(([k]) => !excludedKeys.includes(k.toUpperCase()))
           .map(([k, v]) => {
             const formatted = typeof v === 'number' ? (Number.isInteger(v) ? v : v.toFixed(2)) : v;
             return `<strong>${k}</strong>: ${formatted}`;
