@@ -102,6 +102,7 @@ export class IndiciFiltersComponent implements OnInit {
 
   markDirty(): void {
     this.isDirty = true;
+    this.checkDateBounds()
     this.emitState();
   }
 
@@ -133,13 +134,63 @@ export class IndiciFiltersComponent implements OnInit {
     }
   }
 
+  // Helper per verificare se una data YYYY-MM-DD esiste realmente nel calendario
+  private isValidCalendarDate(dStr: string): boolean {
+    if (!dStr || typeof dStr !== 'string') return false;
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dStr);
+    if (!match) return false;
+
+    const y = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    const d = parseInt(match[3], 10);
+
+    if (m < 1 || m > 12 || d < 1 || d > 31) return false;
+
+    // Se passi il 31 giugno a Date(), JavaScript fa rollover al 1 luglio
+    const date = new Date(y, m - 1, d);
+    return date.getFullYear() === y && (date.getMonth() + 1) === m && date.getDate() === d;
+  }
+  
   private checkDateBounds(): boolean {
-    if (this.startDate && this.endDate && this.startDate > this.endDate) {
+    this.error = '';
+
+    // 1. Presenza e validità reale data inizio
+    if (!this.startDate) {
+      this.error = "Inserire una data valida per 'Inizio periodo'.";
+      return false;
+    }
+    if (!this.isValidCalendarDate(this.startDate)) {
+      this.error = "La data di 'Inizio periodo' non è valida o non esiste nel calendario.";
+      return false;
+    }
+
+    // 2. Presenza e validità reale data fine
+    if (!this.endDate) {
+      this.error = "Inserire una data valida per 'Fine periodo'.";
+      return false;
+    }
+    if (!this.isValidCalendarDate(this.endDate)) {
+      this.error = "La data di 'Fine periodo' non è valida o non esiste nel calendario.";
+      return false;
+    }
+
+    // 3. Ordine cronologico
+    if (this.startDate > this.endDate) {
       this.error = "La data di 'Fine periodo' non può essere precedente a 'Inizio periodo'.";
       return false;
     }
+
+    // 4. Sezione variazione (se attiva)
     if (this.showOption === 'map' && this.enableVariation) {
-      if (this.startDateComparison && this.endDateComparison && this.startDateComparison > this.endDateComparison) {
+      if (!this.startDateComparison || !this.isValidCalendarDate(this.startDateComparison)) {
+        this.error = "La data di 'Inizio confronto' non è valida o non esiste nel calendario.";
+        return false;
+      }
+      if (!this.endDateComparison || !this.isValidCalendarDate(this.endDateComparison)) {
+        this.error = "La data di 'Fine confronto' non è valida o non esiste nel calendario.";
+        return false;
+      }
+      if (this.startDateComparison > this.endDateComparison) {
         this.error = "La data di 'Fine confronto' non può essere precedente a 'Inizio confronto'.";
         return false;
       }
@@ -148,6 +199,8 @@ export class IndiciFiltersComponent implements OnInit {
         return false;
       }
     }
+
+    // 5. Rispetto del range di anni ammesso dall'indicatore
     const minBound = this.minDateBound;
     const maxBound = this.maxDateBound;
     if (minBound && maxBound) {
@@ -156,7 +209,14 @@ export class IndiciFiltersComponent implements OnInit {
         this.error = `Le date devono essere comprese tra il ${this.currentMeta?.years_range.min_year} e il ${this.currentMeta?.years_range.max_year}.`;
         return false;
       }
+      if (this.showOption === 'map' && this.enableVariation) {
+        if (isOut(this.startDateComparison) || isOut(this.endDateComparison)) {
+          this.error = `Le date di confronto devono essere comprese tra il ${this.currentMeta?.years_range.min_year} e il ${this.currentMeta?.years_range.max_year}.`;
+          return false;
+        }
+      }
     }
+
     return true;
   }
 

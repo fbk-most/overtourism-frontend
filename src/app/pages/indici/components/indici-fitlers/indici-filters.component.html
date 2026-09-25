@@ -144,7 +144,10 @@
 
     <!-- Bottone Applica -->
     <div class="ms-auto pt-1">
-      <button itButton="primary" [attr.itButton]="isDirty ? 'warning' : 'primary'" (click)="submit()" [disabled]="loading">
+      <button itButton="primary"
+        [attr.itButton]="isDirty ? 'warning' : 'primary'"
+        (click)="submit()"
+        [disabled]="loading || !!error || !startDate || !endDate">
         <ng-container *ngIf="!loading">
           <span *ngIf="isDirty" class="material-icons align-middle me-1" style="font-size: 18px;">refresh</span>
           {{ isDirty ? 'Aggiorna dati' : 'Applica filtri' }}
