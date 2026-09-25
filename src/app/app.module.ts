@@ -75,6 +75,8 @@ import { IndiciFiltersComponent } from './pages/indici/components/indici-fitlers
 import { IndiciMapComponent } from './components/indici-map/indici-map.component';
 import { AgentStatsComponent } from './pages/agent-stats/agent-stats.component';
 import { IndiciChartComponent } from './pages/indici/components/indici-charts/indici-charts.component';
+import { SharedLineChartComponent } from './components/shared/shared-line-chart/shared-line-chart.component';
+import { SharedBarChartComponent } from './components/shared/shared-bar-chart/shared-bar-chart.component';
 
 // Funzioni Factory
 export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
@@ -115,6 +117,8 @@ export function initializeAuth(authService: AuthenticationService) {
     ChatbotIntegratedComponent,
     SharedPlotComponent,
     SharedHistogramComponent,
+    SharedLineChartComponent,
+    SharedBarChartComponent,
     SharedKpisComponent,
     OAuthModule.forRoot({
       resourceServer: {

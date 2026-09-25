@@ -13,13 +13,16 @@ import { SharedKpisComponent } from '../../shared/shared-kpis/shared-kpis.compon
 import { SharedPlotComponent } from '../../shared/shared-plot/shared-plot.component';
 import { IndiciMapComponent } from '../../indici-map/indici-map.component';
 import { ChatbotService } from '../../../services/chatbot/chatbot.service';
+import { SharedLineChartComponent } from '../../shared/shared-line-chart/shared-line-chart.component';  
+import { SharedBarChartComponent } from '../../shared/shared-bar-chart/shared-bar-chart.component';    
 
 @Component({
   selector: 'app-chatbot-standalone',
   standalone: true,
   imports: [CommonModule, FormsModule, ChatMessageComponent, DesignAngularKitModule,
     // @ts-ignore-warnings
-    SharedHistogramComponent, SharedKpisComponent,SharedPlotComponent],
+    SharedHistogramComponent, SharedKpisComponent,SharedPlotComponent, SharedLineChartComponent, 
+    SharedBarChartComponent],
     templateUrl: './chatbot-standalone.component.html',
   styleUrls: ['./chatbot-standalone.component.scss']
 })
@@ -28,7 +31,9 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
     'histogramComparison': SharedHistogramComponent,
     'indexComparison': SharedKpisComponent,
     'plot': SharedPlotComponent, 
-    'map': IndiciMapComponent 
+    'map': IndiciMapComponent ,
+    'lineChart': SharedLineChartComponent, 
+    'barChart': SharedBarChartComponent 
 
   };
   private translator = inject(ChatbotActionTranslatorService);

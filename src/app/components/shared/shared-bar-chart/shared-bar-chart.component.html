@@ -1,0 +1,11 @@
+<div class="shared-chart-wrapper position-relative" style="width: 100%; min-height: 400px;">
+  <div *ngIf="loading" class="d-flex justify-content-center align-items-center position-absolute top-0 start-0 w-100 h-100 bg-white" style="z-index: 5; opacity: 0.8;">
+    <div class="spinner-border text-primary" role="status"></div>
+  </div>
+
+  <div *ngIf="!loading && (!payload || !payload.series || !payload.series.length)" class="d-flex justify-content-center align-items-center h-100 text-muted p-5">
+    Nessun dato disponibile per il grafico a barre.
+  </div>
+
+  <div #chartContainer [hidden]="!payload || !payload.series || !payload.series.length" style="width: 100%; height: 100%; min-height: 400px;"></div>
+</div>

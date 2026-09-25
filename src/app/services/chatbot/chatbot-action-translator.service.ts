@@ -76,6 +76,20 @@ export class ChatbotActionTranslatorService {
         const widgetName = event.payload['widgetName'];
         let mappedData = event.payload['data'] || {};
 
+        if (widgetName === 'lineChart' || widgetName === 'barChart') {
+          const innerPayload = mappedData['payload'] ?? mappedData;
+          mappedData = {
+            payload: {
+              labels: innerPayload.labels || [],
+              series: innerPayload.series || [],
+              title: innerPayload.title || '',
+              unitDescription: innerPayload.unitDescription || '',
+              granularity: innerPayload.granularity || 'annuale',
+              selectedItems: innerPayload.selectedItems,
+              codeToName: innerPayload.codeToName
+            }
+          };
+        }
         if (widgetName === 'histogramComparison') {
           const innerPayload = mappedData['payload'] ?? mappedData;
           
