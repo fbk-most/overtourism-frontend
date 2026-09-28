@@ -2,6 +2,7 @@ import { Component, ElementRef, EventEmitter, Input, OnChanges, Output, SimpleCh
 import Plotly from 'plotly.js-dist-min';
 import { Comune, TemporalGranularity, VariationSeries } from '../../../../models/indici.model';
 import { IndiciChartService } from '../services/indici-chart.service';
+import { SharedTimeSeriesPayload } from '../../../../models/shared-chart.model';
 
 @Component({
   selector: 'app-indici-chart',
@@ -9,7 +10,7 @@ import { IndiciChartService } from '../services/indici-chart.service';
   styleUrls: ['./indici-charts.component.scss'],
   standalone: false
 })
-export class IndiciChartComponent implements OnChanges {
+export class IndiciChartComponent  {
   @Input() chartLabels: string[] = [];
   @Input() chartSeries: VariationSeries[] = [];
   @Input() allComuni: Comune[] = [];
@@ -25,8 +26,6 @@ export class IndiciChartComponent implements OnChanges {
 
   @Output() selectedComuniChange = new EventEmitter<string[]>();
   @Output() selectedAreasChange = new EventEmitter<string[]>();
-
-  @ViewChild('chartEl') chartEl?: ElementRef;
   chartType: 'scatter' | 'bar' = 'scatter';
 
   get currentSelection(): string[] {
@@ -41,33 +40,21 @@ export class IndiciChartComponent implements OnChanges {
     return this.allAreas.filter(a => !this.selectedAreas.includes(a.code)).map(a => a.name);
   }
 
-  constructor(private chartSvc: IndiciChartService) {}
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (this.chartSeries.length && (changes['chartSeries'] || changes['selectedComuni'] || changes['selectedAreas'] || changes['granularity'])) {
-      setTimeout(() => this.render(), 30);
-    }
+  get chartPayload(): SharedTimeSeriesPayload {
+    return {
+      labels: this.chartLabels,
+      series: this.chartSeries,
+      title: this.chartTitle,
+      unitDescription: this.unitDescription,
+      granularity: this.granularity,
+      selectedItems: this.currentSelection,
+      codeToName: this.codeToName
+    };
   }
 
-  render(): void {
-    if (!this.chartEl || !this.chartSeries.length) return;
 
-    const traces = this.chartSvc.buildTraces(
-      this.chartLabels,
-      this.chartSeries,
-      this.currentSelection,
-      this.codeToName,
-      this.chartType,
-      this.granularity
-    );
-
-    const layout = this.chartSvc.buildLayout(this.chartTitle, this.unitDescription, this.granularity);
-
-    Plotly.react(this.chartEl.nativeElement, traces, layout, {
-      responsive: true,
-      displayModeBar: false,
-      locale: 'it'
-    });
+  get hasSelection(): boolean {
+    return this.spatialGranularity !== 'comune' || this.selectedComuni.length > 0;
   }
 
   onComuneSelected(name: string): void {

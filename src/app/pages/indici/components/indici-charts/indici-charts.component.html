@@ -17,12 +17,12 @@
       <div class="d-flex align-items-center gap-2 mt-auto" *ngIf="chartSeries.length">
         <button class="btn btn-sm"
           [ngClass]="{'btn-primary': chartType === 'scatter', 'btn-outline-primary': chartType !== 'scatter'}"
-          (click)="chartType = 'scatter'; render()">
+          (click)="chartType = 'scatter'">
           Linee
         </button>
         <button class="btn btn-sm"
           [ngClass]="{'btn-primary': chartType === 'bar', 'btn-outline-primary': chartType !== 'bar'}"
-          (click)="chartType = 'bar'; render()">
+          (click)="chartType = 'bar'">
           Barre
         </button>
       </div>
@@ -43,10 +43,22 @@
     <ng-container *ngIf="!chartSeries.length">
       Seleziona i parametri e clicca <strong>Applica filtri</strong> per generare il grafico.
     </ng-container>
-    <ng-container *ngIf="chartSeries.length && spatialGranularity === 'comune' && !selectedComuni.length">
+    <ng-container *ngIf="chartSeries.length && !hasSelection">
       Seleziona uno o più <strong>comuni</strong> dal filtro qui sopra per visualizzare il grafico.
     </ng-container>
   </div>
 
-  <div #chartEl [hidden]="!chartSeries.length || (spatialGranularity === 'comune' && !selectedComuni.length)"></div>
+  <div [hidden]="!chartSeries.length || !hasSelection">
+    <app-shared-line-chart
+      *ngIf="chartType === 'scatter'"
+      [payload]="chartPayload"
+      [loading]="loading">
+    </app-shared-line-chart>
+
+    <app-shared-bar-chart
+      *ngIf="chartType === 'bar'"
+      [payload]="chartPayload"
+      [loading]="loading">
+    </app-shared-bar-chart>
+  </div>
 </div>
