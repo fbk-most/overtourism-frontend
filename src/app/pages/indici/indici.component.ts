@@ -77,7 +77,7 @@ export class IndiciComponent implements OnInit {
     }
     if (this.filterState.enableImpactPercentage) {
       const meta = this.additionalLabels.find(l => l.value === 'incidenza-periodo');
-      const prefix = meta?.label || 'Incidenza percentuale del periodo';
+      const prefix = meta?.label || 'incidenza percentuale del sottoperiodo';
       return this.currentMeta?.label ? `${prefix}: ${this.currentMeta.label}` : prefix;
     }
     return this.currentMeta?.label || '';
