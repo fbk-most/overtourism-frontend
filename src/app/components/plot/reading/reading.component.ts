@@ -6,12 +6,13 @@ import { AgentService } from '../../../services/agent.service';
 import { AuthenticationService } from '../../../services/authentication.service';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { marked } from 'marked';
+import { debounceTime, Subject, Subscription, switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-reading',
   standalone: false,
   templateUrl: './reading.component.html',
-  styleUrl: './reading.component.scss' // <-- nota: se dà problemi cambia in urls: ['./reading.component.scss']
+  styleUrl: './reading.component.scss'  
 })
 export class ReadingComponent implements OnInit, OnChanges {
   @Input() widgets!: Record<string, Widget[]>;
@@ -29,6 +30,10 @@ export class ReadingComponent implements OnInit, OnChanges {
   aiSummary: SafeHtml | null = null;
   aiSummaryLoading = false;
   aiSummaryError = false;
+
+  private summaryTrigger$ = new Subject<{ ids: string[]; sessionId?: string; evalId?: string }>();
+  private summarySub?: Subscription;
+
   
   constructor(
     private explanationService: ExplanationService,
@@ -38,6 +43,25 @@ export class ReadingComponent implements OnInit, OnChanges {
   ) {} 
   
   ngOnInit(): void {
+    this.summarySub = this.summaryTrigger$.pipe(
+      debounceTime(5000),
+      switchMap(({ ids, sessionId, evalId }) => {
+        this.aiSummaryLoading = true;
+        this.aiSummaryError = false;
+        return this.agentService.getSummary(ids, sessionId, evalId);
+      })
+    ).subscribe({
+      next: async (res) => {
+        const raw = res?.message || res?.result || res?.summary || res?.text || '';
+        const html = await marked.parse(raw);
+        this.aiSummary = this.sanitizer.bypassSecurityTrustHtml(html);
+        this.aiSummaryLoading = false;
+      },
+      error: () => {
+        this.aiSummaryError = true;
+        this.aiSummaryLoading = false;
+      }
+    });
     if (this.dataFacts.length > 0) {
       this.dataFactsParametersChanges = this.createParameterChanges();
     }
@@ -45,7 +69,9 @@ export class ReadingComponent implements OnInit, OnChanges {
       this.loadAiSummary();
     }
   }
-
+  ngOnDestroy(): void {
+    this.summarySub?.unsubscribe();
+  }
   ngOnChanges(changes: SimpleChanges): void {
     const scenarioChanged = changes['scenarioIds'] && !changes['scenarioIds'].firstChange;
     const evalChanged = changes['evaluationId'] && !changes['evaluationId'].firstChange;
@@ -69,21 +95,10 @@ export class ReadingComponent implements OnInit, OnChanges {
     if (!ids.length) return;
     if (this.sessionId && !this.evaluationId) return;
 
-    this.aiSummaryLoading = true;
-    this.aiSummaryError = false;
-    this.aiSummary = null;
-
-    this.agentService.getSummary(ids, this.sessionId, this.evaluationId).subscribe({
-      next: async (res) => {
-        const raw = res?.message || res?.result || res?.summary || res?.text || '';
-        const html = await marked.parse(raw); 
-        this.aiSummary = this.sanitizer.bypassSecurityTrustHtml(html);
-        this.aiSummaryLoading = false;
-      },
-      error: () => {
-        this.aiSummaryError = true;
-        this.aiSummaryLoading = false;
-      }
+    this.summaryTrigger$.next({
+      ids,
+      sessionId: this.sessionId,
+      evalId: this.evaluationId
     });
   }
 

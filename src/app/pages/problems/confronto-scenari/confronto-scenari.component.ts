@@ -1,7 +1,7 @@
 import { Component, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import Plotly from 'plotly.js-dist-min';
-import { firstValueFrom } from 'rxjs';
+import { debounceTime, firstValueFrom, Subject, Subscription, switchMap } from 'rxjs';
 import { KPIs, PlotInput, Curve } from '../../../models/plot.model';
 import { PlotService } from '../../../services/plot.service';
 import { ScenarioService, Widget } from '../../../services/scenario.service';
@@ -60,6 +60,8 @@ export class ConfrontoScenariComponent {
   aiSummary: SafeHtml | null = null;
   aiSummaryLoading = false;
   aiSummaryError = false;
+  private aiSummaryTrigger$ = new Subject<string[]>();
+  private aiSummarySub?: Subscription;
   plotMapper: PlotMapper = {};
   constructor(
     private scenarioService: ScenarioService,
@@ -73,6 +75,25 @@ export class ConfrontoScenariComponent {
   ) { }
 
   async ngOnInit() {
+    this.aiSummarySub = this.aiSummaryTrigger$.pipe(
+      debounceTime(5000),
+      switchMap(ids => {
+        this.aiSummaryLoading = true;
+        this.aiSummaryError = false;
+        return this.agentService.getSummary(ids);
+      })
+    ).subscribe({
+      next: async (res) => {
+        const raw = res?.message || res?.result || res?.summary || res?.text || '';
+        const html = await marked.parse(raw);
+        this.aiSummary = this.sanitizer.bypassSecurityTrustHtml(html);
+        this.aiSummaryLoading = false;
+      },
+      error: () => {
+        this.aiSummaryError = true;
+        this.aiSummaryLoading = false;
+      }
+    });
     this.problemId = this.route.snapshot.paramMap.get('problemId')!;
     try {
       const parsed = await firstValueFrom(this.scenarioService.getParsedConfiguration());
@@ -80,7 +101,7 @@ export class ConfrontoScenariComponent {
       this.colorMap = parsed.colorMap;
       this.kpiMapper = parsed.kpiMapper;
       this.plotMapper = parsed.plotMapper;
-      this.baseWidgets = parsed.baseWidgets; // già "initialized" se getParsedConfiguration lo fa internamente
+      this.baseWidgets = parsed.baseWidgets;  
     } catch (err) {
       console.error('Errore caricamento configurazione base', err);
     }
@@ -99,6 +120,9 @@ export class ConfrontoScenariComponent {
         this.loadScenario(2);
       }
     });
+  }
+  ngOnDestroy(): void {
+    this.aiSummarySub?.unsubscribe();
   }
   private updateHistogramPayload() {
     if ((this.selectedScenario1Id && this.kpisLeft) || (this.selectedScenario2Id && this.kpisRight)) {
@@ -232,47 +256,8 @@ export class ConfrontoScenariComponent {
   private loadAiSummary() {
     const ids = [this.selectedScenario1Id, this.selectedScenario2Id].filter(Boolean);
     if (ids.length === 0) return;
-
-    this.aiSummaryLoading = true;
-    this.aiSummaryError = false;
-    this.aiSummary = null;
-
-    this.agentService.getSummary(ids).subscribe({
-      next: async (res) => {
-        const raw = res?.message || res?.result || res?.summary || res?.text || '';
-        const html = await marked.parse(raw);
-        this.aiSummary = this.sanitizer.bypassSecurityTrustHtml(html);
-        this.aiSummaryLoading = false;
-      },
-      error: () => {
-        this.aiSummaryError = true;
-        this.aiSummaryLoading = false;
-      }
-    });
+    this.aiSummaryTrigger$.next(ids);
   }
-  // private arrayToDict(values: any): Record<string, any> {
-  //   if (!values) return {};
-    
-  //   if (Array.isArray(values)) {
-  //     const dict: Record<string, any> = {};
-  //     values.forEach(v => {
-  //       if (!v) return;
-  //       // Compatibilità con V1 (index_id, value) e V2 (index_name, index_value)
-  //       const key = v.index_id || v.index_name;
-  //       const val = v.index_value !== undefined ? v.index_value : v.value;
-  //       if (key && val !== undefined) {
-  //         dict[key] = val;
-  //       }
-  //     });
-  //     return dict;
-  //   }
-    
-  //   if (typeof values === 'object') {
-  //     return values;
-  //   }
-
-  //   return {};
-  // }
   updateDiffs() {
     console.log('Widgets Left:', this.widgetsLeft);
     console.log('Widgets Right:', this.widgetsRight);
