@@ -53,13 +53,13 @@ export class SharedLineChartComponent implements OnChanges, AfterViewInit, OnDes
       selected,
       codeToNameMap,
       'scatter',
-      this.payload.granularity || 'annuale'
+      this.payload.granularity || 'mensile'
     );
 
     const layout = this.chartSvc.buildLayout(
       this.payload.title || '',
       this.payload.unitDescription || '',
-      this.payload.granularity || 'annuale'
+      this.payload.granularity || 'mensile'
     );
 
     Plotly.react(this.chartContainer.nativeElement, traces, layout, {

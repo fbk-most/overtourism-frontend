@@ -21,7 +21,7 @@ export class IndiciFiltersComponent implements OnInit {
   spatialGranularity: 'comune' | 'macro_area' = 'comune';
   startDate = '';
   endDate = '';
-  granularity: TemporalGranularity = 'annuale';
+  granularity: TemporalGranularity = 'mensile';
   enableVariation = false;
   startDateComparison = '';
   endDateComparison = '';

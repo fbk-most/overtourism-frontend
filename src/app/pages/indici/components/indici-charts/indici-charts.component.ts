@@ -18,7 +18,7 @@ export class IndiciChartComponent  {
   @Input() selectedComuni: string[] = [];
   @Input() selectedAreas: string[] = [];
   @Input() spatialGranularity: 'comune' | 'macro_area' = 'comune';
-  @Input() granularity: TemporalGranularity = 'annuale';
+  @Input() granularity: TemporalGranularity = 'mensile';
   @Input() chartTitle = '';
   @Input() unitDescription = '';
   @Input() codeToName = new Map<string, string>();

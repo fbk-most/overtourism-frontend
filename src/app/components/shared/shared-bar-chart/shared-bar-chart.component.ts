@@ -53,13 +53,13 @@ export class SharedBarChartComponent implements OnChanges, AfterViewInit, OnDest
       selected,
       codeToNameMap,
       'bar',
-      this.payload.granularity || 'annuale'
+      this.payload.granularity || 'mensile'
     );
 
     const layout = this.chartSvc.buildLayout(
       this.payload.title || '',
       this.payload.unitDescription || '',
-      this.payload.granularity || 'annuale'
+      this.payload.granularity || 'mensile'
     );
 
     Plotly.react(this.chartContainer.nativeElement, traces, layout, {
