@@ -14,6 +14,7 @@ export type DomainEventType =
   // | 'COMPARISON_READY'
   // | 'EVALUATION_READY'
   // | 'NAVIGATION_REQUESTED';  //??
+  export type AgentType = 'executor' | 'operative' | 'methodological' | 'exploitative';
 
 export interface DomainEvent {
   type: DomainEventType;
@@ -31,6 +32,7 @@ export interface UIAction {
 // ─── Risposta strutturata dal backend ─────────────────────────────────────
 export interface AgentResponse {
   response: string;
+  agent_type?: AgentType;
   session_id?: string;
   active_context?: string;
   chart_data?: SharedChartPayload | null;
@@ -42,6 +44,7 @@ export interface AgentResponse {
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;                          // testo raw
+  agentType?: AgentType;
   html?: string;                            // testo pre-renderizzato markdown (opzionale)
   index?: number;                           // per il feedback keying
   chartData?: SharedChartPayload | null;

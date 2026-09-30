@@ -115,6 +115,7 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
     const updated: ChatMessage[] = [...currentMessages, {
       role: 'assistant',
       content: data.response,
+      agentType: data.agent_type,
       chartData: data.chart_data ?? null,
       slidersData: data.sliders_data ?? null,
       inlineActions: inlineActions.length > 0 ? inlineActions : undefined

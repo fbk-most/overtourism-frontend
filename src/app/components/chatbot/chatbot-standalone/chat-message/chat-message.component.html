@@ -1,9 +1,12 @@
 <div class="message user" *ngIf="msg.role === 'user'" style="white-space: pre-wrap;">{{ msg.content }}</div>
 
-<div class="message assistant" *ngIf="msg.role === 'assistant'">
+<div class="message assistant" *ngIf="msg.role === 'assistant'" [ngClass]="agentMeta?.cssClass">
   
-  <!-- DEBUG temporaneo -->
-  <!-- <pre style="font-size: 10px; background: #f0f0f0; padding: 8px; max-height: 200px; overflow: auto;">{{ msg | json }}</pre> -->
+  <!-- Header agent type -->
+  <div *ngIf="agentMeta" class="agent-type-header d-flex align-items-center gap-1 mb-2">
+    <it-icon [name]="agentMeta.icon" size="xs"></it-icon>
+    <span class="agent-label">{{ agentMeta.label }}</span>
+  </div>
 
   <div class="message-content" [innerHTML]="msg.content | markdown"></div>
 
