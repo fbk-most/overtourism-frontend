@@ -53,7 +53,7 @@ export interface IndicatorMeta {
   
   export interface IndiciFilterState {
     indicator: string;
-    spatialGranularity: 'comune' | 'macro_area';
+    spatialGranularity: 'comune' | 'macro_area' | 'provincia';
     startDate: string;
     endDate: string;
     granularity: TemporalGranularity;
