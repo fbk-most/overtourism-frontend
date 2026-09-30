@@ -65,7 +65,9 @@
       <label class="form-label fw-bold mb-1" style="font-size:13px;">Granularità temp.</label>
       <div class="dropdown">
         <button class="btn btn-outline-primary d-flex align-items-center" type="button" data-bs-toggle="dropdown">
-          <span class="text-start me-2">{{ granularity === 'mensile' ? 'Mensile' : (granularity === 'giornaliero' ? 'Giornaliero' : 'Annuale') }}</span>
+          <span class="text-start me-2">
+            {{ { giornaliero: 'Giornaliero', settimanale: 'Settimanale', mensile: 'Mensile', annuale: 'Annuale' }[granularity] }}
+          </span>
           <span class="material-icons ms-auto" style="font-size: 18px;">expand_more</span>
         </button>
         <div class="dropdown-menu shadow">
@@ -73,6 +75,7 @@
             <ul class="link-list">
               <li><a class="list-item" (click)="granularity = 'annuale'; markDirty()" style="cursor:pointer"><span>Annuale</span></a></li>
               <li><a class="list-item" (click)="granularity = 'mensile'; markDirty()" style="cursor:pointer"><span>Mensile</span></a></li>
+              <li><a class="list-item" (click)="granularity = 'settimanale'; markDirty()" style="cursor:pointer"><span>Settimanale</span></a></li>
               <li><a class="list-item" (click)="granularity = 'giornaliero'; markDirty()" style="cursor:pointer"><span>Giornaliero</span></a></li>
             </ul>
           </div>

@@ -24,7 +24,7 @@ export interface IndicatorMeta {
   }
   
   export type ShowOption = 'map' | 'chart' ;
-  export type TemporalGranularity = 'annuale' | 'mensile' | 'giornaliero';
+  export type TemporalGranularity = 'annuale' | 'mensile' | 'settimanale' | 'giornaliero';
   
   export interface GeoDataEnvelope {
     data: string;        
