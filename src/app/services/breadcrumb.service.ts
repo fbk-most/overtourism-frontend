@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Router } from '@angular/router';
-import { filter, map } from 'rxjs/operators';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { BehaviorSubject } from 'rxjs';
 
 export interface Breadcrumb {
@@ -13,17 +13,23 @@ export class BreadcrumbService {
   private breadcrumbs$ = new BehaviorSubject<Breadcrumb[]>([]);
 
   constructor(private router: Router, private route: ActivatedRoute) {
+    this.updateBreadcrumbs();
+
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(() => {
-        const root: ActivatedRoute = this.route.root;
-        const breadcrumbs = this.buildBreadcrumbs(root);
-        this.breadcrumbs$.next(breadcrumbs);
+        this.updateBreadcrumbs();
       });
   }
 
   get breadcrumbs() {
     return this.breadcrumbs$.asObservable();
+  }
+
+  public updateBreadcrumbs(): void {
+    const root: ActivatedRoute = this.route.root;
+    const breadcrumbs = this.buildBreadcrumbs(root);
+    this.breadcrumbs$.next(breadcrumbs);
   }
 
   private buildBreadcrumbs(
@@ -44,10 +50,10 @@ export class BreadcrumbService {
   
     const routeData = primaryRoute.snapshot.data || {};
     const params = primaryRoute.snapshot.params || {};
+    
     if (routeData['breadcrumb']) {
       let link = nextUrl;
     
-      // Usa breadcrumbUrl se presente
       if (routeData['breadcrumbUrl']) {
         link = this.interpolatePath(routeData['breadcrumbUrl'], params);
       }
@@ -64,11 +70,8 @@ export class BreadcrumbService {
   private interpolatePath(path: string, params: any): string {
     return path.replace(/:([a-zA-Z0-9_]+)/g, (_, key) => params[key] ?? '');
   }
-  
-  
 
   private interpolateLabel(label: string, params: any): string {
     return label.replace(/:([a-zA-Z0-9_]+)/g, (_, key) => params[key] || key);
   }
-
 }

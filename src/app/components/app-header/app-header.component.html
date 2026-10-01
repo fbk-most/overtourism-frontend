@@ -8,27 +8,6 @@
 <ng-container slimRightZone>
   <div class="d-flex align-items-center mt-1 gap-3">
     
-     <div class="d-flex align-items-center">
-      <span class="text-white small me-2">Contesto:</span>
-      <div class="dropdown">
-        <button class="btn btn-outline-light btn-sm d-flex justify-content-between align-items-center dropdown-toggle" 
-                type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.75rem;">
-          <span class="me-2 text-uppercase">{{ currentTerritory || 'Seleziona' }}</span>
-        </button>
-        <div class="dropdown-menu">
-          <div class="link-list-wrapper">
-            <ul class="link-list">
-              <li *ngFor="let t of territorys">
-                <a class="list-item" style="cursor: pointer;" (click)="onTerritoryChange(t)">
-                   <span class="text-uppercase" [ngStyle]="{'font-weight': currentTerritory === t ? 'bold' : 'normal'}">{{ t }}</span>
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="d-none d-md-flex align-items-center gap-1">
       <it-icon name="user" class="icon-white bg-white"></it-icon>
       <span class="text-white small">
@@ -48,12 +27,12 @@
       <img src="assets/images/logo.png" alt="IAxPA Logo" class="responsive-logo me-2" />
       <div class="it-brand-text">
         <div class="it-brand-title responsive-title">
-          Analisi dell'affollamento turistico<span *ngIf="currentTerritory">: {{ currentTerritory | uppercase }}</span>
-        </div>        <div class="it-brand-tagline d-none d-md-block"></div>
+          Analisi dell'affollamento turistico
+        </div>
+        <div class="it-brand-tagline d-none d-md-block"></div>
       </div>
     </a>
   </ng-container>
-
 
   <ng-container navItems>
      <it-navbar-item *ngFor="let link of links">

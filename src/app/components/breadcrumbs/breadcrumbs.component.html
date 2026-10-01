@@ -1,15 +1,41 @@
-<div class="container-fluid mb-3">
-    <it-breadcrumb [separator]="'/'" [ariaLabel]="'Breadcrumb'">
-      <it-breadcrumb-item
-        *ngFor="let breadcrumb of breadcrumbs$ | async; let last = last"
-        [active]="last"
-      >
-        <a *ngIf="!last" [routerLink]="breadcrumb.url"  class="text-primary">
-          {{ breadcrumb.label }}
-        </a>
-        <ng-template [ngIf]="last">
-          <span class="text-muted h6">{{ breadcrumb.label }}</span>
-        </ng-template>
-      </it-breadcrumb-item>
-    </it-breadcrumb>
+<div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+
+  <!-- Selettore Contesto/Territorio solo nel tab Analisi -->
+  <div *ngIf="isAnalisiTab && territorys.length > 0" class="d-flex align-items-center me-2">
+    <span class="text-muted small fw-semibold me-2">Contesto:</span>
+    <div class="dropdown">
+      <button class="btn btn-outline-primary btn-sm d-flex justify-content-between align-items-center dropdown-toggle px-2 py-1" 
+              type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.8rem;">
+        <span class="me-1 text-uppercase fw-bold">{{ currentTerritory || 'Seleziona' }}</span>
+      </button>
+      <div class="dropdown-menu shadow-sm">
+        <div class="link-list-wrapper">
+          <ul class="link-list">
+            <li *ngFor="let t of territorys">
+              <a class="list-item" style="cursor: pointer;" (click)="onTerritoryChange(t)">
+                 <span class="text-uppercase" [ngStyle]="{'font-weight': currentTerritory === t ? 'bold' : 'normal'}">{{ t }}</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- Separatore verticale tra contesto e breadcrumb -->
+  <div *ngIf="isAnalisiTab && territorys.length > 0" class="vr my-1 d-none d-sm-block text-secondary opacity-25"></div>
+
+  <!-- Breadcrumbs dal BreadcrumbService -->
+  <div class="flex-grow-1" *ngIf="(breadcrumbs$ | async) as crumbs">
+    <nav class="breadcrumb-container" aria-label="Percorso di navigazione" *ngIf="crumbs.length > 0">
+      <ol class="breadcrumb mb-0">
+        <li *ngFor="let crumb of crumbs; let last = last" class="breadcrumb-item" [class.active]="last">
+          <a *ngIf="!last" [routerLink]="crumb.url">{{ crumb.label }}</a>
+          <span *ngIf="last" aria-current="page">{{ crumb.label }}</span>
+          <span *ngIf="!last" class="separator mx-2 text-muted">/</span>
+        </li>
+      </ol>
+    </nav>
+  </div>
+
+</div>

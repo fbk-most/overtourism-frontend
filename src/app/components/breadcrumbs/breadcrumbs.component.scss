@@ -1,0 +1,43 @@
+:host {
+    display: block;
+  }
+  
+  .breadcrumb-container {
+    .breadcrumb {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+  
+      .breadcrumb-item {
+        display: inline-flex;
+        align-items: center;
+        font-size: 1.05rem; // 🟢 Font più leggibile e visibile
+  
+        a {
+          color: #0066cc;
+          text-decoration: underline;
+          font-weight: 500;
+          cursor: pointer;
+  
+          &:hover {
+            color: #004080;
+          }
+        }
+  
+        &.active, span[aria-current="page"] {
+          color: #1a202c;
+          font-weight: 600;
+          text-decoration: none;
+        }
+  
+        .separator {
+          color: #6c757d;
+          font-size: 1rem;
+          font-weight: normal;
+        }
+      }
+    }
+  }

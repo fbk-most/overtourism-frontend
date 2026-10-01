@@ -155,11 +155,10 @@ setActiveTerritory(territory: string, reload: boolean = true) {
   this.activeTerritorySubject.next(territory);
 
   if (reload) {
-    this.router.routeReuseStrategy.shouldReuseRoute = () => false;
-    this.router.onSameUrlNavigation = 'reload';
 
-    this.router.navigate(['/problems']).then(() => {
-      console.log("relaoded data for territory change");
+
+    this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+      this.router.navigate(['/problems']);
     });
   }
 }
