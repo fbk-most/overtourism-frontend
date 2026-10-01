@@ -18,7 +18,7 @@ export class IndiciFiltersComponent implements OnInit {
   @Output() stateChange = new EventEmitter<IndiciFilterState>();
 
   selectedIndicator = '';
-  spatialGranularity: 'comune' | 'macro_area' = 'comune';
+  spatialGranularity: 'comune' | 'macro_area' | 'provincia' = 'comune';
   startDate = '';
   endDate = '';
   granularity: TemporalGranularity = 'mensile';

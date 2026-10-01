@@ -24,7 +24,7 @@ export interface IndicatorMeta {
   }
   
   export type ShowOption = 'map' | 'chart' ;
-  export type TemporalGranularity = 'annuale' | 'mensile' | 'giornaliero';
+  export type TemporalGranularity = 'annuale' | 'mensile' | 'settimanale' | 'giornaliero';
   
   export interface GeoDataEnvelope {
     data: string;        
@@ -53,7 +53,7 @@ export interface IndicatorMeta {
   
   export interface IndiciFilterState {
     indicator: string;
-    spatialGranularity: 'comune' | 'macro_area';
+    spatialGranularity: 'comune' | 'macro_area' | 'provincia';
     startDate: string;
     endDate: string;
     granularity: TemporalGranularity;

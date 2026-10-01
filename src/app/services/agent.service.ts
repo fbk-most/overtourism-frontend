@@ -78,17 +78,12 @@ export class AgentService {
   }
 
   createEventSource(sessionId: string): any {
-    const params = new URLSearchParams();
-    if (this.authService.activeTenant) {
-      params.append('tenant', this.authService.activeTenant);
-    }
-
-    const qs = params.toString();
-    const url = `${this.apiUrl}/stream/${sessionId}${qs ? '?' + qs : ''}`;
-    const ctrl = new AbortController();
+    const tenant = this.authService.activeTenant;
     const token = this.authService.accessToken;
 
     const listeners: Record<string, Array<(e: any) => void>> = {};
+    let closed = false;
+    let ctrl = new AbortController();
 
     const customEventSource = {
       addEventListener: (type: string, handler: (e: any) => void) => {
@@ -97,43 +92,83 @@ export class AgentService {
       },
       onmessage: null as ((ev: any) => void) | null,
       onerror: null as ((err: any) => void) | null,
-      close: () => ctrl.abort()
+      close: () => {
+        closed = true;
+        ctrl.abort();
+      }
     };
 
-    fetchEventSource(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'text/event-stream'
-      },
-      signal: ctrl.signal,
-      onmessage(msg) {
-        const eventType = msg.event || 'message';
+    const buildUrl = (since: number) => {
+      const params = new URLSearchParams();
+      if (tenant) params.append('tenant', tenant);
+      params.append('since', String(since));
+      return `${this.apiUrl}/stream/${sessionId}?${params.toString()}`;
+    };
 
-        let resolvedType = eventType;
-        let payload: any = { data: msg.data };
-        try {
-          const parsed = JSON.parse(msg.data);
-          if (parsed?.type) {
-            resolvedType = parsed.type;
-            payload = { data: parsed.content ?? msg.data, raw: parsed };
+    // The backend voluntarily closes and reopens this connection every
+    // ~12s (see SSE_MAX_CONNECTION_SECONDS in app.api.routes) rather than
+    // risk a proxy/gateway cutting a long-lived stream uncleanly, as was
+    // happening in production (ERR_INCOMPLETE_CHUNKED_ENCODING around
+    // 15-16s, silently dropping "done" and leaving the chat stuck loading
+    // forever). It signals this with a "retry" event carrying the offset
+    // to resume from — handled entirely here, inside connect(), so it
+    // never reaches component code: from the caller's point of view
+    // (chatbot-standalone/integrated), the stream just keeps going.
+    const connect = (since: number) => {
+      if (closed) return;
+      ctrl = new AbortController();
+
+      fetchEventSource(buildUrl(since), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'text/event-stream'
+        },
+        signal: ctrl.signal,
+        onmessage(msg) {
+          const eventType = msg.event || 'message';
+
+          if (eventType === 'retry') {
+            const resumeFrom = parseInt(msg.data, 10) || 0;
+            connect(resumeFrom);
+            return;
           }
-        } catch { }
 
-        if (listeners[resolvedType]) {
-          listeners[resolvedType].forEach(fn => fn(payload));
+          let resolvedType = eventType;
+          let payload: any = { data: msg.data };
+          try {
+            const parsed = JSON.parse(msg.data);
+            if (parsed?.type) {
+              resolvedType = parsed.type;
+              payload = { data: parsed.content ?? msg.data, raw: parsed };
+            }
+          } catch { }
+
+          if (listeners[resolvedType]) {
+            listeners[resolvedType].forEach(fn => fn(payload));
+          }
+          if (customEventSource.onmessage) {
+            customEventSource.onmessage({ data: msg.data, type: resolvedType });
+          }
+        },
+        onerror(err) {
+          // A voluntary rotation reconnects itself above, WITHOUT going
+          // through onerror — so anything reaching here is a genuine
+          // failure (network drop, a proxy cut we didn't manage to
+          // preempt, backend down, etc.), not routine reconnect traffic.
+          // Throwing stops fetchEventSource's own built-in retry-on-error
+          // loop and lets the caller's onerror decide what the user sees
+          // (see chatbot-standalone.component.ts, which falls back to
+          // polling /agent/result once before showing a hard error).
+          if (customEventSource.onerror) {
+            customEventSource.onerror(err);
+          }
+          throw err;
         }
-        if (customEventSource.onmessage) {
-          customEventSource.onmessage({ data: msg.data, type: resolvedType });
-        }
-      },
-      onerror(err) {
-        if (customEventSource.onerror) {
-          customEventSource.onerror(err);
-        }
-        throw err;
-      }
-    });
+      });
+    };
+
+    connect(0);
 
     return customEventSource;
   }

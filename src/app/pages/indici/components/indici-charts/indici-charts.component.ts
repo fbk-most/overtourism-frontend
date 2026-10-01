@@ -17,7 +17,7 @@ export class IndiciChartComponent  {
   @Input() allAreas: Comune[] = [];
   @Input() selectedComuni: string[] = [];
   @Input() selectedAreas: string[] = [];
-  @Input() spatialGranularity: 'comune' | 'macro_area' = 'comune';
+  @Input() spatialGranularity: 'comune' | 'macro_area' | 'provincia' = 'comune';
   @Input() granularity: TemporalGranularity = 'mensile';
   @Input() chartTitle = '';
   @Input() unitDescription = '';
