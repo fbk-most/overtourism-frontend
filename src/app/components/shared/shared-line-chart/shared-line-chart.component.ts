@@ -43,9 +43,7 @@ export class SharedLineChartComponent implements OnChanges, AfterViewInit, OnDes
     if (!this.chartContainer || !this.payload?.series?.length) return;
 
     const codeToNameMap = this.normalizeCodeToName(this.payload.codeToName);
-    const selected = this.payload.selectedItems && this.payload.selectedItems.length > 0
-      ? this.payload.selectedItems
-      : this.payload.series.map(s => s.label);
+    const selected = this.payload.selectedItems ?? [];
 
     const traces = this.chartSvc.buildTraces(
       this.payload.labels || [],
@@ -59,7 +57,8 @@ export class SharedLineChartComponent implements OnChanges, AfterViewInit, OnDes
     const layout = this.chartSvc.buildLayout(
       this.payload.title || '',
       this.payload.unitDescription || '',
-      this.payload.granularity || 'mensile'
+      this.payload.granularity || 'mensile',
+      'scatter'
     );
 
     Plotly.react(this.chartContainer.nativeElement, traces, layout, {

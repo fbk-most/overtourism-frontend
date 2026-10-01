@@ -62,6 +62,8 @@ export class PlotComponent implements AfterViewInit {
   sessionId!: string;
   sessionScenarioId: string | null = null;
   sessionEvaluationId: string | null = null;
+  savedSummary: string | null = null;
+  currentSummary: string | null = null;
   plotMapper: any;
 
   constructor(private plotService: PlotService,
@@ -152,7 +154,8 @@ export class PlotComponent implements AfterViewInit {
         this.proposalId,
         this.titolo,
         this.descrizione,
-        this.changedWidgets
+        this.changedWidgets,
+        this.currentSummary
       )
       .subscribe({
         next: (res) => {
@@ -295,7 +298,8 @@ export class PlotComponent implements AfterViewInit {
     // Resetta per dire ai figli (ReadingComponent) di aspettare
     this.sessionScenarioId = null;
     this.sessionEvaluationId = null;
-    
+    this.savedSummary = null;
+    this.currentSummary = null;
     try {
       const sessionScenario = await firstValueFrom(
         this.scenarioService.createSessionScenario(this.sessionId, this.problemId, this.scenarioId, values)
@@ -375,7 +379,8 @@ export class PlotComponent implements AfterViewInit {
     try {
       const problemData = await firstValueFrom(this.problemService.getProblemById(this.problemId));
       const scenarioMetadata = await firstValueFrom(this.scenarioService.getScenarioData(this.scenarioId, this.problemId));
-
+      this.savedSummary = scenarioMetadata.summary ?? scenarioMetadata.extras?.summary ?? null;
+      this.currentSummary = this.savedSummary;
       const rawOverrides = scenarioMetadata.param_overrides || scenarioMetadata.index_values || {};
       const actualNumericalValues = Array.isArray(rawOverrides) ? this.scenarioService.arrayToDict(rawOverrides) : rawOverrides;
 

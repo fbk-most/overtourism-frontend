@@ -9,7 +9,7 @@ export interface ProblemExtras {
 export interface Problem {
   problem_id: string;
   version?: number;
-  tenant?: string;
+  territory?: string;
   name: string;
   description: string;
   updated?: Date;

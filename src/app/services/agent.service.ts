@@ -78,7 +78,7 @@ export class AgentService {
   }
 
   createEventSource(sessionId: string): any {
-    const tenant = this.authService.activeTenant;
+    const territory = this.authService.activeTerritory;
     const token = this.authService.accessToken;
 
     const listeners: Record<string, Array<(e: any) => void>> = {};
@@ -100,7 +100,7 @@ export class AgentService {
 
     const buildUrl = (since: number) => {
       const params = new URLSearchParams();
-      if (tenant) params.append('tenant', tenant);
+      if (territory) params.append('territory', territory);
       params.append('since', String(since));
       return `${this.apiUrl}/stream/${sessionId}?${params.toString()}`;
     };

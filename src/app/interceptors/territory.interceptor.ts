@@ -5,41 +5,41 @@ import { AuthenticationService } from '../services/authentication.service';
 import { environment } from '../../environments/environment';
 
 @Injectable()
-export class TenantInterceptor implements HttpInterceptor {
+export class TerritoryInterceptor implements HttpInterceptor {
   constructor(private injector: Injector) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const authService = this.injector.get(AuthenticationService);
-    const activeTenant = authService.activeTenant;
-    if (req.url.includes('/default/tenants')) {
+    const activeTerritory = authService.activeTerritory;
+    if (req.url.includes('/default/territorys')) {
       return next.handle(req);
     }
 
     const apiBase = environment.apiBaseUrl;
     const agentApi = environment.agentApiUrl;
 
-    // API classica: tenant nel PATH
+    // API classica: territory nel PATH
     if (req.url.startsWith(apiBase)) {
       const apiPath = req.url.slice(apiBase.length);
       if (/^\/indexes(?:\/|\?|$)/.test(apiPath)) {
         const newUrl = req.url.replace(apiBase, `${apiBase}/default`);
         return next.handle(req.clone({ url: newUrl }));
       }
-      if (!activeTenant) {
+      if (!activeTerritory) {
         return next.handle(req);
       }
-      const newUrl = req.url.replace(apiBase, `${apiBase}/${activeTenant}`);
+      const newUrl = req.url.replace(apiBase, `${apiBase}/${activeTerritory}`);
       return next.handle(req.clone({ url: newUrl }));
     }
 
-    if (!activeTenant) {
+    if (!activeTerritory) {
       return next.handle(req);
     }
 
-    // Agent API: tenant come QUERY PARAMETER
+    // Agent API: territory come QUERY PARAMETER
     if (req.url.startsWith(agentApi)) {
       const separator = req.url.includes('?') ? '&' : '?';
-      const newUrl = `${req.url}${separator}tenant=${activeTenant}`;
+      const newUrl = `${req.url}${separator}territory=${activeTerritory}`;
       return next.handle(req.clone({ url: newUrl }));
     }
 

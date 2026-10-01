@@ -23,7 +23,7 @@ import { AppFooterModule } from './components/app-footer/app-footer.module';
 
 // Interceptors & Services
 import { HttpErrorInterceptor } from './interceptors/http-error.interceptor';
-import { TenantInterceptor } from './interceptors/tenant.interceptor';
+import { TerritoryInterceptor } from './interceptors/territory.interceptor';
 import { AuthenticationService } from './services/authentication.service';
 
 // Pages & Components
@@ -158,7 +158,7 @@ export function initializeAuth(authService: AuthenticationService) {
     },
     {
       provide: HTTP_INTERCEPTORS,
-      useClass: TenantInterceptor,
+      useClass: TerritoryInterceptor,
       multi: true
     },
     {

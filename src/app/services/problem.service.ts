@@ -22,7 +22,7 @@ export class ProblemService {
         response.map(problem => ({
           problem_id: problem.problem_id,
           version: problem.version,
-          tenant: problem.tenant,
+          territory: problem.territory,
           name: problem.name,
           description: problem.description,
           updated: problem.updated ? new Date(problem.updated) : undefined,
@@ -54,7 +54,7 @@ export class ProblemService {
   }
   /** PUT update problem */
 updateProblem(problemId: string, payload: Problem): Observable<Problem> {
-  const { problem_id, tenant, updated,...body } = payload;
+  const { problem_id, territory, updated,...body } = payload;
   return this.http.put<Problem>(`${this.baseUrl}/problems/${problemId}`, body);
 }
 }

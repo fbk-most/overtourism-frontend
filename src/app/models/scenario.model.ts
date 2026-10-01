@@ -5,12 +5,13 @@ export interface ScenarioIndexValue {
 }
 
 export interface ProblemScenario {
-  id: string; // lo teniamo per comodità front-end se lo usi
+  id: string;  
   scenario_id: string;
   problem_id: string;
   version?: number;
   name: string | null;
   description?: string | null;
+  summary?: string | null;
   created?: string | null;
   updated?: string | null;
   extras?: any;

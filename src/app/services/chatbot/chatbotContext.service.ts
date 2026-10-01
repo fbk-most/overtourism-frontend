@@ -34,7 +34,7 @@ export class ChatbotContextService {
   getPayloadContext() {
     return {
       route: this.route$.getValue(),
-      tenant: this.authSvc.activeTenant,
+      territory: this.authSvc.activeTerritory,
       problem_id: this.problemId$.getValue(),
       proposal_id: this.proposalId$.getValue(),
       scenario_ids: this.scenarioIds$.getValue(),

@@ -63,8 +63,8 @@ export class ScenarioService {
   constructor(private http: HttpClient, private configService: ConfigService,private authService: AuthenticationService) {
     this.baseUrl = environment.apiBaseUrl;
 
-    this.configuration$ = this.authService.activeTenant$.pipe(
-      filter(tenant => !!tenant),
+    this.configuration$ = this.authService.activeTerritory$.pipe(
+      filter(territory => !!territory),
       switchMap(() => this.http.get<AppConfiguration>(`${this.baseUrl}/configuration`)),
       shareReplay({ bufferSize: 1, refCount: false })
     );
@@ -79,12 +79,10 @@ export class ScenarioService {
     proposalId: string,
     name: string,
     description: string,
-    changedWidgets: Record<string, any>  ): Observable<any> {
+    changedWidgets: Record<string, any>,
+    summary?: string | null
+    ): Observable<any> {
     
-    const indexValues = Object.keys(changedWidgets || {}).map(key => ({
-      index_id: key,
-      value: changedWidgets[key]
-    }));
 
     const payload = {
       problem_id: problemId,
@@ -93,6 +91,7 @@ export class ScenarioService {
       proposal_id: proposalId,
       name: name,
       description: description,
+      summary: summary,
       param_overrides: changedWidgets
         };
 
@@ -258,6 +257,7 @@ export class ScenarioService {
           
           name: scenario.name,
           description: scenario.description,
+          summary: scenario.summary ?? scenario.extras?.summary ?? null,
           
           created: scenario.created,
           updated: scenario.updated,
@@ -316,8 +316,8 @@ export class ScenarioService {
       })
     );
   }
-  getTenants(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.baseUrl}/default/tenants`);
+  getTerritorys(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.baseUrl}/default/territorys`);
   }
   getWidgets(): Observable<Widget[]> {
     return this.getConfiguration().pipe(map(config => config.indexes || []));

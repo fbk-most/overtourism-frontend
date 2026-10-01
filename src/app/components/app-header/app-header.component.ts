@@ -16,12 +16,12 @@ constructor(public router: Router,    public authService: AuthenticationService 
 }
 ngOnInit() {
    if (this.authService.isLoggedIn) {
-    this.scenarioService.getTenants().subscribe({
+    this.scenarioService.getTerritorys().subscribe({
       next: (res) => {
-        this.authService.setAvailableTenants(res);
-         const current = this.authService.activeTenant; 
+        this.authService.setAvailableTerritorys(res);
+         const current = this.authService.activeTerritory; 
       },
-      error: (err) => console.error("Errore recupero lista tenant: ", err)
+      error: (err) => console.error("Errore recupero lista territory: ", err)
     });
   }
 }
@@ -46,15 +46,15 @@ ngOnInit() {
     }
     return this.router.url === link.route;
   }
-  get tenants() {
-    return this.authService.availableTenants;
+  get territorys() {
+    return this.authService.availableTerritorys;
   }
 
-  get currentTenant() {
-    return this.authService.activeTenant;
+  get currentTerritory() {
+    return this.authService.activeTerritory;
   }
 
-  onTenantChange(selectedTenant: string) {
-    this.authService.setActiveTenant(selectedTenant);
+  onTerritoryChange(selectedTerritory: string) {
+    this.authService.setActiveTerritory(selectedTerritory);
   }
 }

@@ -22,9 +22,9 @@ export const authConfig: AuthConfig = {
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
-  private readonly TENANT_KEY = 'active_tenant';
-  private activeTenantSubject = new BehaviorSubject<string | null>(localStorage.getItem(this.TENANT_KEY));
-  public activeTenant$ = this.activeTenantSubject.asObservable();
+  private readonly TERRITORY_KEY = 'active_territory';
+  private activeTerritorySubject = new BehaviorSubject<string | null>(localStorage.getItem(this.TERRITORY_KEY));
+  public activeTerritory$ = this.activeTerritorySubject.asObservable();
 
   constructor(private oauthService: OAuthService,
     private router: Router,
@@ -68,9 +68,9 @@ export class AuthenticationService {
       await this.oauthService.loadDiscoveryDocumentAndTryLogin();
       
       if (this.isLoggedIn) {
-        this.extractTenantsFromClaims();
+        this.extractTerritorysFromClaims();
 
-        if (this.availableTenants.length === 0) {
+        if (this.availableTerritorys.length === 0) {
           localStorage.setItem('auth_error', 'Utente non autorizzato ad accedere all\'applicazione.');
           this.logout()
                     return;
@@ -85,16 +85,16 @@ export class AuthenticationService {
     }
   }
 
-  private extractTenantsFromClaims(): void {
+  private extractTerritorysFromClaims(): void {
     const claims: any = this.oauthService.getIdentityClaims() || {};
-    const tenants = claims['tenant_id'];
+    const territorys = claims['tenant_id'];
 
-    if (Array.isArray(tenants)) {
-      this.setAvailableTenants(tenants);
-    } else if (typeof tenants === 'string' && tenants.length > 0) {
-      this.setAvailableTenants([tenants]);
+    if (Array.isArray(territorys)) {
+      this.setAvailableTerritorys(territorys);
+    } else if (typeof territorys === 'string' && territorys.length > 0) {
+      this.setAvailableTerritorys([territorys]);
     } else {
-      this.setAvailableTenants([]);
+      this.setAvailableTerritorys([]);
     }
   }
 
@@ -126,40 +126,40 @@ export class AuthenticationService {
     this.oauthService.logOut(true);
     this.router.navigate(['/login']);
   }
-  private _availableTenants: string[] = [];
+  private _availableTerritorys: string[] = [];
   
-  get availableTenants(): string[] {
-    return this._availableTenants;
+  get availableTerritorys(): string[] {
+    return this._availableTerritorys;
   }
 
-  setAvailableTenants(tenants: string[]): void {
-    this._availableTenants = tenants;
+  setAvailableTerritorys(territorys: string[]): void {
+    this._availableTerritorys = territorys;
   }
 
-  get activeTenant(): string {
-    let tenant = localStorage.getItem(this.TENANT_KEY);
-    // Se non c'è un tenant o quello salvato non fa più parte della lista
-    if (!tenant || (this._availableTenants.length > 0 && !this._availableTenants.includes(tenant))) {
-      if (this._availableTenants.length > 0) {
-        tenant = this._availableTenants[0];
-        this.setActiveTenant(tenant, false);
+  get activeTerritory(): string {
+    let territory = localStorage.getItem(this.TERRITORY_KEY);
+    // Se non c'è un territory o quello salvato non fa più parte della lista
+    if (!territory || (this._availableTerritorys.length > 0 && !this._availableTerritorys.includes(territory))) {
+      if (this._availableTerritorys.length > 0) {
+        territory = this._availableTerritorys[0];
+        this.setActiveTerritory(territory, false);
       } else {
         return ''; 
       }
     }
-    return tenant;
+    return territory;
   }
 
-setActiveTenant(tenant: string, reload: boolean = true) {
-  localStorage.setItem(this.TENANT_KEY, tenant);
-  this.activeTenantSubject.next(tenant);
+setActiveTerritory(territory: string, reload: boolean = true) {
+  localStorage.setItem(this.TERRITORY_KEY, territory);
+  this.activeTerritorySubject.next(territory);
 
   if (reload) {
     this.router.routeReuseStrategy.shouldReuseRoute = () => false;
     this.router.onSameUrlNavigation = 'reload';
 
     this.router.navigate(['/problems']).then(() => {
-      console.log("relaoded data for tenant change");
+      console.log("relaoded data for territory change");
     });
   }
 }

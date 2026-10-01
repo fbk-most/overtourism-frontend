@@ -168,6 +168,9 @@
           </h6> -->
           <app-reading [widgets]="widgets" [indexDiffs]="indexDiffs" [dataFacts]="inputData?.dataFacts || []"
             [originalIndexDiffs]="originalIndexDiffs"
+            [savedSummary]="savedSummary"
+            [loading]="loading"
+            (summaryChange)="currentSummary = $event"
             [scenarioIds]="(sessionScenarioId || scenarioId) ? [(sessionScenarioId || scenarioId)!] : []"
             [originalScenarioIds]="scenarioId ? [scenarioId] : []"
             [sessionId]="sessionScenarioId ? sessionId : undefined" [evaluationId]="sessionEvaluationId || undefined"

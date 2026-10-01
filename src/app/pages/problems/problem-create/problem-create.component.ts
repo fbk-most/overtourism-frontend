@@ -34,7 +34,7 @@ export class ProblemCreateComponent {
   originalExtras: any = {};
 
   savedVersion?: number;
-  savedTenant?: string;
+  savedTerritory?: string;
   savedCreated?: Date;
 
   constructor(
@@ -68,7 +68,7 @@ export class ProblemCreateComponent {
       next: (res: any) => {
         this.savedProblemId = res.problem_id;
         this.savedVersion = res.version;
-        this.savedTenant = res.tenant;
+        this.savedTerritory = res.territory;
         this.savedCreated = res.created ? new Date(res.created) : undefined;
         this.model.name = res.name || '';
         this.model.descriptionProblem = res.description || '';
@@ -110,7 +110,7 @@ export class ProblemCreateComponent {
         problem_id: this.savedProblemId || '', 
         
         version: this.savedVersion,
-        tenant: this.savedTenant,
+        territory: this.savedTerritory,
         created: this.savedCreated,
         updated: new Date(),
         
@@ -140,7 +140,7 @@ export class ProblemCreateComponent {
       if (res) {
         this.savedProblemId = res.problem_id;
         this.savedVersion = res.version;
-        this.savedTenant = res.tenant;
+        this.savedTerritory = res.territory;
         this.savedCreated = res.created ? new Date(res.created) : undefined;
       }
       this.savedProblemId = res?.problem_id;
