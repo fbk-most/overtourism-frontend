@@ -14,16 +14,15 @@ import { SharedPlotComponent } from '../../shared/shared-plot/shared-plot.compon
 import { IndiciMapComponent } from '../../indici-map/indici-map.component';
 import { ChatbotService } from '../../../services/chatbot/chatbot.service';
 import { SharedLineChartComponent } from '../../shared/shared-line-chart/shared-line-chart.component';  
-import { SharedBarChartComponent } from '../../shared/shared-bar-chart/shared-bar-chart.component';
-import { c } from '../../../../../node_modules/@angular/cdk/a11y-module.d-DBHGyKoh';    
+import { SharedBarChartComponent } from '../../shared/shared-bar-chart/shared-bar-chart.component';    
 
 @Component({
   selector: 'app-chatbot-standalone',
   standalone: true,
   imports: [CommonModule, FormsModule, ChatMessageComponent, DesignAngularKitModule,
     // @ts-ignore-warnings
-    SharedHistogramComponent, SharedKpisComponent, SharedPlotComponent, SharedLineChartComponent,
-    SharedBarChartComponent, c],
+    SharedHistogramComponent, SharedKpisComponent,SharedPlotComponent, SharedLineChartComponent, 
+    SharedBarChartComponent],
     templateUrl: './chatbot-standalone.component.html',
   styleUrls: ['./chatbot-standalone.component.scss']
 })
