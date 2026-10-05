@@ -14,15 +14,16 @@ import { SharedPlotComponent } from '../../shared/shared-plot/shared-plot.compon
 import { IndiciMapComponent } from '../../indici-map/indici-map.component';
 import { ChatbotService } from '../../../services/chatbot/chatbot.service';
 import { SharedLineChartComponent } from '../../shared/shared-line-chart/shared-line-chart.component';  
-import { SharedBarChartComponent } from '../../shared/shared-bar-chart/shared-bar-chart.component';    
+import { SharedBarChartComponent } from '../../shared/shared-bar-chart/shared-bar-chart.component';
+import { c } from '../../../../../node_modules/@angular/cdk/a11y-module.d-DBHGyKoh';    
 
 @Component({
   selector: 'app-chatbot-standalone',
   standalone: true,
   imports: [CommonModule, FormsModule, ChatMessageComponent, DesignAngularKitModule,
     // @ts-ignore-warnings
-    SharedHistogramComponent, SharedKpisComponent,SharedPlotComponent, SharedLineChartComponent, 
-    SharedBarChartComponent],
+    SharedHistogramComponent, SharedKpisComponent, SharedPlotComponent, SharedLineChartComponent,
+    SharedBarChartComponent, c],
     templateUrl: './chatbot-standalone.component.html',
   styleUrls: ['./chatbot-standalone.component.scss']
 })
@@ -61,7 +62,18 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
       this.chatbotSvc.saveSessionId(this.sessionId);
     }
   }
-
+  startNewChat(): void {
+    this.chatbotSvc.clearSession();
+    this.sessionId = this.agentSvc.generateSessionId();
+    this.chatbotSvc.saveSessionId(this.sessionId);
+    this.messages = [];
+    this.feedbacks = {};
+    this.input = '';
+    this.attachments = [];
+    this.statusMessage = null;
+    this.loading = false;
+    this.activeContext = '-';
+  }
   ngOnInit() {
     this.messages = this.chatbotSvc.loadMessages();
     if (this.messages.length > 0) this.shouldScroll = true;

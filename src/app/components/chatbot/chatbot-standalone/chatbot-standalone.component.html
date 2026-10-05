@@ -1,16 +1,30 @@
 <div class="chatbot-app">
+  <div class="chatbot-app">
 
-  <div class="chat-wrapper" #chatRef>
-    <div class="chat-container">
-      
-      <div class="empty-state text-muted text-center mt-5" *ngIf="messages.length === 0">
-        <it-icon name="comment" size="lg" class="mb-3"></it-icon>
-        <h5>Come posso aiutarti oggi?</h5>
-        <p>Invia un messaggio o allega un file per iniziare.</p>
-      </div>
-
-      <ng-container *ngFor="let msg of messages; let i = index">
+    <div class="context-bar">
+      <div class="d-flex align-items-center gap-2">
+            </div>
+  
+      <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1 py-1 px-2"
+              (click)="startNewChat()"
+              [disabled]="loading"
+              title="Inizia una nuova sessione e pulisci la chat">
+        <it-icon name="plus"  class="icon-primary" size="xs"></it-icon>
+        <span class="small fw-semibold">Nuova chat</span>
+      </button>
+    </div>
+  
+    <div class="chat-wrapper" #chatRef>
+      <div class="chat-container">
         
+        <div class="empty-state text-muted text-center mt-5" *ngIf="messages.length === 0">
+          <it-icon name="comment" size="lg" class="mb-3"></it-icon>
+          <h5>Come posso aiutarti oggi?</h5>
+          <p>Invia un messaggio per iniziare la conversazione.</p>
+        </div>
+  
+        <ng-container *ngFor="let msg of messages; let i = index">
+       
         <app-chat-message
           [msg]="msg"
           [sessionId]="sessionId"
