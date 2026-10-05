@@ -24,12 +24,9 @@ export class BreadcrumbsComponent implements OnInit {
   ngOnInit() {
     this.breadcrumbs$ = this.breadcrumbService.breadcrumbs;
 
-    if (this.authService.isLoggedIn && this.territorys.length === 0) {
-      this.scenarioService.getTerritorys().subscribe({
-        next: (res) => {
-          const valid = (res || []).filter(t => t.toLowerCase() !== 'default');
-          this.authService.setAvailableTerritorys(valid);
-        },
+    if (this.authService.isLoggedIn && this.territories.length === 0) {
+      this.scenarioService.getTerritories().subscribe({
+        next: (res) => this.authService.setAvailableTerritories(res),
         error: (err) => console.error("Errore recupero lista territory: ", err)
       });
     }
@@ -39,8 +36,8 @@ export class BreadcrumbsComponent implements OnInit {
     return this.router.url.startsWith('/problems');
   }
 
-  get territorys(): string[] {
-    return (this.authService.availableTerritorys || []).filter(t => t.toLowerCase() !== 'default');
+  get territories(): string[] {
+    return (this.authService.availableTerritories || []).filter(t => t.toLowerCase() !== 'default');
   }
 
   get currentTerritory(): string {

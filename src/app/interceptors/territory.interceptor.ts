@@ -11,7 +11,7 @@ export class TerritoryInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const authService = this.injector.get(AuthenticationService);
     const activeTerritory = authService.activeTerritory;
-    if (req.url.includes('/default/territorys')) {
+    if (req.url.includes('/default/territories')) {
       return next.handle(req);
     }
 

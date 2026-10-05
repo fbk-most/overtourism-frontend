@@ -1,7 +1,7 @@
 <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
 
   <!-- Selettore Contesto/Territorio solo nel tab Analisi -->
-  <div *ngIf="isAnalisiTab && territorys.length > 0" class="d-flex align-items-center me-2">
+  <div *ngIf="isAnalisiTab && territories.length > 0" class="d-flex align-items-center me-2">
     <span class="text-muted small fw-semibold me-2">Contesto:</span>
     <div class="dropdown">
       <button class="btn btn-outline-primary btn-sm d-flex justify-content-between align-items-center dropdown-toggle px-2 py-1" 
@@ -11,7 +11,7 @@
       <div class="dropdown-menu shadow-sm">
         <div class="link-list-wrapper">
           <ul class="link-list">
-            <li *ngFor="let t of territorys">
+            <li *ngFor="let t of territories">
               <a class="list-item" style="cursor: pointer;" (click)="onTerritoryChange(t)">
                  <span class="text-uppercase" [ngStyle]="{'font-weight': currentTerritory === t ? 'bold' : 'normal'}">{{ t }}</span>
               </a>
@@ -23,7 +23,7 @@
   </div>
 
   <!-- Separatore verticale tra contesto e breadcrumb -->
-  <div *ngIf="isAnalisiTab && territorys.length > 0" class="vr my-1 d-none d-sm-block text-secondary opacity-25"></div>
+  <div *ngIf="isAnalisiTab && territories.length > 0" class="vr my-1 d-none d-sm-block text-secondary opacity-25"></div>
 
   <!-- Breadcrumbs dal BreadcrumbService -->
   <div class="flex-grow-1" *ngIf="(breadcrumbs$ | async) as crumbs">

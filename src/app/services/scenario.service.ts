@@ -63,6 +63,13 @@ export class ScenarioService {
   constructor(private http: HttpClient, private configService: ConfigService,private authService: AuthenticationService) {
     this.baseUrl = environment.apiBaseUrl;
 
+    this.getTerritories().subscribe({
+      next: (territories) => {
+        this.authService.setAvailableTerritories(territories);
+      },
+      error: (err) => console.error('Errore nel recupero dei territori:', err)
+    });
+
     this.configuration$ = this.authService.activeTerritory$.pipe(
       filter(territory => !!territory),
       switchMap(() => this.http.get<AppConfiguration>(`${this.baseUrl}/configuration`)),
@@ -316,8 +323,8 @@ export class ScenarioService {
       })
     );
   }
-  getTerritorys(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.baseUrl}/default/territorys`);
+  getTerritories(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.baseUrl}/default/territories`);
   }
   getWidgets(): Observable<Widget[]> {
     return this.getConfiguration().pipe(map(config => config.indexes || []));

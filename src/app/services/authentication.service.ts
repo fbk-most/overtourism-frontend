@@ -67,15 +67,6 @@ export class AuthenticationService {
 
       await this.oauthService.loadDiscoveryDocumentAndTryLogin();
       
-      if (this.isLoggedIn) {
-        this.extractTerritorysFromClaims();
-
-        if (this.availableTerritorys.length === 0) {
-          localStorage.setItem('auth_error', 'Utente non autorizzato ad accedere all\'applicazione.');
-          this.logout()
-                    return;
-        }
-      }
     } catch (e: any) {
       if (e?.type === 'invalid_nonce_in_state') {
         console.warn('Ignorato errore di stato disallineato post-logout');
@@ -85,18 +76,6 @@ export class AuthenticationService {
     }
   }
 
-  private extractTerritorysFromClaims(): void {
-    const claims: any = this.oauthService.getIdentityClaims() || {};
-    const territorys = claims['tenant_id'];
-
-    if (Array.isArray(territorys)) {
-      this.setAvailableTerritorys(territorys);
-    } else if (typeof territorys === 'string' && territorys.length > 0) {
-      this.setAvailableTerritorys([territorys]);
-    } else {
-      this.setAvailableTerritorys([]);
-    }
-  }
 
   get isLoggedIn(): boolean {
     return this.oauthService.hasValidAccessToken();
@@ -126,22 +105,29 @@ export class AuthenticationService {
     this.oauthService.logOut(true);
     this.router.navigate(['/login']);
   }
-  private _availableTerritorys: string[] = [];
+  private _availableTerritories: string[] = [];
   
-  get availableTerritorys(): string[] {
-    return this._availableTerritorys;
+  get availableTerritories(): string[] {
+    return this._availableTerritories;
   }
 
-  setAvailableTerritorys(territorys: string[]): void {
-    this._availableTerritorys = territorys;
+  setAvailableTerritories(territories: string[]): void {
+    this._availableTerritories = (territories || []).filter(t => t.toLowerCase() !== 'default');
+    
+    const current = localStorage.getItem(this.TERRITORY_KEY);
+    if (!current || !this._availableTerritories.includes(current)) {
+      if (this._availableTerritories.length > 0) {
+        this.setActiveTerritory(this._availableTerritories[0], false);
+      }
+    }
   }
+
 
   get activeTerritory(): string {
     let territory = localStorage.getItem(this.TERRITORY_KEY);
-    // Se non c'è un territory o quello salvato non fa più parte della lista
-    if (!territory || (this._availableTerritorys.length > 0 && !this._availableTerritorys.includes(territory))) {
-      if (this._availableTerritorys.length > 0) {
-        territory = this._availableTerritorys[0];
+    if (!territory || (this._availableTerritories.length > 0 && !this._availableTerritories.includes(territory))) {
+      if (this._availableTerritories.length > 0) {
+        territory = this._availableTerritories[0];
         this.setActiveTerritory(territory, false);
       } else {
         return ''; 
@@ -150,16 +136,14 @@ export class AuthenticationService {
     return territory;
   }
 
-setActiveTerritory(territory: string, reload: boolean = true) {
-  localStorage.setItem(this.TERRITORY_KEY, territory);
-  this.activeTerritorySubject.next(territory);
+  setActiveTerritory(territory: string, reload: boolean = true) {
+    localStorage.setItem(this.TERRITORY_KEY, territory);
+    this.activeTerritorySubject.next(territory);
 
-  if (reload) {
-
-
-    this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-      this.router.navigate(['/problems']);
-    });
+    if (reload) {
+      this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+        this.router.navigate(['/problems']);
+      });
+    }
   }
-}
 }
