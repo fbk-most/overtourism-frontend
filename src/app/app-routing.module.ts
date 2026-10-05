@@ -19,6 +19,8 @@ import { AuthGuard } from './guards/auth.guard';
 import { ChatbotStandaloneComponent } from './components/chatbot/chatbot-standalone/chatbot-standalone.component';
 import { IndiciComponent } from './pages/indici/indici.component';
 import { AgentStatsComponent } from './pages/agent-stats/agent-stats.component';
+import { AdminGuard } from './guards/admin.guard';
+import { UsersComponent } from './pages/users/users.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -123,6 +125,12 @@ const routes: Routes = [
   { path: 'indici', component: IndiciComponent, canActivate: [AuthGuard] },
   // 🔹 Altre sezioni del portale ()
   { path: 'agent-stats', component: AgentStatsComponent, canActivate: [AuthGuard] },
+  {
+    path: 'users',
+    component: UsersComponent,
+    canActivate: [AuthGuard, AdminGuard],
+    data: { breadcrumb: 'Gestione Utenti' }
+  },
   { path: 'faqs', component: FaqsComponent, data: { breadcrumb: 'FAQ' }, canActivate: [AuthGuard] },
   { path: '', redirectTo: 'problems', pathMatch: 'full' },
   { path: '**', redirectTo: 'problems' }

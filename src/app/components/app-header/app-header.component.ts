@@ -21,11 +21,17 @@ export class AppHeaderComponent {
     document.body.classList.toggle('it-dark-mode', this.darkMode);
   }
 
-  links = [
-    { label: 'Analisi', route: '/problems' },
-    { label: 'Indici territoriali', route: '/indici' },
-    { label: 'Assistente AI', route: '/agent' },
-  ];
+  get links() {
+    const list = [
+      { label: 'Analisi', route: '/problems' },
+      { label: 'Indici territoriali', route: '/indici' },
+      { label: 'Assistente AI', route: '/agent' },
+    ];
+    if (this.authService.canManageUsers) {
+      list.push({ label: 'Gestione Utenti', route: '/users' });
+    }
+    return list;
+  }
 
   doLogout() {
     this.authService.logout();

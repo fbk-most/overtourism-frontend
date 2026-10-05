@@ -4,7 +4,9 @@ import { environment } from '../../environments/environment';
 import { Router } from '@angular/router';
 import { NotificationService } from './notifications.service';
 import { ChatbotService } from './chatbot/chatbot.service';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, firstValueFrom } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { AuthMe } from '../models/user.model';
 
 export const authConfig: AuthConfig = {
   issuer: environment.auth.issuer,
@@ -14,10 +16,10 @@ export const authConfig: AuthConfig = {
   redirectUri: environment.auth.redirectUri,
   postLogoutRedirectUri: window.location.origin + '/', 
   clearHashAfterLogin: true,
-    useSilentRefresh: false,
-    timeoutFactor: 0.75,
-    sessionChecksEnabled: false,
-    showDebugInformation: true,
+  useSilentRefresh: false,
+  timeoutFactor: 0.75,
+  sessionChecksEnabled: false,
+  showDebugInformation: true,
 };
 
 @Injectable({ providedIn: 'root' })
@@ -26,10 +28,15 @@ export class AuthenticationService {
   private activeTerritorySubject = new BehaviorSubject<string | null>(localStorage.getItem(this.TERRITORY_KEY));
   public activeTerritory$ = this.activeTerritorySubject.asObservable();
 
-  constructor(private oauthService: OAuthService,
+  private currentUserSubject = new BehaviorSubject<AuthMe | null>(null);
+  public currentUser$ = this.currentUserSubject.asObservable();
+
+  constructor(
+    private oauthService: OAuthService,
     private router: Router,
     private notificationService: NotificationService,
-    private chatbotService: ChatbotService
+    private chatbotService: ChatbotService,
+    private http: HttpClient
   ) {}
 
   public async initialLoginSequence(): Promise<void> {
@@ -38,22 +45,17 @@ export class AuthenticationService {
     this.oauthService.events.subscribe((event: OAuthEvent) => {
       switch (event.type) {
         case 'token_received':
-          console.log('Token rinnovato correttamente');
+          this.loadUserProfile();
           break;
-
         case 'token_refresh_error':
         case 'token_error':
-          console.warn(' Rinnovo token fallito:', event.type);
-          this.forceLocalLogout();
-          break;
-
         case 'session_terminated':
         case 'session_error':
-          console.warn('Sessione terminata:', event.type);
           this.forceLocalLogout();
           break;
       }
     });
+
     if (window.location.search.includes('state') && !window.location.search.includes('code=')) {
       window.history.replaceState({}, window.document.title, window.location.pathname);
     }
@@ -61,21 +63,70 @@ export class AuthenticationService {
     try {
       const authError = localStorage.getItem('auth_error');
       if (authError) {
-        setTimeout(() => this.notificationService.showError(authError), 500); // 500ms altrimenti il Toast rischia di non essere ancora montato
+        setTimeout(() => this.notificationService.showError(authError), 500);
         localStorage.removeItem('auth_error');
       }
 
       await this.oauthService.loadDiscoveryDocumentAndTryLogin();
-      
+
+      if (this.isLoggedIn) {
+        await this.loadUserProfile();
+      }
     } catch (e: any) {
       if (e?.type === 'invalid_nonce_in_state') {
-        console.warn('Ignorato errore di stato disallineato post-logout');
         this.oauthService.logOut(true); 
-      
       }
     }
   }
 
+  public async loadUserProfile(): Promise<AuthMe | null> {
+    try {
+      const profile = await firstValueFrom(this.http.get<AuthMe>(`${environment.apiBaseUrl}/auth/me`));
+      this.currentUserSubject.next(profile);
+      return profile;
+    } catch (err) {
+      console.error('Errore durante il caricamento del profilo utente:', err);
+      return null;
+    }
+  }
+
+  get currentUser(): AuthMe | null {
+    return this.currentUserSubject.value;
+  }
+
+  get isAdmin(): boolean {
+    const u = this.currentUser;
+    return !!(u?.is_global_admin || u?.role === 'admin');
+  }
+
+  get isMultiEditor(): boolean {
+    return this.currentUser?.role === 'multieditor';
+  }
+
+  get canManageUsers(): boolean {
+    return this.isAdmin;
+  }
+
+  canEdit(territory?: string): boolean {
+    const u = this.currentUser;
+    if (!u) return false;
+    
+    // Admin e Multieditor possono modificare ovunque
+    if (this.isAdmin || this.isMultiEditor) return true;
+
+    // Editor può modificare solo nei suoi territori assegnati
+    if (u.role === 'editor') {
+      const targetTerritory = (territory || this.activeTerritory).toLowerCase();
+      const userTerritories = (u.territories || []).map(t => t.toLowerCase());
+      return userTerritories.includes(targetTerritory);
+    }
+
+    return false; // viewer o altri ruoli
+  }
+
+  get isViewer(): boolean {
+    return this.currentUser?.role === 'viewer';
+  }
 
   get isLoggedIn(): boolean {
     return this.oauthService.hasValidAccessToken();
@@ -94,17 +145,20 @@ export class AuthenticationService {
   }
 
   logout() {
+    this.currentUserSubject.next(null);
     this.chatbotService.clearSession();
     this.router.navigate(['/login']).then(() => {
-
-    this.oauthService.logOut();
+      this.oauthService.logOut();
     });
   }
+
   forceLocalLogout() {
+    this.currentUserSubject.next(null);
     this.chatbotService.clearSession();
     this.oauthService.logOut(true);
     this.router.navigate(['/login']);
   }
+
   private _availableTerritories: string[] = [];
   
   get availableTerritories(): string[] {
@@ -121,7 +175,6 @@ export class AuthenticationService {
       }
     }
   }
-
 
   get activeTerritory(): string {
     let territory = localStorage.getItem(this.TERRITORY_KEY);

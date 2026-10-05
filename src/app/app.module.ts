@@ -77,6 +77,7 @@ import { AgentStatsComponent } from './pages/agent-stats/agent-stats.component';
 import { IndiciChartComponent } from './pages/indici/components/indici-charts/indici-charts.component';
 import { SharedLineChartComponent } from './components/shared/shared-line-chart/shared-line-chart.component';
 import { SharedBarChartComponent } from './components/shared/shared-bar-chart/shared-bar-chart.component';
+import { UsersComponent } from './pages/users/users.component';
 
 // Funzioni Factory
 export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
@@ -100,7 +101,8 @@ export function initializeAuth(authService: AuthenticationService) {
     ProposalDetailComponent, ProposalDetailPageComponent, OvertourismComponent, OvertourismChartsComponent, 
     OvertourismMapComponent, ToastComponent, AutocompleteComponent, CapacityComponent, FlowsComponent, 
     RedistributionComponent, HiddenComponent, ProposalListPageComponent, EmptyFieldPipe, LoginComponent,IndiciComponent,
-    IndiciMapComponent, AgentStatsComponent,IndiciFiltersComponent,IndiciChartComponent
+    IndiciMapComponent, AgentStatsComponent,IndiciFiltersComponent,IndiciChartComponent,
+    UsersComponent
 
   ],
   imports: [

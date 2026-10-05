@@ -1,0 +1,143 @@
+<div class="container my-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-1 text-primary">Gestione Utenti</h2>
+      <p class="text-muted mb-0">Gestisci i ruoli, i territori assegnati e i permessi degli utenti.</p>
+    </div>
+    <button class="btn btn-primary d-flex align-items-center gap-1" (click)="openCreateModal()">
+      <it-icon name="plus" size="sm"></it-icon>
+      <span>Nuovo Utente</span>
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-2 text-muted">Caricamento utenti in corso...</p>
+  </div>
+
+  <div class="card shadow-sm border-0" *ngIf="!loading">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Identificativo / Email</th>
+            <th>Ruolo</th>
+            <th>Territori Assegnati</th>
+            <th>Stato</th>
+            <th class="text-end">Azioni</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of users">
+            <td>
+              <strong>{{ u.identifier }}</strong>
+              <div class="small text-muted font-monospace" *ngIf="u.user_id">ID: {{ u.user_id | slice:0:8 }}...</div>
+            </td>
+            <td>
+              <span class="badge text-uppercase"
+                [ngClass]="{
+                  'bg-primary': u.role === 'admin',
+                  'bg-info text-dark': u.role === 'multieditor',
+                  'bg-warning text-dark': u.role === 'editor',
+                  'bg-secondary': u.role === 'viewer'
+                }">
+                {{ u.role }}
+              </span>
+            </td>
+            <td>
+              <!-- Admin e Multieditor hanno accesso a tutti -->
+              <ng-container *ngIf="u.role === 'admin' || u.role === 'multieditor'">
+                <span class="badge bg-light text-dark border">Tutti (Globale)</span>
+              </ng-container>
+              <!-- Editor e Viewer hanno 1 o più territori -->
+              <ng-container *ngIf="u.role !== 'admin' && u.role !== 'multieditor'">
+                <span *ngFor="let t of u.territories" class="badge bg-light text-primary border me-1 text-uppercase">
+                  {{ t }}
+                </span>
+                <span *ngIf="!u.territories?.length" class="text-danger fst-italic small">Nessuno assegnato</span>
+              </ng-container>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="u.is_active ? 'bg-success' : 'bg-danger'">
+                {{ u.is_active ? 'Attivo' : 'Disattivato' }}
+              </span>
+            </td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary me-2" (click)="openEditModal(u)" title="Modifica">
+                <it-icon name="pencil" size="xs"></it-icon>
+              </button>
+              <button *ngIf="u.is_active" class="btn btn-sm btn-outline-danger" (click)="onDeactivate(u)" title="Disattiva">
+                <it-icon name="close" size="xs"></it-icon>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="users.length === 0">
+            <td colspan="5" class="text-center py-4 text-muted">Nessun utente trovato.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Creazione/Modifica Utente -->
+<div class="modal-backdrop fade show" *ngIf="showModal"></div>
+<div class="modal d-block" tabindex="-1" *ngIf="showModal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ isEditMode ? 'Modifica Utente' : 'Nuovo Utente' }}</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Email / Identificativo *</label>
+            <input type="email" class="form-control" formControlName="identifier" placeholder="utente@dominio.it" />
+            <div class="text-danger small mt-1" *ngIf="userForm.get('identifier')?.touched && userForm.get('identifier')?.invalid">
+              Inserire un'email valida.
+            </div>
+          </div>
+
+
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Ruolo *</label>
+            <select class="form-select" formControlName="role" (change)="onRoleChange()">
+              <option *ngFor="let r of roles" [value]="r.role">{{ r.role | uppercase }} - {{ r.description }}</option>
+            </select>
+          </div>
+
+          <div class="mb-3" *ngIf="hasTerritorySelection">
+            <label class="form-label fw-semibold d-block">
+              Territori Assegnati *
+              <small class="text-muted fw-normal ms-1">(Seleziona 1 o più territori)</small>
+            </label>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button"
+                *ngFor="let t of territories"
+                class="btn btn-sm text-uppercase"
+                [ngClass]="isTerritorySelected(t) ? 'btn-primary' : 'btn-outline-secondary'"
+                (click)="toggleTerritory(t)">
+                {{ t }}
+              </button>
+            </div>
+            <div class="text-danger small mt-1" *ngIf="userForm.get('territories')?.value?.length === 0">
+              È richiesto almeno un territorio per questo ruolo.
+            </div>
+          </div>
+
+          <div class="form-check form-switch mt-3" *ngIf="isEditMode">
+
+            <input class="form-check-input" type="checkbox" id="userActiveCheck" formControlName="is_active">
+            <label class="form-check-label fw-semibold" for="userActiveCheck">Utente Attivo</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="closeModal()">Annulla</button>
+          <button type="submit" class="btn btn-primary">{{ isEditMode ? 'Salva Modifiche' : 'Crea Utente' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

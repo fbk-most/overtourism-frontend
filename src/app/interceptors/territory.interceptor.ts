@@ -1,48 +1,49 @@
-import { Injectable,Injector } from '@angular/core';
-import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import {
+  HttpRequest,
+  HttpHandler,
+  HttpEvent,
+  HttpInterceptor
+} from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthenticationService } from '../services/authentication.service';
 import { environment } from '../../environments/environment';
 
 @Injectable()
 export class TerritoryInterceptor implements HttpInterceptor {
-  constructor(private injector: Injector) {}
 
-  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const authService = this.injector.get(AuthenticationService);
-    const activeTerritory = authService.activeTerritory;
-    if (req.url.includes('/default/territories')) {
-      return next.handle(req);
+  private readonly excludedPatterns = [
+    '/auth/',
+    '/default/territories',
+    '/assets/'
+  ];
+
+  constructor(private authService: AuthenticationService) {}
+
+  intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+    const isApiUrl = request.url.startsWith(environment.apiBaseUrl);
+
+    // Salta se non è una chiamata alle nostre API o se matcha una rotta esclusa
+    const isExcluded = this.excludedPatterns.some(pattern => request.url.includes(pattern));
+
+    if (!isApiUrl || isExcluded) {
+      return next.handle(request);
     }
 
-    const apiBase = environment.apiBaseUrl;
-    const agentApi = environment.agentApiUrl;
+    const territory = this.authService.activeTerritory;
 
-    // API classica: territory nel PATH
-    if (req.url.startsWith(apiBase)) {
-      const apiPath = req.url.slice(apiBase.length);
-      if (/^\/indexes(?:\/|\?|$)/.test(apiPath)) {
-        const newUrl = req.url.replace(apiBase, `${apiBase}/default`);
-        return next.handle(req.clone({ url: newUrl }));
+    if (territory) {
+      // Sostituisce apiBaseUrl con apiBaseUrl + '/' + territory se non è già presente
+      const targetPrefix = `${environment.apiBaseUrl}/${territory}`;
+      
+      if (!request.url.startsWith(targetPrefix)) {
+        const pathAfterBase = request.url.substring(environment.apiBaseUrl.length);
+        const newUrl = `${environment.apiBaseUrl}/${territory}${pathAfterBase}`;
+        const modifiedRequest = request.clone({ url: newUrl });
+        return next.handle(modifiedRequest);
       }
-      if (!activeTerritory) {
-        return next.handle(req);
-      }
-      const newUrl = req.url.replace(apiBase, `${apiBase}/${activeTerritory}`);
-      return next.handle(req.clone({ url: newUrl }));
     }
 
-    if (!activeTerritory) {
-      return next.handle(req);
-    }
-
-    // Agent API: territory come QUERY PARAMETER
-    if (req.url.startsWith(agentApi)) {
-      const separator = req.url.includes('?') ? '&' : '?';
-      const newUrl = `${req.url}${separator}territory=${activeTerritory}`;
-      return next.handle(req.clone({ url: newUrl }));
-    }
-
-    return next.handle(req);
+    return next.handle(request);
   }
 }
