@@ -5,7 +5,7 @@
       <p class="text-muted mb-0">Gestisci i ruoli, i territori assegnati e i permessi degli utenti.</p>
     </div>
     <button class="btn btn-primary d-flex align-items-center gap-1" (click)="openCreateModal()">
-      <it-icon name="plus" size="sm"></it-icon>
+      <it-icon name="plus" class="icon-white" size="sm"></it-icon>
       <span>Nuovo Utente</span>
     </button>
   </div>
@@ -20,7 +20,7 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th>Identificativo / Email</th>
+            <th>Identificativo </th>
             <th>Ruolo</th>
             <th>Territori Assegnati</th>
             <th>Stato</th>
@@ -31,7 +31,6 @@
           <tr *ngFor="let u of users">
             <td>
               <strong>{{ u.identifier }}</strong>
-              <div class="small text-muted font-monospace" *ngIf="u.user_id">ID: {{ u.user_id | slice:0:8 }}...</div>
             </td>
             <td>
               <span class="badge text-uppercase"

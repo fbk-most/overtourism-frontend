@@ -36,7 +36,7 @@
 
       <!-- TAB 2: GRAFICI -->
       <it-tab-item label="Grafici" icon="chart-line" [active]="showOption === 'chart'"
-        [disabled]="filterState?.enableVariation || filterState?.enableImpactPercentage">
+        [disabled]="isChartDisabled">
         <app-indici-chart
           [chartLabels]="chartLabels"
           [chartSeries]="chartSeries"

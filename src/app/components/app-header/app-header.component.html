@@ -35,7 +35,7 @@
   </ng-container>
 
   <ng-container navItems>
-     <it-navbar-item *ngFor="let link of links">
+     <it-navbar-item *ngFor="let link of links; trackBy: trackByRoute">
       <a class="nav-link" [ngClass]="{ active: isActive(link)}" [routerLink]="link.route">
         {{ link.label }}
       </a>

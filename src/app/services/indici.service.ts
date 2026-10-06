@@ -11,8 +11,8 @@ import {
 @Injectable({ providedIn: 'root' })
 export class IndiciService {
 
-  //prefisso
-  private readonly base = `${environment.apiBaseUrl}/indexes`;
+  // prefisso fisso con /default/indexes
+  private readonly base = `${environment.apiBaseUrl}/default/indexes`;
 
   constructor(private http: HttpClient) {}
 
@@ -47,8 +47,6 @@ export class IndiciService {
     return this.http.get<IndexDataResponse>(`${this.base}/get_index_data`, { params });
   }
 
-
-
   getVariationData(
     index: string,
     startDate: string,
@@ -64,24 +62,4 @@ export class IndiciService {
       .set('spatial_granularity', spatialGranularity);
     return this.http.get<VariationDataResponse>(`${this.base}/get-variation-data`, { params });
   }
-
-  // getVariationOverTime(
-  //   index: string,
-  //   startBaseline: string,
-  //   endBaseline: string,
-  //   startComparison: string,
-  //   endComparison: string,
-  //   spatialGranularity = 'comune',
-  //   seasonality?: string
-  // ): Observable<VariationOverTimeResponse> {
-  //   let params = new HttpParams()
-  //     .set('index', index)
-  //     .set('start_date_baseline', startBaseline)
-  //     .set('end_date_baseline', endBaseline)
-  //     .set('start_date_comparison', startComparison)
-  //     .set('end_date_comparison', endComparison)
-  //     .set('spatial_granularity', spatialGranularity);
-  //   if (seasonality) params = params.set('seasonality', seasonality);
-  //   return this.http.get<VariationOverTimeResponse>(`${this.base}/get-variation-over-time`, { params });
-  // }
 }

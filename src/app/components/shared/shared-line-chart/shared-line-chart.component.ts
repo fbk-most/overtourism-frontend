@@ -69,8 +69,12 @@ export class SharedLineChartComponent implements OnChanges, AfterViewInit, OnDes
   }
 
   private resize(): void {
-    if (this.chartContainer?.nativeElement) {
-      Plotly.Plots.resize(this.chartContainer.nativeElement);
+    const el = this.chartContainer?.nativeElement;
+    if (el && el.offsetParent !== null && typeof Plotly !== 'undefined') {
+      try {
+        Plotly.Plots.resize(el);
+      } catch (e) {
+      }
     }
   }
 

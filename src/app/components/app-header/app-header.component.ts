@@ -2,6 +2,11 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthenticationService } from '../../services/authentication.service';
 
+export interface HeaderLink {
+  label: string;
+  route: string;
+}
+
 @Component({
   selector: 'app-header',
   standalone: false,
@@ -10,6 +15,17 @@ import { AuthenticationService } from '../../services/authentication.service';
 })
 export class AppHeaderComponent {
   darkMode = false;
+
+  private readonly baseLinks: HeaderLink[] = [
+    { label: 'Analisi', route: '/problems' },
+    { label: 'Indici territoriali', route: '/indici' },
+    { label: 'Assistente AI', route: '/agent' },
+  ];
+
+  private readonly usersLink: HeaderLink = { 
+    label: 'Gestione Utenti', 
+    route: '/users' 
+  };
 
   constructor(
     public router: Router,
@@ -21,23 +37,21 @@ export class AppHeaderComponent {
     document.body.classList.toggle('it-dark-mode', this.darkMode);
   }
 
-  get links() {
-    const list = [
-      { label: 'Analisi', route: '/problems' },
-      { label: 'Indici territoriali', route: '/indici' },
-      { label: 'Assistente AI', route: '/agent' },
-    ];
-    if (this.authService.canManageUsers) {
-      list.push({ label: 'Gestione Utenti', route: '/users' });
-    }
-    return list;
+  get links(): HeaderLink[] {
+    return this.authService.canManageUsers
+      ? [...this.baseLinks, this.usersLink]
+      : this.baseLinks;
+  }
+
+  trackByRoute(_index: number, item: HeaderLink): string {
+    return item.route;
   }
 
   doLogout() {
     this.authService.logout();
   }
 
-  isActive(link: any): boolean {
+  isActive(link: HeaderLink): boolean {
     if (link.route === '/problems') {
       return this.router.url.startsWith('/problems');
     }

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { AdditionalLabelMeta, Comune, GeoDataEnvelope, IndicatorMeta, IndiciFilterState, ShowOption, VariationSeries } from '../../models/indici.model';
 import { IndiciService } from '../../services/indici.service';
 import { IndiciFiltersComponent } from './components/indici-fitlers/indici-filters.component';
@@ -30,7 +30,10 @@ export class IndiciComponent implements OnInit {
   loading = false;
   error = '';
 
-  constructor(private svc: IndiciService) {}
+  constructor(
+    private svc: IndiciService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.svc.getIndicatorList().subscribe({
@@ -56,6 +59,11 @@ export class IndiciComponent implements OnInit {
 
   onFilterStateChange(state: IndiciFilterState): void {
     this.filterState = state;
+    this.cdr.detectChanges(); 
+  }
+
+  get isChartDisabled(): boolean {
+    return !!(this.filterState?.enableVariation || this.filterState?.enableImpactPercentage);
   }
 
   onTabSelected(event: any): void {

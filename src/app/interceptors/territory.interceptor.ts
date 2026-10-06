@@ -14,7 +14,8 @@ export class TerritoryInterceptor implements HttpInterceptor {
 
   private readonly excludedPatterns = [
     '/auth/',
-    '/default/territories',
+    '/default/',
+    '/indexes',
     '/assets/'
   ];
 
