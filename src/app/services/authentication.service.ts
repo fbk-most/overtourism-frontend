@@ -70,7 +70,11 @@ export class AuthenticationService {
       await this.oauthService.loadDiscoveryDocumentAndTryLogin();
 
       if (this.isLoggedIn) {
-        await this.loadUserProfile();
+        const profile = await this.loadUserProfile();
+        if (!profile) {
+          this.handleUnauthorized();
+          return;
+        }
       }
     } catch (e: any) {
       if (e?.type === 'invalid_nonce_in_state') {
@@ -82,12 +86,27 @@ export class AuthenticationService {
   public async loadUserProfile(): Promise<AuthMe | null> {
     try {
       const profile = await firstValueFrom(this.http.get<AuthMe>(`${environment.apiBaseUrl}/auth/me`));
+      
+      if (!profile || profile.authenticated === false) {
+        return null;
+      }
+
       this.currentUserSubject.next(profile);
       return profile;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Errore durante il caricamento del profilo utente:', err);
       return null;
     }
+  }
+
+  /**
+   * Gestisce l'accesso non autorizzato: salva il messaggio di errore ed esegue il logout federato
+   */
+  handleUnauthorized(): void {
+    this.currentUserSubject.next(null);
+    this.chatbotService.clearSession();
+    localStorage.setItem('auth_error', 'Utente non autorizzato ad accedere all\'applicazione.');
+    this.logout();
   }
 
   get currentUser(): AuthMe | null {
@@ -111,17 +130,15 @@ export class AuthenticationService {
     const u = this.currentUser;
     if (!u) return false;
     
-    // Admin e Multieditor possono modificare ovunque
     if (this.isAdmin || this.isMultiEditor) return true;
 
-    // Editor può modificare solo nei suoi territori assegnati
     if (u.role === 'editor') {
       const targetTerritory = (territory || this.activeTerritory).toLowerCase();
       const userTerritories = (u.territories || []).map(t => t.toLowerCase());
       return userTerritories.includes(targetTerritory);
     }
 
-    return false; // viewer o altri ruoli
+    return false;
   }
 
   get isViewer(): boolean {
@@ -131,9 +148,11 @@ export class AuthenticationService {
   get isLoggedIn(): boolean {
     return this.oauthService.hasValidAccessToken();
   }
+
   get accessToken(): string {
     return this.oauthService.getAccessToken();
   }
+
   get userName(): string {
     const claims: any = this.oauthService.getIdentityClaims();
     if (!claims) return '';
