@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthenticationService } from './authentication.service';
@@ -10,7 +10,15 @@ export class AgentService {
   private readonly apiUrl = environment.agentApiUrl;
 
   constructor(private http: HttpClient, private authService: AuthenticationService) { }
-
+  
+  private getTerritoryParams(): HttpParams {
+    let params = new HttpParams();
+    const territory = this.authService.activeTerritory;
+    if (territory) {
+      params = params.set('territory', territory);
+    }
+    return params;
+  }
   sendMessage(
     sessionId: string,
     message: string,
@@ -55,7 +63,8 @@ export class AgentService {
         }
       };
 
-    return this.http.post(`${this.apiUrl}/tool`, body, { withCredentials: true });
+    return this.http.post(`${this.apiUrl}/tool`, body, {      params: this.getTerritoryParams(),
+      withCredentials: true });
   }
 
   getUsageStats(): Observable<any[]> {
