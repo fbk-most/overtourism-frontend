@@ -1,7 +1,6 @@
 <div class="container my-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h2 class="mb-1 text-primary">Gestione Utenti</h2>
       <p class="text-muted mb-0">Gestisci i ruoli, i territori assegnati e i permessi degli utenti.</p>
     </div>
     <button class="btn btn-primary d-flex align-items-center gap-1" (click)="openCreateModal()">
@@ -62,11 +61,13 @@
               </span>
             </td>
             <td class="text-end">
-              <button class="btn btn-sm btn-outline-primary me-2" (click)="openEditModal(u)" title="Modifica">
-                <it-icon name="pencil" size="xs"></it-icon>
+              <button class="btn btn-sm btn-primary me-2" (click)="openEditModal(u)" title="Modifica">
+                <span class="material-icons align-middle">edit</span>
+
               </button>
-              <button *ngIf="u.is_active" class="btn btn-sm btn-outline-danger" (click)="onDeactivate(u)" title="Disattiva">
-                <it-icon name="close" size="xs"></it-icon>
+              <button  class="btn btn-sm btn-danger" (click)="onDeactivate(u)" title="Disattiva">
+                <span class="material-icons align-middle">delete</span>
+
               </button>
             </td>
           </tr>

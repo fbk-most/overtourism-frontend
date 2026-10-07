@@ -129,7 +129,6 @@ const routes: Routes = [
     path: 'users',
     component: UsersComponent,
     canActivate: [AuthGuard, AdminGuard],
-    data: { breadcrumb: 'Gestione Utenti' }
   },
   { path: 'faqs', component: FaqsComponent, data: { breadcrumb: 'FAQ' }, canActivate: [AuthGuard] },
   { path: '', redirectTo: 'problems', pathMatch: 'full' },
