@@ -32,9 +32,9 @@ export class SharedKpisComponent implements OnChanges {
     this.criticalConstraintKey = (cc && typeof cc === 'object' && cc.name) ? `constraint_level_${cc.name}` : null;
 
     // 3. Ordina: prima overtourism, poi constraint critico (se esiste), poi il resto
-    keys = keys.filter(k => k !== this.criticalConstraintKey && k !== 'overtourism_level');
+    keys = keys.filter(k => k !== this.criticalConstraintKey && k !== 'sustainability_level');
     this.kpiKeys = [];
-    if (this.kpisMain['overtourism_level'] !== undefined) this.kpiKeys.push('overtourism_level');
+    if (this.kpisMain['sustainability_level'] !== undefined) this.kpiKeys.push('sustainability_level');
     if (this.criticalConstraintKey && this.kpisMain[this.criticalConstraintKey] !== undefined) this.kpiKeys.push(this.criticalConstraintKey);
     this.kpiKeys.push(...keys);
   }

@@ -77,12 +77,12 @@ if (
   this.criticalConstraintKey = null;
 }
 
-let keys = this.kpiKeys.filter(k => k !== dynamicKey && k !== 'overtourism_level');
+let keys = this.kpiKeys.filter(k => k !== dynamicKey && k !== 'sustainability_level');
 
 this.kpiKeys = [];
 
-if (this.kpisData && 'overtourism_level' in this.kpisData) {
-  this.kpiKeys.push('overtourism_level');
+if (this.kpisData && 'sustainability_level' in this.kpisData) {
+  this.kpiKeys.push('sustainability_level');
 }
 
 if (dynamicKey) {

@@ -19,6 +19,7 @@
     "title": "Criticality Indicators",
     "area": "Total Area",
     "overtourism_level": "Overtourism Days",
+    "sustainability_level": "Sustainable Days",
     "constraint_level_parcheggi": "Parking Constraint Days",
     "constraint_level_spiaggia": "Beach Constraint Days",
     "constraint_level_alberghi": "Hotel Constraint Days",

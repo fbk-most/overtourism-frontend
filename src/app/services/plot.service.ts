@@ -149,12 +149,12 @@ const plotMapper = (input as any).plotMapper;
     const dataFacts: DataFact[] = [];
   
     // Global overtourism level
-    if (kpis['overtourism_level']) {
+    if (kpis['sustainability_level']) {
       dataFacts.push({
         category: 'all',
-        violations_percentage: +(kpis['overtourism_level'].level ?? 0).toFixed(1),
-        uncertainty: +(kpis['overtourism_level'].confidence ?? 0).toFixed(1),
-        violations_numerosity: (kpis['overtourism_level'].level > 0) ? 1 : 0
+        violations_percentage: +(kpis['sustainability_level'].level ?? 0).toFixed(1),
+        uncertainty: +(kpis['sustainability_level'].confidence ?? 0).toFixed(1),
+        violations_numerosity: (kpis['sustainability_level'].level > 0) ? 1 : 0
       });
     }
   
@@ -210,9 +210,9 @@ const plotMapper = (input as any).plotMapper;
     let kpis: any = undefined;
     if (module.kpis && typeof module.kpis === 'object') {
       kpis = {
-        overtourism_level: typeof module.kpis.overtourism_level === 'object' 
-          ? module.kpis.overtourism_level 
-          : { level: module.kpis.overtourism_level ?? 0, confidence: 0 },
+        sustainability_level: typeof module.kpis.sustainability_level === 'object' 
+          ? module.kpis.sustainability_level 
+          : { level: module.kpis.sustainability_level ?? 0, confidence: 0 },
         
         critical_constraint: {
           name: module.kpis['critical constraint']?.name ?? '',
