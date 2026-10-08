@@ -4,8 +4,8 @@ import { ExplanationService } from '../../../services/explanation.service';
 import { DataFact } from '../../../models/data-fact.model';
 import { AgentService } from '../../../services/agent.service';
 import { AuthenticationService } from '../../../services/authentication.service';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { debounceTime, EMPTY, Subject, Subscription, switchMap } from 'rxjs';
 
 @Component({
@@ -31,7 +31,7 @@ export class ReadingComponent implements OnInit, OnChanges, OnDestroy {
   selectedCategory = 'default';
   dataFactsParametersChanges: DataFact[] = [];
 
-  aiSummary: SafeHtml | null = null;
+  aiSummary: string | null = null;
   aiSummaryLoading = false;
   aiSummaryError = false;
 
@@ -42,8 +42,8 @@ export class ReadingComponent implements OnInit, OnChanges, OnDestroy {
   constructor(
     private explanationService: ExplanationService,
     private agentService: AgentService,
-    private authService: AuthenticationService,
-    private sanitizer: DomSanitizer
+    private authService: AuthenticationService
+
   ) {} 
   
   ngOnInit(): void {
@@ -100,7 +100,7 @@ export class ReadingComponent implements OnInit, OnChanges, OnDestroy {
     if (this.savedSummary && this.savedSummary.trim().length > 0 && !this.sessionId) {
       this.summaryChange.emit(this.savedSummary);
       const html = await marked.parse(this.savedSummary);
-      this.aiSummary = this.sanitizer.bypassSecurityTrustHtml(html);
+      this.aiSummary = DOMPurify.sanitize(html);
       this.aiSummaryLoading = false;
       this.aiSummaryError = false;
       return;
@@ -120,7 +120,7 @@ export class ReadingComponent implements OnInit, OnChanges, OnDestroy {
         evalId: this.evaluationId
       });
     } else {
-      // 3. 🟢 Altrimenti (primo avvio senza summary), chiamata IMMEDIATA senza debounce
+      // 3. Chiamata immediata senza debounce
       this.directSub?.unsubscribe();
       this.directSub = this.executeFetch(ids, this.sessionId, this.evaluationId).subscribe();
     }
@@ -135,7 +135,7 @@ export class ReadingComponent implements OnInit, OnChanges, OnDestroy {
         const raw = res?.message || res?.result || res?.summary || res?.text || '';
         this.summaryChange.emit(raw); 
         const html = await marked.parse(raw);
-        this.aiSummary = this.sanitizer.bypassSecurityTrustHtml(html);
+        this.aiSummary = DOMPurify.sanitize(html);
         this.aiSummaryLoading = false;
         return res;
       })

@@ -11,9 +11,9 @@ import { TranslateService } from '@ngx-translate/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfrontoScenariContext } from '../../../models/confronto-scenari-context.model';
 import { ChatbotDialogComponent } from '../../../components/chatbot/chatbot-integrated/chatbot-dialog/chatbot-dialog.component';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AgentService } from '../../../services/agent.service';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { stripSystemKpis } from '../../../utils/kpi.utils';
 import { PlotMapper } from '../../../models/plot.model';
 
@@ -57,12 +57,13 @@ export class ConfrontoScenariComponent {
   plotInputLeft?: PlotInput;
   plotInputRight?: PlotInput; 
   
-  aiSummary: SafeHtml | null = null;
+  aiSummary: string | null = null;
   aiSummaryLoading = false;
   aiSummaryError = false;
   private aiSummaryTrigger$ = new Subject<string[]>();
   private aiSummarySub?: Subscription;
   plotMapper: PlotMapper = {};
+
   constructor(
     private scenarioService: ScenarioService,
     private plotService: PlotService,
@@ -70,8 +71,7 @@ export class ConfrontoScenariComponent {
     private pdfService: PdfService,
     private translate: TranslateService,
     private dialog: MatDialog,
-    private agentService: AgentService,
-    private sanitizer: DomSanitizer
+    private agentService: AgentService
   ) { }
 
   async ngOnInit() {
@@ -86,7 +86,7 @@ export class ConfrontoScenariComponent {
       next: async (res) => {
         const raw = res?.message || res?.result || res?.summary || res?.text || '';
         const html = await marked.parse(raw);
-        this.aiSummary = this.sanitizer.bypassSecurityTrustHtml(html);
+        this.aiSummary = DOMPurify.sanitize(html);
         this.aiSummaryLoading = false;
       },
       error: () => {
@@ -269,7 +269,7 @@ export class ConfrontoScenariComponent {
   }
   filterKpis(rawData: Record<string, any>): Record<string, { level: number, confidence: number }> {
     return Object.keys(rawData)
-    .filter(key => key.includes('constraint_level_') || key === 'overtourism_level' || key === 'critical_constraint')
+    .filter(key => key.includes('constraint_level_') || key === 'sustainability_level' || key === 'critical_constraint')
     .reduce((obj, key) => {
   
         const value = rawData[key];
@@ -471,5 +471,5 @@ export class ConfrontoScenariComponent {
 //   constraint_level_parcheggi: 'kpi.constraint_level_parcheggi',
 //   constraint_level_ristoranti: 'kpi.constraint_level_ristoranti',
 //   constraint_level_spiaggia: 'kpi.constraint_level_spiaggia',
-//   overtourism_level: 'kpi.overtourism_level'
+//   sustainability_level: 'kpi.sustainability_level'
 // };
