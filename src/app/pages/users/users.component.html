@@ -32,14 +32,8 @@
               <strong>{{ u.identifier }}</strong>
             </td>
             <td>
-              <span class="badge text-uppercase"
-                [ngClass]="{
-                  'bg-primary': u.role === 'admin',
-                  'bg-info text-dark': u.role === 'multieditor',
-                  'bg-warning text-dark': u.role === 'editor',
-                  'bg-secondary': u.role === 'viewer'
-                }">
-                {{ u.role }}
+              <span class="badge badge-role">
+                {{ u.role | uppercase }}
               </span>
             </td>
             <td>
