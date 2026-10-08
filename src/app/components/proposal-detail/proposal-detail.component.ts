@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, ViewChild } from '@angular/core
 import { Proposal } from '../../models/proposal.model';
 import { ItModalComponent } from 'design-angular-kit';
 import { ProblemScenario } from '../../models/scenario.model';
+import { AuthenticationService } from '../../services/authentication.service';
 
 @Component({
   selector: 'app-proposal-detail',
@@ -16,6 +17,11 @@ export class ProposalDetailComponent {
   @Output() editProposal = new EventEmitter<string>();
   @ViewChild('deleteProposalModal') deleteProposalModal!: ItModalComponent;
   proposalToDeleteId: string | null = null;
+
+  constructor(    public authService: AuthenticationService
+  ) {
+
+  }
 
   openDeleteModal(proposalId: string): void {
     this.proposalToDeleteId = proposalId;

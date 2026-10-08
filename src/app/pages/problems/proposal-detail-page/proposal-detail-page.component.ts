@@ -9,6 +9,7 @@ import { ProblemScenario } from '../../../models/scenario.model';
 import { ItModalComponent } from 'design-angular-kit';
 import { forkJoin } from 'rxjs';
 import { ModalCleanupService } from '../../../services/modal-cleanup.service.ts.service';
+import { AuthenticationService } from '../../../services/authentication.service';
 
 @Component({
   selector: 'app-proposal-detail',
@@ -44,6 +45,8 @@ export class ProposalDetailPageComponent implements OnInit, AfterViewInit {
     private notificationService: NotificationService,
     private translate: TranslateService,
     private modalCleanup: ModalCleanupService,
+    public authService: AuthenticationService
+
     
   ) { }
   onProposalEdited() {

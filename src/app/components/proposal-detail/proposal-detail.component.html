@@ -7,10 +7,10 @@
   
       <!-- Pulsanti di azione -->
       <div class="d-flex justify-content-end gap-2 mb-3">
-        <button itButton="primary" size="sm" (click)="editProposal.emit(proposal.proposal_id)">
+        <button *ngIf="authService.canEdit()" itButton="primary" size="sm" (click)="editProposal.emit(proposal.proposal_id)">
           <span class="material-icons align-middle">edit</span> Modifica
         </button>
-        <button itButton="danger" size="sm" (click)="openDeleteModal(proposal.proposal_id)">
+        <button *ngIf="authService.canEdit()" itButton="danger" size="sm" (click)="openDeleteModal(proposal.proposal_id)">
           <span class="material-icons align-middle">delete</span> Elimina
         </button>
       </div>

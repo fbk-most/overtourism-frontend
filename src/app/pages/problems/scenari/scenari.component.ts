@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ItModalComponent } from 'design-angular-kit';
 import { NotificationService } from '../../../services/notifications.service';
 import { TranslateService } from '@ngx-translate/core';
+import { AuthenticationService } from '../../../services/authentication.service';
 
 @Component({
   selector: 'app-scenari',
@@ -31,7 +32,9 @@ export class ScenariComponent {
     private router: Router,
     private notificationService: NotificationService, 
     private translate: TranslateService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    public authService: AuthenticationService
+
   ) { }
 
   ngOnInit(): void {

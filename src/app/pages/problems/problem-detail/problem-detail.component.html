@@ -1,6 +1,6 @@
 <it-card background="true" class="p-4 position-relative">
   <!-- Pulsanti in alto a destra -->
-  <div class="position-absolute top-0 end-0 m-3 d-flex gap-2">
+  <div class="position-absolute top-0 end-0 m-3 d-flex gap-2" *ngIf="authService.canEdit()">
     <it-modal #editProblemModal size="lg">
       <ng-container modalTitle>
         {{ 'problems.editTitle' | translate }}
@@ -70,7 +70,7 @@
       </tr>
     </tbody>
   </table>
-  <div class="mb-3">
+  <div class="mb-3" *ngIf="authService.canEdit()">
     <button itButton="primary" (click)="openProposalModal()" *ngIf="!showProposalForm">
       {{ 'problems.fields.addProposal' | translate }}
     </button>
@@ -112,6 +112,7 @@
   
               <!-- ✏️ Modifica -->
               <button
+                *ngIf="authService.canEdit()"
                 class="btn btn-sm btn-icon text-primary"
                 (click)="editProposal(proposal.proposal_id)">
                 <span class="material-icons align-middle">edit</span>
@@ -119,6 +120,7 @@
   
               <!-- 🗑️ Elimina -->
               <button
+              *ngIf="authService.canEdit()"
               class="btn btn-sm btn-icon text-primary"
               (click)="openDeleteProposalModal(proposal); $event.stopPropagation()"
               aria-label="Elimina proposta">

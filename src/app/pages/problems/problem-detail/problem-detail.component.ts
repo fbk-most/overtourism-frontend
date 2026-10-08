@@ -9,6 +9,7 @@ import { ItModalComponent } from 'design-angular-kit';
 import { Problem } from '../../../models/problem.model';
 import { ModalCleanupService } from '../../../services/modal-cleanup.service.ts.service';
 import { ChatbotContextService } from '../../../services/chatbot/chatbotContext.service';
+import { AuthenticationService } from '../../../services/authentication.service';
 
 interface ProposalResponse {
   data: Proposal[];
@@ -50,7 +51,8 @@ export class ProblemDetailComponent implements OnInit,AfterViewInit {
     private translate: TranslateService,
     private proposalService: ProposalService,
         private modalCleanup: ModalCleanupService,
-        private chatbotCtx: ChatbotContextService
+        private chatbotCtx: ChatbotContextService,
+        public authService: AuthenticationService
 
     
   ) {}

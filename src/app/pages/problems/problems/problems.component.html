@@ -3,12 +3,13 @@
 <div *ngIf="!loading" class="bd-example">
   <h3>{{ 'problems.title' | translate }}</h3>
 
-  <button itButton="primary" (click)="openCreateProblemModal()" class="mb-5 d-flex align-items-center gap-2">
+  <!-- Mostrato solo a chi ha permessi di scrittura -->
+  <button itButton="primary" *ngIf="authService.canEdit()" (click)="openCreateProblemModal()" class="mb-5 d-flex align-items-center gap-2">
     <span class="material-icons">add_circle_outline</span>
     <span>{{ 'problems.create' | translate }}</span>
   </button>
 
-  <it-modal #problemModal size="xl">
+  <it-modal #problemModal size="xl" *ngIf="authService.canEdit()">
     <ng-container modalTitle>
       {{ 'problems.createTitle' | translate }}
     </ng-container>

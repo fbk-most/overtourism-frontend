@@ -1,7 +1,7 @@
-import { Component, ViewChild, ElementRef } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import Plotly from 'plotly.js-dist-min';
-import { debounceTime, firstValueFrom, Subject, Subscription, switchMap } from 'rxjs';
+import { firstValueFrom, Subscription } from 'rxjs';
 import { KPIs, PlotInput, Curve } from '../../../models/plot.model';
 import { PlotService } from '../../../services/plot.service';
 import { ScenarioService, Widget } from '../../../services/scenario.service';
@@ -23,9 +23,7 @@ import { PlotMapper } from '../../../models/plot.model';
   styleUrls: ['./confronto-scenari.component.scss'],
   standalone: false
 })
-
-
-export class ConfrontoScenariComponent {
+export class ConfrontoScenariComponent implements OnDestroy {
   scenari: any[] = [];
   selectedScenario1Id!: string;
   selectedScenario2Id!: string;
@@ -53,14 +51,12 @@ export class ConfrontoScenariComponent {
   histogramPayload: any = null; 
   baseWidgets: Record<string, Widget[]> = {};
 
-  
   plotInputLeft?: PlotInput;
   plotInputRight?: PlotInput; 
   
   aiSummary: string | null = null;
   aiSummaryLoading = false;
   aiSummaryError = false;
-  private aiSummaryTrigger$ = new Subject<string[]>();
   private aiSummarySub?: Subscription;
   plotMapper: PlotMapper = {};
 
@@ -75,25 +71,6 @@ export class ConfrontoScenariComponent {
   ) { }
 
   async ngOnInit() {
-    this.aiSummarySub = this.aiSummaryTrigger$.pipe(
-      debounceTime(5000),
-      switchMap(ids => {
-        this.aiSummaryLoading = true;
-        this.aiSummaryError = false;
-        return this.agentService.getSummary(ids);
-      })
-    ).subscribe({
-      next: async (res) => {
-        const raw = res?.message || res?.result || res?.summary || res?.text || '';
-        const html = await marked.parse(raw);
-        this.aiSummary = DOMPurify.sanitize(html);
-        this.aiSummaryLoading = false;
-      },
-      error: () => {
-        this.aiSummaryError = true;
-        this.aiSummaryLoading = false;
-      }
-    });
     this.problemId = this.route.snapshot.paramMap.get('problemId')!;
     try {
       const parsed = await firstValueFrom(this.scenarioService.getParsedConfiguration());
@@ -105,7 +82,6 @@ export class ConfrontoScenariComponent {
     } catch (err) {
       console.error('Errore caricamento configurazione base', err);
     }
-
 
     this.scenarioService.getScenarios(this.problemId).subscribe(scenari => {
       this.scenari = scenari;
@@ -121,8 +97,44 @@ export class ConfrontoScenariComponent {
       }
     });
   }
+
   ngOnDestroy(): void {
     this.aiSummarySub?.unsubscribe();
+  }
+
+  selectScenario(slot: 1 | 2, id: string): void {
+    this.aiSummary = null;
+    this.aiSummaryError = false;
+
+    if (slot === 1) {
+      this.selectedScenario1Id = id;
+      this.loadScenario(1);
+    } else {
+      this.selectedScenario2Id = id;
+      this.loadScenario(2);
+    }
+  }
+
+  generateAiSummary(): void {
+    const ids = [this.selectedScenario1Id, this.selectedScenario2Id].filter(Boolean);
+    if (ids.length === 0 || this.aiSummaryLoading) return;
+
+    this.aiSummaryLoading = true;
+    this.aiSummaryError = false;
+
+    this.aiSummarySub?.unsubscribe();
+    this.aiSummarySub = this.agentService.getSummary(ids).subscribe({
+      next: async (res) => {
+        const raw = res?.message || res?.result || res?.summary || res?.text || '';
+        const html = await marked.parse(raw);
+        this.aiSummary = DOMPurify.sanitize(html);
+        this.aiSummaryLoading = false;
+      },
+      error: () => {
+        this.aiSummaryError = true;
+        this.aiSummaryLoading = false;
+      }
+    });
   }
   private updateHistogramPayload() {
     if ((this.selectedScenario1Id && this.kpisLeft) || (this.selectedScenario2Id && this.kpisRight)) {
@@ -160,15 +172,7 @@ export class ConfrontoScenariComponent {
     const diffKeys = this.getDiffKeys(kpisA, kpisB);
     return diffKeys.map(key => ({ key, value: kpisA ? kpisA[key] : undefined }));
   }
-  selectScenario(slot: 1 | 2, id: string): void {
-    if (slot === 1) {
-      this.selectedScenario1Id = id;
-      this.loadScenario(1);
-    } else {
-      this.selectedScenario2Id = id;
-      this.loadScenario(2);
-    }
-  }
+
 
   onPlotControlChange(value: string) {
     this.selectedControlOption = value;
@@ -216,7 +220,6 @@ export class ConfrontoScenariComponent {
       const valuesDict = this.scenarioService.arrayToDict(rawOverrides);
       const specificWidgets = this.scenarioService.applyIndexDiffsToWidgets(this.baseWidgets, valuesDict);
 
-
       const evaluations = await firstValueFrom(this.scenarioService.getEvaluations(this.problemId, id));
       const completedEvals = evaluations.filter(e => e.scenario_id === id && e.state === 'COMPLETED');
       completedEvals.sort((a, b) => new Date(b.finished || 0).getTime() - new Date(a.finished || 0).getTime());
@@ -241,22 +244,13 @@ export class ConfrontoScenariComponent {
       }
 
       this.renderChart(container, input);
-      this.updateDiffs(); // Ricalcola le differenze dopo il fetch
+      this.updateDiffs();
       this.updateHistogramPayload();
     } catch (err) {
       console.error(`Errore durante il caricamento dello scenario ${slot}:`, err);
-    }
-    finally {
+    } finally {
       this.isLoading = false; 
     }
-    if (this.selectedScenario1Id && this.selectedScenario2Id && this.kpisLeft && this.kpisRight) {
-      this.loadAiSummary();
-    }
-  }
-  private loadAiSummary() {
-    const ids = [this.selectedScenario1Id, this.selectedScenario2Id].filter(Boolean);
-    if (ids.length === 0) return;
-    this.aiSummaryTrigger$.next(ids);
   }
   updateDiffs() {
     console.log('Widgets Left:', this.widgetsLeft);

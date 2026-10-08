@@ -6,7 +6,7 @@ import { AgentService } from '../../../services/agent.service';
 import { AuthenticationService } from '../../../services/authentication.service';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { debounceTime, EMPTY, Subject, Subscription, switchMap } from 'rxjs';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-reading',
@@ -35,28 +35,18 @@ export class ReadingComponent implements OnInit, OnChanges, OnDestroy {
   aiSummaryLoading = false;
   aiSummaryError = false;
 
-  private debouncedTrigger$ = new Subject<{ ids: string[]; sessionId?: string; evalId?: string }>();
   private summarySub?: Subscription;
-  private directSub?: Subscription;
 
   constructor(
     private explanationService: ExplanationService,
     private agentService: AgentService,
     private authService: AuthenticationService
-
   ) {} 
   
-  ngOnInit(): void {
-    // 🟢 Debounce solo quando si modificano i parametri (slider)
-    this.summarySub = this.debouncedTrigger$.pipe(
-      debounceTime(2500),
-      switchMap(({ ids, sessionId, evalId }) => {
-        if (this.savedSummary && this.savedSummary.trim().length > 0 && !this.sessionId) {
-          return EMPTY;
-        }
-        return this.executeFetch(ids, sessionId, evalId);
-      })
-    ).subscribe();
+  async ngOnInit(): Promise<void> {
+    if (this.savedSummary && this.savedSummary.trim().length > 0 && !this.sessionId) {
+      await this.displaySavedSummary(this.savedSummary);
+    }
 
     if (this.dataFacts.length > 0) {
       this.dataFactsParametersChanges = this.createParameterChanges();
@@ -65,81 +55,64 @@ export class ReadingComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnDestroy(): void {
     this.summarySub?.unsubscribe();
-    this.directSub?.unsubscribe();
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
+  async ngOnChanges(changes: SimpleChanges): Promise<void> {
     const scenarioChanged = changes['scenarioIds'] && !changes['scenarioIds'].firstChange;
     const evalChanged = changes['evaluationId'] && !changes['evaluationId'].firstChange;
+    const indexDiffsChanged = changes['indexDiffs'] && !changes['indexDiffs'].firstChange;
     const savedSummaryChanged = changes['savedSummary'];
-    const loadingChanged = changes['loading'];
 
     if (changes['widgets'] && this.widgets && this.dataFacts?.length > 0) {
       this.dataFactsParametersChanges = this.createParameterChanges();
     }
 
-    if (this.loading) {
+    // Se cambia il sommario salvato da fuori (es. caricamento scenario)
+    if (savedSummaryChanged && this.savedSummary && this.savedSummary.trim().length > 0 && !this.sessionId) {
+      await this.displaySavedSummary(this.savedSummary);
       return;
     }
 
-    if (savedSummaryChanged || loadingChanged || scenarioChanged || evalChanged) {
-      if (this.sessionId && !this.evaluationId) {
-        return; 
-      }
-      
-      if (evalChanged && !this.evaluationId) {
-        return;
-      }
-
-      this.loadAiSummary(evalChanged);
+    // Se i parametri cambiano o cambia scenario, azzera il sommario per far riapparire il pulsante
+    if (scenarioChanged || evalChanged || indexDiffsChanged) {
+      this.aiSummary = null;
+      this.aiSummaryError = false;
+      this.summaryChange.emit(null);
     }
   }
 
-  async loadAiSummary(isParamChange: boolean = false): Promise<void> {
-    // 1. Se abbiamo il summary salvato e non siamo in sessione di modifica, caricalo subito
-    if (this.savedSummary && this.savedSummary.trim().length > 0 && !this.sessionId) {
-      this.summaryChange.emit(this.savedSummary);
-      const html = await marked.parse(this.savedSummary);
-      this.aiSummary = DOMPurify.sanitize(html);
-      this.aiSummaryLoading = false;
-      this.aiSummaryError = false;
-      return;
-    }
+  private async displaySavedSummary(summary: string): Promise<void> {
+    this.summaryChange.emit(summary);
+    const html = await marked.parse(summary);
+    this.aiSummary = DOMPurify.sanitize(html);
+    this.aiSummaryLoading = false;
+    this.aiSummaryError = false;
+  }
 
-    if (this.loading) return;
+  generateAiSummary(): void {
+    if (this.loading || this.aiSummaryLoading) return;
 
     const ids = this.originalScenarioIds.length ? this.originalScenarioIds : this.scenarioIds;
     if (!ids.length) return;
     if (this.sessionId && !this.evaluationId) return;
 
-    // 2. Se è una modifica di parametri (slider), usa il debounce
-    if (isParamChange || this.sessionId) {
-      this.debouncedTrigger$.next({
-        ids,
-        sessionId: this.sessionId,
-        evalId: this.evaluationId
-      });
-    } else {
-      // 3. Chiamata immediata senza debounce
-      this.directSub?.unsubscribe();
-      this.directSub = this.executeFetch(ids, this.sessionId, this.evaluationId).subscribe();
-    }
-  }
-
-  private executeFetch(ids: string[], sessionId?: string, evalId?: string) {
     this.aiSummaryLoading = true;
     this.aiSummaryError = false;
 
-    return this.agentService.getSummary(ids, sessionId, evalId).pipe(
-      switchMap(async (res) => {
+    this.summarySub?.unsubscribe();
+    this.summarySub = this.agentService.getSummary(ids, this.sessionId, this.evaluationId).subscribe({
+      next: async (res) => {
         const raw = res?.message || res?.result || res?.summary || res?.text || '';
         this.summaryChange.emit(raw); 
         const html = await marked.parse(raw);
         this.aiSummary = DOMPurify.sanitize(html);
         this.aiSummaryLoading = false;
-        return res;
-      })
-    );
+      },
+      error: () => {
+        this.aiSummaryError = true;
+        this.aiSummaryLoading = false;
+      }
+    });
   }
 
   getLocallyChangedKeys(): string[] {

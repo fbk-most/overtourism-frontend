@@ -15,10 +15,10 @@
       </app-proposal-create>
     </it-modal>
     
-    <button itButton="primary" (click)="editProposalModal.show()">
+    <button itButton="primary" (click)="editProposalModal.show()" *ngIf="authService.canEdit()" >
       <span class="material-icons align-middle">edit</span> Modifica
     </button>
-    <button itButton="danger" size="sm" (click)="openDeleteModalProposal()">
+    <button itButton="danger" size="sm" (click)="openDeleteModalProposal()" *ngIf="authService.canEdit()" >
       <span class="material-icons align-middle">delete</span> Elimina
     </button>
   </div>

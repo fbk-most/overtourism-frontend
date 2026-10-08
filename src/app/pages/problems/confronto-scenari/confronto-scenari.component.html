@@ -152,13 +152,21 @@
         </div>
       </div>
     </div>
-     <!-- ── Sommario AI ─────────────────────────────────────────────────── -->
+      <!-- ── Sommario AI ─────────────────────────────────────────────────── -->
   <div class="row mt-4" *ngIf="selectedScenario1Id && selectedScenario2Id">
     <div class="col-12">
       <h3 class="mb-3 p-3 h3 d-flex align-items-center gap-2">
         <span class="material-icons text-primary">auto_awesome</span>
         Analisi comparativa AI
       </h3>
+
+      <!-- Pulsante di generazione manuale -->
+      <div class="mx-3 mb-3" *ngIf="!aiSummary && !aiSummaryLoading">
+        <button class="btn btn-outline-primary d-flex align-items-center gap-2" (click)="generateAiSummary()">
+          <span class="material-icons">auto_awesome</span>
+          <span>Genera analisi comparativa</span>
+        </button>
+      </div>
 
       <!-- Loading -->
       <div class="d-flex align-items-center gap-2 text-muted small p-3" *ngIf="aiSummaryLoading">
@@ -167,22 +175,16 @@
       </div>
 
       <!-- Errore -->
-      <div class="alert alert-warning mx-3" *ngIf="aiSummaryError">
-        <span class="material-icons align-middle me-1" style="font-size:16px;">warning</span>
-        Impossibile generare l'analisi automatica.
+      <div class="alert alert-warning mx-3 d-flex justify-content-between align-items-center" *ngIf="aiSummaryError">
+        <div>
+          <span class="material-icons align-middle me-1" style="font-size:16px;">warning</span>
+          Impossibile generare l'analisi automatica.
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" (click)="generateAiSummary()">Riprova</button>
       </div>
 
       <!-- Risultato -->
       <div class="callout callout-highlight note mx-3" *ngIf="aiSummary && !aiSummaryLoading">
-        <!-- <div class="d-flex align-items-center gap-2 mb-2">
-          <span class="badge" [ngStyle]="{'background-color': scenario1Color}">
-            {{ getScenarioName(selectedScenario1Id) }}
-          </span>
-          <span class="material-icons text-muted" style="font-size:16px;">compare_arrows</span>
-          <span class="badge" [ngStyle]="{'background-color': scenario2Color}">
-            {{ getScenarioName(selectedScenario2Id) }}
-          </span>
-        </div> -->
         <div class="small text-dark ai-summary-content" [innerHTML]="aiSummary"></div>
       </div>
     </div>

@@ -6,6 +6,7 @@ import { NotificationService } from '../../../services/notifications.service';
 import { ItModalComponent, SearchItem } from 'design-angular-kit';
 import { Router } from '@angular/router';
 import { ChatbotContextService } from '../../../services/chatbot/chatbotContext.service';
+import { AuthenticationService } from '../../../services/authentication.service';
 
 @Component({
   selector: 'app-problems',
@@ -30,11 +31,12 @@ export class ProblemsComponent {
   onProblemCancel() {
     this.problemModal.hide();
   }
-  constructor(private problemService: ProblemService,
+  constructor(
+    private problemService: ProblemService,
     private notificationService: NotificationService,
     private router: Router,
-    private chatbotCtx: ChatbotContextService 
-
+    private chatbotCtx: ChatbotContextService,
+    public authService: AuthenticationService
   ) {}
 
   ngOnInit(): void {

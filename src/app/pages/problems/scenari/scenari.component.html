@@ -67,7 +67,7 @@
               </span>
              </button>
             
-             <button *ngIf="scenario.id !== 'model_0'" 
+             <button *ngIf="scenario.id !== 'model_0'  && authService.canEdit()"  
              class="btn btn-sm btn-icon text-primary"
              (click)="openDeleteModal(scenario); $event.stopPropagation()" 
              [disabled]="comparazioneAttiva"

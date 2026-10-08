@@ -1,62 +1,30 @@
 <div class="mb-3" *ngIf="scenarioIds.length > 0">
 
-    <!-- Loading -->
-    <div class="d-flex align-items-center gap-2 text-muted small py-2" *ngIf="aiSummaryLoading">
-      <div class="spinner-border spinner-border-sm" role="status"></div>
-      <span>Generazione sommario in corso...</span>
-    </div>
-  
-    <!-- Errore -->
-    <div class="alert alert-warning py-2 small" *ngIf="aiSummaryError">
+  <!-- Pulsante di Generazione (visibile quando non c'è sommario e non sta caricando) -->
+  <div *ngIf="!aiSummary && !aiSummaryLoading" class="my-3">
+    <button class="btn btn-outline-primary d-flex align-items-center gap-2" (click)="generateAiSummary()">
+      <span class="material-icons">auto_awesome</span>
+      <span>Genera sommario </span>
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div class="d-flex align-items-center gap-2 text-muted small py-2" *ngIf="aiSummaryLoading">
+    <div class="spinner-border spinner-border-sm" role="status"></div>
+    <span>Generazione sommario in corso...</span>
+  </div>
+
+  <!-- Errore con pulsante Riprova -->
+  <div class="alert alert-warning py-2 small d-flex justify-content-between align-items-center" *ngIf="aiSummaryError">
+    <div>
       <span class="material-icons align-middle me-1" style="font-size:16px;">warning</span>
       Impossibile generare il sommario automatico.
     </div>
-  
-    <!-- Risultato (Rimosse le classi callout) -->
-    <div *ngIf="aiSummary && !aiSummaryLoading" class="mb-4">
-      <!-- <h6 class="text-primary mb-2 d-flex align-items-start ">
-        {{ scenarioIds.length > 1 ? 'Analisi comparativa' : 'Sommario scenario' }}
-      </h6> -->
-      <div class="small text-dark ai-summary-content" [innerHTML]="aiSummary"></div>
-    </div>
+    <button class="btn btn-sm btn-outline-secondary" (click)="generateAiSummary()">Riprova</button>
   </div>
-<!-- <div class="explanation-block">
-    <h6 class=" text-muted mb-2">Descrizione indice globale di sovraffollamento</h6>
-    <div class="explanation-text">{{ getGlobalIndexExplanation() }}</div>
+
+  <!-- Risultato Sommario -->
+  <div *ngIf="aiSummary && !aiSummaryLoading" class="mb-4">
+    <div class="small text-dark ai-summary-content" [innerHTML]="aiSummary"></div>
+  </div>
 </div>
-
-<div class="explanation-block">
-    <h6 class=" text-muted mb-2">Descrizione dei singoli indici</h6>
-    <div class="explanation-text">{{ getIndexesListExplanation() }}</div>
-</div>
-
-<div class="explanation-block">
-    <h6 class=" text-muted mb-2">Spiegazione incertezza</h6>
-    <div class="explanation-text">{{ getUncertaintyExplanation() }}</div>
-</div>
-
-<div class="explanation-block">
-    <h6 class=" text-muted mb-2">Descrizione di cambiamenti rispetto allo scenario base</h6>
-    <div class="explanation-text">{{ getParametersChangesExplanation() }}</div>
-</div> -->
-
-
-<!-- <it-accordion title="GUIDA ALLA LETTURA DEL GRAFICO">
-    <p>
-        I punti nel grafico indicano un campione di valori giornalieri per turisti e escursionisti stimati su base
-        probabilistica dal modello di riferimento (Modello Molveno Estate).
-    </p>
-    <p>
-        I punti che si trovano sopra o a destra ad una linea di vincolo (ad esempio «parcheggi») rappresentano
-        potenziali giornate con superamento della capacità della risorsa.
-        I punti in verde indicano giornate che soddisfano tutte le linee di vincolo e che sono compatibili con la
-        capacità di carico complessiva della destinazione.
-        I punti in rosso indicano giornate in cui si verifica sovraffollamento.
-    </p>
-    <p>
-        La previsione è caratterizzata da un margine di incertezza (evidenziato in giallo) che dipende da diversi
-        fattori, quali (i) le assunzioni sul comportamento dei visitatori e su altri parametri dei fenomeni turistici,
-        (ii) le approssimazioni dovute alla modellazione statistica. Per i punti colorati di giallo, la previsione è più
-        incerta.
-    </p>
-</it-accordion> -->
