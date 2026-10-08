@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiBaseUrl: (window as any)['env']?.['apiBaseUrl'] ?? 'http://localhost:8000/api/v2',
+  apiBaseUrl: (window as any)['env']?.['apiBaseUrl'] ?? 'http://localhost:8000/api',
   agentApiUrl: (window as any)['env']?.['agentApiUrl'] ?? 'http://localhost:9000/agent',
   auth: {
     issuer: (window as any)['env']?.['issuer'] ?? 'https://aac.platform.smartcommunitylab.it',

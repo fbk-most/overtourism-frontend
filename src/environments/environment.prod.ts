@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiBaseUrl: (window as any)['env']?.['apiBaseUrl'] ?? 'https://overtourism.smartcommunitylab.it/api/v2',
+  apiBaseUrl: (window as any)['env']?.['apiBaseUrl'] ?? 'https://overtourism.smartcommunitylab.it/api',
   agentApiUrl: (window as any)['env']?.['agentApiUrl'] ?? 'https://overtourism.smartcommunitylab.it/agent',
   auth: {
     issuer: (window as any)['env']?.['issuer'] ?? 'https://aac.platform.smartcommunitylab.it',
