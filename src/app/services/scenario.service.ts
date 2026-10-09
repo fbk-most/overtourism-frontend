@@ -205,15 +205,37 @@ export class ScenarioService {
       { params: { problem_id: problemId } }
     );
   }
+    /** Legge l'evaluation di sessione (Read Session Evaluation) */
 
+  getSessionEvaluation(
+    sessionId: string,
+    evaluationId: string,
+    scenarioId?: string
+  ): Observable<any> {
+    let params = new HttpParams();
+    if (scenarioId) {
+      params = params.set('scenario_id', scenarioId);
+    }
+    return this.http.get<any>(
+      `${this.baseUrl}/sessions/${sessionId}/evaluations/${evaluationId}`,
+      { params }
+    );
+  }
+  /** Legge i dati dell'evaluation di sessione (Get Session Data) */
   getSessionEvaluationData(
     sessionId: string,
     evaluationId: string,
-    problemId: string
+    problemId?: string,
+    asSnapshot: boolean = false
   ): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/sessions/${sessionId}/evaluations/${evaluationId}/data`, {
-      params: { problem_id: problemId,as_snapshot:false }
-    });
+    let params = new HttpParams().set('as_snapshot', String(asSnapshot));
+    if (problemId) {
+      params = params.set('problem_id', problemId);
+    }
+    return this.http.get<any>(
+      `${this.baseUrl}/sessions/${sessionId}/evaluations/${evaluationId}/data`,
+      { params }
+    );
   }
   
   getEvaluations(problemId: string, scenarioId?: string): Observable<any[]> {

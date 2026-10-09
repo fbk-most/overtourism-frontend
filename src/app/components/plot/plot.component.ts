@@ -1,8 +1,7 @@
 // plot.component.ts
 import { Component, ElementRef, AfterViewInit, ViewChild, Input } from '@angular/core';
-import Plotly from 'plotly.js-dist-min';
 import { PlotService } from '../../services/plot.service';
-import { Curve, KPIs, PlotInput } from '../../models/plot.model';
+import { KPIs, PlotInput } from '../../models/plot.model';
 import { ScenarioService, Widget } from '../../services/scenario.service';
 import { firstValueFrom } from 'rxjs';
 import { NotificationService } from '../../services/notifications.service';
@@ -10,6 +9,7 @@ import { Router } from '@angular/router';
 import { ItModalComponent } from 'design-angular-kit';
 import { TranslateService } from '@ngx-translate/core';
 import { ProblemService } from '../../services/problem.service';
+import { AuthenticationService } from '../../services/authentication.service';
 
 @Component({
   selector: 'app-plot',
@@ -18,6 +18,7 @@ import { ProblemService } from '../../services/problem.service';
   styleUrls: ['./plot.component.scss']
 })
 export class PlotComponent implements AfterViewInit {
+
 
   @ViewChild('chartLib', { static: false }) chartLib!: ElementRef<HTMLElement>;
   @ViewChild('saveModal') saveModal!: ItModalComponent;
@@ -29,6 +30,7 @@ export class PlotComponent implements AfterViewInit {
   @Input() proposalId!: string;
   @Input() version: number = 1;
   private navigationAfterSave = false;
+  private isNavigatingToCompare = false;
   isSaving = false;
   inputData: PlotInput | null = null;
   sottosistemaSelezionato = 'default';
@@ -72,17 +74,42 @@ export class PlotComponent implements AfterViewInit {
     private notificationService: NotificationService,
     private router: Router,
     private translate: TranslateService,
-    private notif: NotificationService
+    private notif: NotificationService,
+    public authService: AuthenticationService
+
   ) { }
 
   async ngAfterViewInit() {
-    await this.initSessionAsync();
-    await this.loadWidgetsAsync();
-    await this.loadData();
-  } catch(e: any) {
-    console.error("Errore inizializzazione component plot", e);
+    const savedSessionId = sessionStorage.getItem('overtourism_session_id');
+    const savedTempScenarioId = sessionStorage.getItem('overtourism_temp_scenario_id');
+    const savedChangedWidgets = sessionStorage.getItem('overtourism_changed_widgets');
+    const savedIndexDiffs = sessionStorage.getItem('overtourism_index_diffs');
 
+    if (savedSessionId) {
+      this.sessionId = savedSessionId;
+      this.sessionScenarioId = savedTempScenarioId || null;
+      if (savedChangedWidgets) {
+        this.changedWidgets = JSON.parse(savedChangedWidgets);
+        this.hasChanges = Object.keys(this.changedWidgets).length > 0;
+      }
+      if (savedIndexDiffs) {
+        this.indexDiffs = JSON.parse(savedIndexDiffs);
+      }
+    } else {
+      await this.initSessionAsync();
+    }
+
+    await this.loadWidgetsAsync();
+
+    // Se avevamo modifiche di sessione attive, ricarichiamo i dati con i diffs applicati
+    if (this.sessionScenarioId && this.changedWidgets && Object.keys(this.changedWidgets).length > 0) {
+      this.widgets = this.scenarioService.applyIndexDiffsToWidgets(this.widgets, this.changedWidgets);
+      await this.updateData(this.changedWidgets);
+    } else {
+      await this.loadData();
+    }
   }
+
   ngOnInit() {
 
   }
@@ -99,16 +126,17 @@ export class PlotComponent implements AfterViewInit {
     }
   }
   ngOnDestroy() {
-    sessionStorage.removeItem('overtourism_session_id');
-    console.log('Session ID removed');
+    // Se NON stiamo navigando verso il confronto e NON abbiamo salvato, pulisci la sessione
+    if (!this.isNavigatingToCompare && !this.navigationAfterSave) {
+      this.clearSessionStorage();
+    }
   }
-  // private arrayToDict(values: any[]): Record<string, any> {
-  //   const dict: Record<string, any> = {};
-  //   (values || []).forEach(v => {
-  //     if (v.index_name) dict[v.index_name] = v.index_value;
-  //   });
-  //   return dict;
-  // }
+  private clearSessionStorage() {
+    sessionStorage.removeItem('overtourism_session_id');
+    sessionStorage.removeItem('overtourism_temp_scenario_id');
+    sessionStorage.removeItem('overtourism_changed_widgets');
+    sessionStorage.removeItem('overtourism_index_diffs');
+  }
   formatValue(val: any): string {
     if (val === null || val === undefined || val === '' || val === 'None') {
       return '-';
@@ -142,9 +170,7 @@ export class PlotComponent implements AfterViewInit {
   }
 
   saveAsNewScenario(): void {
-
     const targetScenarioId = this.sessionScenarioId || this.scenarioId;
-    console.log('Saving as scenario ID:', targetScenarioId);
     this.scenarioService
       .saveSessionScenario(
         this.sessionId,
@@ -161,6 +187,7 @@ export class PlotComponent implements AfterViewInit {
         next: (res) => {
           this.isSaving = false;
           this.hasChanges = false;
+          this.clearSessionStorage(); // Pulizia dopo il salvataggio avvenuto
           this.closeModal();
           this.navigationAfterSave = true;
 
@@ -356,17 +383,37 @@ export class PlotComponent implements AfterViewInit {
     this.showControls = !this.showControls;
   }
   goToCompare(): void {
-    this.router.navigate([
-      '/problems',
-      this.problemId,
-      'proposals',
-      this.proposalId,
-      'scenari',
-      'confronta',
-      this.scenarioId,
-      'default'
-    ]);
-    console.log('Vai alla pagina di confronto');
+    this.isNavigatingToCompare = true;
+
+    if (this.sessionId) {
+      sessionStorage.setItem('overtourism_session_id', this.sessionId);
+      if (this.sessionScenarioId) {
+        sessionStorage.setItem('overtourism_temp_scenario_id', this.sessionScenarioId);
+      }
+      if (this.changedWidgets) {
+        sessionStorage.setItem('overtourism_changed_widgets', JSON.stringify(this.changedWidgets));
+      }
+      if (this.indexDiffs) {
+        sessionStorage.setItem('overtourism_index_diffs', JSON.stringify(this.indexDiffs));
+      }
+    }
+
+    const targetId = this.sessionScenarioId || this.scenarioId;
+    this.router.navigate(
+      [
+        '/problems',
+        this.problemId,
+        'proposals',
+        this.proposalId,
+        'scenari',
+        'confronta',
+        targetId,
+        'default'
+      ],
+      {
+        queryParams: { baseScenarioId: this.scenarioId }
+      }
+    );
   }
   
   async loadData() {
@@ -469,24 +516,11 @@ export class PlotComponent implements AfterViewInit {
     this.loadData();
     this.notificationService.showError('Modifiche ripristinate.');
   }
-  // renderPlot() {
-  //   if (!this.chartLib || !this.inputData) return;
-  //   if (this.monoDimensionale) {
-  //     this.plotService.renderMonoDimensionale(this.sottosistemaSelezionato, this.chartLib.nativeElement, this.inputData);
-  //     return;
-  //   }
-  //   const input = JSON.parse(JSON.stringify(this.inputData)) as PlotInput;
-  //   this.plotService.renderBidimensionale(
-  //     this.sottosistemaSelezionato,
-  //     this.chartLib.nativeElement, this.inputData
-  //   );
-
-
-  // }
 
   canDeactivate(): Promise<boolean> | boolean {
-    if (this.navigationAfterSave) {
-      this.navigationAfterSave = false; // resetta per le prossime volte
+    // Se stiamo andando al confronto o abbiamo appena salvato, consenti l'uscita senza blocchi
+    // NON resettare this.isNavigatingToCompare qui, altrimenti ngOnDestroy non lo vedrà!
+    if (this.navigationAfterSave || this.isNavigatingToCompare) {
       return true;
     }
     if (this.hasLocalDiffs()) {
@@ -498,8 +532,8 @@ export class PlotComponent implements AfterViewInit {
     return true;
   }
 
-  // Da chiamare quando l’utente conferma di voler abbandonare senza salvare
   onConfirmLeaveWithoutSaving() {
+    this.clearSessionStorage();
     if (this.pendingNavigationResolve) {
       this.pendingNavigationResolve(true);
       this.pendingNavigationResolve = null;

@@ -76,13 +76,13 @@
     <span class="material-icons me-2">replay</span>
     Ripristina modifiche
   </button>
-  <button itButton="primary" class="m-4 d-flex justify-content-between align-items-center" (click)="openSaveModal()">
+  <button *ngIf="authService.canEdit()" itButton="primary" class="m-4 d-flex justify-content-between align-items-center" (click)="openSaveModal()">
     <span class="material-icons me-2">save</span>
     Salva come nuovo scenario
   </button>
 </div>
 
-<it-modal #saveModal id="saveModal" closeButton="false">
+<it-modal #saveModal id="saveModal" closeButton="false" *ngIf="authService.canEdit()">
   <ng-container modalTitle>Salvataggio scenario modificato</ng-container>
 
   <p> Vuoi salvarlo come nuovo scenario per renderlo disponibile tra quelli salvati?
@@ -95,11 +95,9 @@
 
   <it-input label="{{ 'save.title' | translate }} *" name="titolo" [(ngModel)]="titolo"
     #titoloInput="ngModel"></it-input>
-  <!-- <small *ngIf="formInvalid && !titolo?.trim()" class="text-danger">Il titolo è obbligatorio</small> -->
 
   <it-textarea class="w-100" label="{{ 'save.description' | translate }} *" name="descrizione" [(ngModel)]="descrizione"
     #descrizioneInput="ngModel"></it-textarea>
-  <!-- <small *ngIf="formInvalid && !descrizione?.trim()" class="text-danger">La descrizione è obbligatoria</small> -->
 
   <ng-container footer>
     <button itButton="outline-primary" size="sm" type="button" data-bs-dismiss="modal"
@@ -117,6 +115,7 @@
     </button>
   </ng-container>
 </it-modal>
+
 <it-modal #unsavedModal>
   <ng-container modalTitle>Sei sicuro di voler abbandonare la pagina?</ng-container>
   <p>Hai modifiche non salvate. Chiudendo ora, tutte le impostazioni modificate in questa sessione andranno perse.</p>
@@ -124,7 +123,7 @@
   <ng-container footer>
     <button itButton="outline-primary" (click)="onCancelLeave()">Annulla</button>
     <button itButton="danger" (click)="onConfirmLeaveWithoutSaving()">Esci senza salvare</button>
-    <button itButton="primary" (click)="onSaveFromUnsaved()">Salva configurazione</button>
+    <button *ngIf="authService.canEdit()" itButton="primary" (click)="onSaveFromUnsaved()">Salva configurazione</button>
   </ng-container>
 </it-modal>
 <!-- Info e note SEMPRE visibili -->

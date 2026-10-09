@@ -1,11 +1,9 @@
-import { Component, ViewChild, ElementRef, OnDestroy } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import Plotly from 'plotly.js-dist-min';
+import { Component, ViewChild, ElementRef, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, Subscription } from 'rxjs';
-import { KPIs, PlotInput, Curve } from '../../../models/plot.model';
+import { KPIs, PlotInput } from '../../../models/plot.model';
 import { PlotService } from '../../../services/plot.service';
 import { ScenarioService, Widget } from '../../../services/scenario.service';
-
 import { PdfService } from '../../../services/pdf.service';
 import { TranslateService } from '@ngx-translate/core';
 import { MatDialog } from '@angular/material/dialog';
@@ -23,11 +21,13 @@ import { PlotMapper } from '../../../models/plot.model';
   styleUrls: ['./confronto-scenari.component.scss'],
   standalone: false
 })
-export class ConfrontoScenariComponent implements OnDestroy {
+export class ConfrontoScenariComponent implements OnInit, OnDestroy {
   scenari: any[] = [];
   selectedScenario1Id!: string;
   selectedScenario2Id!: string;
   problemId!: string;
+  proposalId!: string;
+  baseScenarioId!: string;
   selectedControlOption!: string;
   scenario2Color = '#D9D9D9'; // grigio
   scenario1Color = '#0066CC'; // blu
@@ -45,7 +45,7 @@ export class ConfrontoScenariComponent implements OnDestroy {
   diffsRightToLeft: any[] = [];
   @ViewChild('chartLeft', { static: true }) chartLeft!: ElementRef<HTMLElement>;
   @ViewChild('chartRight', { static: true }) chartRight!: ElementRef<HTMLElement>;
-  showControls: boolean = false; // per 'settings'
+  showControls: boolean = false;
   isDownloading = false;
   isLoading = false;
   histogramPayload: any = null; 
@@ -64,6 +64,7 @@ export class ConfrontoScenariComponent implements OnDestroy {
     private scenarioService: ScenarioService,
     private plotService: PlotService,
     private route: ActivatedRoute,
+    private router: Router,
     private pdfService: PdfService,
     private translate: TranslateService,
     private dialog: MatDialog,
@@ -72,6 +73,19 @@ export class ConfrontoScenariComponent implements OnDestroy {
 
   async ngOnInit() {
     this.problemId = this.route.snapshot.paramMap.get('problemId')!;
+    this.proposalId = this.route.snapshot.paramMap.get('proposalId') || '';
+    
+    const id1 = this.route.snapshot.paramMap.get('id1');
+    const id2 = this.route.snapshot.paramMap.get('id2');
+
+    this.selectedScenario1Id = id1 && id1 !== 'default' ? id1 : '';
+    this.selectedScenario2Id = id2 && id2 !== 'default' ? id2 : '';
+
+    const tempScenarioId = sessionStorage.getItem('overtourism_temp_scenario_id');
+    this.baseScenarioId = (this.selectedScenario1Id === tempScenarioId)
+      ? (this.route.snapshot.queryParamMap.get('baseScenarioId') || 'model_0')
+      : this.selectedScenario1Id;
+
     try {
       const parsed = await firstValueFrom(this.scenarioService.getParsedConfiguration());
       this.sottosistemi = parsed.sottosistemi;
@@ -83,19 +97,54 @@ export class ConfrontoScenariComponent implements OnDestroy {
       console.error('Errore caricamento configurazione base', err);
     }
 
-    this.scenarioService.getScenarios(this.problemId).subscribe(scenari => {
-      this.scenari = scenari;
-      
-      if (scenari.length >= 2) {
-        this.selectedScenario1Id = this.route.snapshot.paramMap.get('id1')!;
-        const id2 = this.route.snapshot.paramMap.get('id2');
-        
-        this.selectedScenario2Id = id2 && id2 !== 'default' ? id2 : '';
-        
-        this.loadScenario(1);
-        this.loadScenario(2);
+    try {
+      const scenari = await firstValueFrom(
+        this.scenarioService.getScenarios(this.problemId, this.proposalId || undefined)
+      );
+      this.scenari = [...scenari];
+
+      if (this.selectedScenario1Id && !this.scenari.some(s => s.id === this.selectedScenario1Id)) {
+        this.scenari.unshift({
+          id: this.selectedScenario1Id,
+          scenario_id: this.selectedScenario1Id,
+          name: 'Scenario modificato (corrente)',
+          problem_id: this.problemId
+        });
       }
-    });
+
+      if (this.selectedScenario2Id && !this.scenari.some(s => s.id === this.selectedScenario2Id)) {
+        this.scenari.unshift({
+          id: this.selectedScenario2Id,
+          scenario_id: this.selectedScenario2Id,
+          name: 'Scenario modificato (corrente)',
+          problem_id: this.problemId
+        });
+      }
+    } catch (err) {
+      console.error('Errore nel recupero scenari:', err);
+    }
+
+    if (this.selectedScenario1Id) {
+      this.loadScenario(1);
+    }
+    if (this.selectedScenario2Id) {
+      this.loadScenario(2);
+    }
+  }
+
+  goBackToScenario(): void {
+    if (this.proposalId && this.baseScenarioId) {
+      this.router.navigate([
+        '/problems',
+        this.problemId,
+        'proposals',
+        this.proposalId,
+        'scenari',
+        this.baseScenarioId
+      ]);
+    } else {
+      window.history.back();
+    }
   }
 
   ngOnDestroy(): void {
@@ -136,6 +185,7 @@ export class ConfrontoScenariComponent implements OnDestroy {
       }
     });
   }
+
   private updateHistogramPayload() {
     if ((this.selectedScenario1Id && this.kpisLeft) || (this.selectedScenario2Id && this.kpisRight)) {
       const cleanLeft = stripSystemKpis(this.kpisLeft);
@@ -151,40 +201,34 @@ export class ConfrontoScenariComponent implements OnDestroy {
       this.histogramPayload = null;
     }
   }
-  // private arrayToDict(values: any[]): Record<string, any> {
-  //   const dict: Record<string, any> = {};
-  //   (values || []).forEach(v => {
-  //     if (v.index_id) dict[v.index_id] = v.value;
-  //   });
-  //   return dict;
-  // }
 
-  
   getScenarioName(id: string | undefined): string | undefined {
-    return this.scenari.find(s => s.id === id)?.name;
+    if (!id || id === 'default') return undefined;
+    const found = this.scenari.find(s => s.id === id);
+    if (found) return found.name;
+    return 'Scenario modificato (corrente)';
   }
+
   getDiffKeys(kpisA: KPIs | undefined, kpisB: KPIs | undefined): string[] {
     if (!kpisA || !kpisB) return [];
     const keys = new Set([...Object.keys(kpisA), ...Object.keys(kpisB)]);
     return Array.from(keys).filter(key => String(kpisA[key]) !== String(kpisB[key]));
   }
+
   getDiffsFor(kpisA: KPIs | undefined, kpisB: KPIs | undefined): { key: string, value: any }[] {
     const diffKeys = this.getDiffKeys(kpisA, kpisB);
     return diffKeys.map(key => ({ key, value: kpisA ? kpisA[key] : undefined }));
   }
 
-
   onPlotControlChange(value: string) {
     this.selectedControlOption = value;
-    this.renderBoth()
+    this.renderBoth();
   }
 
   onShowAllSubsystemsChange(value: boolean) {
     this.showAllSubsystems = value;
     this.renderBoth();
   }
-
-
 
   onMonoDimensionaleChange(value: boolean) {
     this.monoDimensionale = value;
@@ -200,37 +244,86 @@ export class ConfrontoScenariComponent implements OnDestroy {
     this.renderBoth();
   }
 
-
   toggleControls(): void {
     this.showControls = !this.showControls;
   }
+
   renderBoth() {
-    this.loadScenario(1);
-    this.loadScenario(2);
+    if (this.selectedScenario1Id) this.loadScenario(1);
+    if (this.selectedScenario2Id) this.loadScenario(2);
   }
 
   async loadScenario(slot: 1 | 2) {
     const id = slot === 1 ? this.selectedScenario1Id : this.selectedScenario2Id;
-    if (!id) return;
+    if (!id || id === 'default') return;
     this.isLoading = true;
+
     try {
-      const scenarioRes = await firstValueFrom(this.scenarioService.getScenarioData(id, this.problemId));
+      let dataSet: any;
+      let specificWidgets = JSON.parse(JSON.stringify(this.baseWidgets));
+      const sessionId = sessionStorage.getItem('overtourism_session_id');
+      const tempScenarioId = sessionStorage.getItem('overtourism_temp_scenario_id');
 
-      const rawOverrides = scenarioRes.param_overrides || scenarioRes.index_values || {};
-      const valuesDict = this.scenarioService.arrayToDict(rawOverrides);
-      const specificWidgets = this.scenarioService.applyIndexDiffsToWidgets(this.baseWidgets, valuesDict);
+      const isTemporarySession = !!(tempScenarioId && id === tempScenarioId && sessionId);
 
-      const evaluations = await firstValueFrom(this.scenarioService.getEvaluations(this.problemId, id));
-      const completedEvals = evaluations.filter(e => e.scenario_id === id && e.state === 'COMPLETED');
-      completedEvals.sort((a, b) => new Date(b.finished || 0).getTime() - new Date(a.finished || 0).getTime());
+      if (!isTemporarySession) {
+        // --- SCENARIO SALVATO: API standard ---
+        const scenarioRes = await firstValueFrom(
+          this.scenarioService.getScenarioData(id, this.problemId)
+        );
+        const rawOverrides = scenarioRes?.param_overrides || scenarioRes?.index_values || {};
+        const valuesDict = this.scenarioService.arrayToDict(rawOverrides);
+        specificWidgets = this.scenarioService.applyIndexDiffsToWidgets(this.baseWidgets, valuesDict);
 
-      const currentEval = completedEvals[0];
-      if (!currentEval) throw new Error(`Nessuna evaluation completata per lo scenario ${id}`);
+        const evaluations = await firstValueFrom(
+          this.scenarioService.getEvaluations(this.problemId, id)
+        );
+        const completedEvals = (evaluations || [])
+          .filter(e => e.scenario_id === id && e.state === 'COMPLETED')
+          .sort((a, b) => new Date(b.finished || 0).getTime() - new Date(a.finished || 0).getTime());
 
-      const rawResponse = await firstValueFrom(this.scenarioService.getEvaluationData(currentEval.evaluation_id, this.problemId));
-      const dataSet = rawResponse.data || {};
+        if (completedEvals.length > 0) {
+          const rawResponse = await firstValueFrom(
+            this.scenarioService.getEvaluationData(completedEvals[0].evaluation_id, this.problemId)
+          );
+          dataSet = rawResponse.extras?.data || rawResponse.data || rawResponse;
+        }
+      } else {
+        // --- SCENARIO TEMPORANEO DI SESSIONE: API sessioni ---
+        const rawChangedWidgets = sessionStorage.getItem('overtourism_changed_widgets');
+        if (rawChangedWidgets) {
+          try {
+            const changedWidgets = JSON.parse(rawChangedWidgets);
+            specificWidgets = this.scenarioService.applyIndexDiffsToWidgets(this.baseWidgets, changedWidgets);
+          } catch (e) {
+            console.error('Errore parsing changed widgets da sessione', e);
+          }
+        }
 
-      const input = this.plotService.preparePlotInput(dataSet, this.colorMap, this.sottosistemi);
+        // Crea ed esegue evaluation temporanea
+        const evalRes = await firstValueFrom(
+          this.scenarioService.createSessionEvaluation(sessionId!, this.problemId, id)
+        );
+        const sessionEvalId = evalRes.evaluation_id || evalRes.id;
+
+        if (sessionEvalId) {
+          const rawResponse = await firstValueFrom(
+            this.scenarioService.getSessionEvaluationData(sessionId!, sessionEvalId, this.problemId, false)
+          );
+          dataSet = rawResponse.extras?.data || rawResponse.data || rawResponse;
+        }
+      }
+
+      if (!dataSet) {
+        throw new Error(`Nessun dato disponibile per lo scenario ${id}`);
+      }
+
+      const input = this.plotService.preparePlotInput(
+        dataSet,
+        this.colorMap,
+        this.sottosistemi,
+        this.plotMapper
+      );
       const container = slot === 1 ? this.chartLeft.nativeElement : this.chartRight.nativeElement;
 
       if (slot === 1) {
@@ -249,32 +342,27 @@ export class ConfrontoScenariComponent implements OnDestroy {
     } catch (err) {
       console.error(`Errore durante il caricamento dello scenario ${slot}:`, err);
     } finally {
-      this.isLoading = false; 
+      this.isLoading = false;
     }
   }
+
   updateDiffs() {
-    console.log('Widgets Left:', this.widgetsLeft);
-    console.log('Widgets Right:', this.widgetsRight);
-    
     this.diffsLeftToRight = this.getWidgetDiffs(this.widgetsLeft, this.widgetsRight);
     this.diffsRightToLeft = this.getWidgetDiffs(this.widgetsRight, this.widgetsLeft);
-    
-    console.log('Differenze L->R trovate:', this.diffsLeftToRight);
   }
+
   filterKpis(rawData: Record<string, any>): Record<string, { level: number, confidence: number }> {
     return Object.keys(rawData)
-    .filter(key => key.includes('constraint_level_') || key === 'sustainability_level' || key === 'critical_constraint')
-    .reduce((obj, key) => {
-  
+      .filter(key => key.includes('constraint_level_') || key === 'sustainability_level' || key === 'critical_constraint')
+      .reduce((obj, key) => {
         const value = rawData[key];
-        // se rawData[key] è un numero singolo, lo trasformiamo in oggetto level/confidence
         obj[key] = typeof value === 'number'
           ? { level: value, confidence: 0 }
           : { level: value.level ?? 0, confidence: value.confidence ?? 0 };
-  
         return obj;
       }, {} as Record<string, { level: number, confidence: number }>);
   }
+
   formatDiffValue(val: any): string {
     if (val === null || val === undefined || val === '' || val === 'None') {
       return '-';
@@ -287,6 +375,7 @@ export class ConfrontoScenariComponent implements OnDestroy {
     }
     return String(val);
   }
+
   getWidgetDiffs(
     widgetsA: Record<string, Widget[]>,
     widgetsB: Record<string, Widget[]>
@@ -301,7 +390,6 @@ export class ConfrontoScenariComponent implements OnDestroy {
       const widgetB = Object.values(widgetsB).flat().find(w => w.name === id);
   
       if (widgetA && widgetB) {
-        // Controllo se è un range [min, max]
         const isRange = widgetA.kind === 'distribution' || (widgetA.scale && widgetA.unit !== '%') || widgetA.vMin !== undefined || widgetB.vMin !== undefined;
 
         if (isRange) {
@@ -319,11 +407,9 @@ export class ConfrontoScenariComponent implements OnDestroy {
             });
           }
         } else {
-          // Valore singolo (categorico o numerico)
           const rawA = widgetA.v !== undefined ? widgetA.v : (widgetA.default ?? widgetA.default_category ?? widgetA.loc ?? null);
           const rawB = widgetB.v !== undefined ? widgetB.v : (widgetB.default ?? widgetB.default_category ?? widgetB.loc ?? null);
 
-          // Normalizza null, undefined e 'None' a stringa vuota per il confronto
           const strA = (rawA === null || rawA === undefined || rawA === 'None') ? '' : String(rawA);
           const strB = (rawB === null || rawB === undefined || rawB === 'None') ? '' : String(rawB);
 
@@ -358,38 +444,28 @@ export class ConfrontoScenariComponent implements OnDestroy {
       this.colorMap
     );
   }
-  onScenarioSelect(slot: 1 | 2, selectedId: string) {
-    if (slot === 1) {
-      this.selectedScenario1Id = selectedId;
-    } else {
-      this.selectedScenario2Id = selectedId;
-    }
-    this.loadScenario(slot);
-  }
 
   getCapacityLabel(subsystem: string): string {
     return subsystem === 'default' ? 'Soglia di sovraffollamento' : 'Capacità di carico';
   }
 
-
   formatNumber(value: number): string {
     return value.toFixed(2);
   }
+
   async downloadPdf(): Promise<void> {
-    if (this.isDownloading) return; // evita doppi click
+    if (this.isDownloading) return;
     this.isDownloading = true;
     setTimeout(async () => {
-
-    try {
-      await this.pdfService.downloadPdfFromElement(
-        'pdfContent',
-        `${this.getScenarioName(this.selectedScenario1Id)} vs ${this.getScenarioName(this.selectedScenario2Id) || 'confronto'}.pdf`
-      );
-    } finally {
-      this.isDownloading = false;
-    }
-  }, 0);
-
+      try {
+        await this.pdfService.downloadPdfFromElement(
+          'pdfContent',
+          `${this.getScenarioName(this.selectedScenario1Id)} vs ${this.getScenarioName(this.selectedScenario2Id) || 'confronto'}.pdf`
+        );
+      } finally {
+        this.isDownloading = false;
+      }
+    }, 0);
   }
 
   buildChatbotContext(): ConfrontoScenariContext {
@@ -452,18 +528,10 @@ export class ConfrontoScenariComponent implements OnDestroy {
       return;
     }
 
-  this.dialog.open(ChatbotDialogComponent, {
+    this.dialog.open(ChatbotDialogComponent, {
       width: '400px',
       height: '600px',
       data: this.buildChatbotContext()
     });
   }
-
 }
-// const KPI_TRANSLATIONS: Record<string, string> = {
-//   constraint_level_alberghi: 'constraint_level_alberghi',
-//   constraint_level_parcheggi: 'kpi.constraint_level_parcheggi',
-//   constraint_level_ristoranti: 'kpi.constraint_level_ristoranti',
-//   constraint_level_spiaggia: 'kpi.constraint_level_spiaggia',
-//   sustainability_level: 'kpi.sustainability_level'
-// };

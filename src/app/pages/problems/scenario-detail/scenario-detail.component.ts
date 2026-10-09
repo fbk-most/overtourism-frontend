@@ -1,12 +1,12 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { PlotService } from '../../../services/plot.service';
 import { ScenarioService } from '../../../services/scenario.service';
 import { ProblemScenario } from '../../../models/scenario.model';
 import { PlotComponent } from '../../../components/plot/plot.component';
 import { ItModalComponent } from 'design-angular-kit';
 import { PdfService } from '../../../services/pdf.service';
 import { ChatbotContextService } from '../../../services/chatbot/chatbotContext.service';
+import { AuthenticationService } from '../../../services/authentication.service';
 
 @Component({
   selector: 'app-scenario-detail',
@@ -30,7 +30,9 @@ export class ScenarioDetailComponent {
     private scenarioService: ScenarioService,
     private router: Router,
     private pdfService: PdfService,
-    private chatbotCtx: ChatbotContextService
+    private chatbotCtx: ChatbotContextService,
+    public authService: AuthenticationService
+
 
 
   ) { }
@@ -47,13 +49,19 @@ export class ScenarioDetailComponent {
     this.loadScenarioDetails();
   }
   canDeactivate(): Promise<boolean> | boolean {
-    // Se il plotComponent esiste, delega a lui
-    return this.plotComponent?.canDeactivate() ?? true;
+    if (this.plotComponent && typeof this.plotComponent.canDeactivate === 'function') {
+      return this.plotComponent.canDeactivate();
+    }
+    return true;
   }
   loadScenarioDetails(): void {
     this.scenarioService.getScenarios(this.problemId, this.proposalId).subscribe({
       next: (scenarios) => {
         this.scenario = scenarios.find(s => s.id === this.scenarioId);
+      },
+
+      error: (err) => {
+        console.error('Errore nel recupero dello scenario:', err);
       }
     });
   }
