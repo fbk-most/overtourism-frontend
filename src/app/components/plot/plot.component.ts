@@ -1,5 +1,5 @@
 // plot.component.ts
-import { Component, ElementRef, AfterViewInit, ViewChild, Input } from '@angular/core';
+import { Component, ElementRef, AfterViewInit, ViewChild, Input, ChangeDetectorRef } from '@angular/core';
 import { PlotService } from '../../services/plot.service';
 import { KPIs, PlotInput } from '../../models/plot.model';
 import { ScenarioService, Widget } from '../../services/scenario.service';
@@ -75,11 +75,13 @@ export class PlotComponent implements AfterViewInit {
     private router: Router,
     private translate: TranslateService,
     private notif: NotificationService,
-    public authService: AuthenticationService
+    public authService: AuthenticationService,
+    private cdr: ChangeDetectorRef
+
 
   ) { }
 
-  async ngAfterViewInit() {
+  async ngOnInit() {
     const savedSessionId = sessionStorage.getItem('overtourism_session_id');
     const savedTempScenarioId = sessionStorage.getItem('overtourism_temp_scenario_id');
     const savedChangedWidgets = sessionStorage.getItem('overtourism_changed_widgets');
@@ -108,12 +110,14 @@ export class PlotComponent implements AfterViewInit {
     } else {
       await this.loadData();
     }
+
+    this.cdr.detectChanges();
   }
 
-  ngOnInit() {
-
+  async ngAfterViewInit() {
+    // Lasciato per eventuali inizializzazioni DOM/Plotly
   }
-  private async initSessionAsync(): Promise<void> {
+    private async initSessionAsync(): Promise<void> {
     try {
       const response = await firstValueFrom(this.scenarioService.createSession(this.problemId));
       this.sessionId = response.session_id;
@@ -364,8 +368,10 @@ export class PlotComponent implements AfterViewInit {
       }
     } finally {
       this.loading = false;
+      this.cdr.detectChanges();
     }
   }
+
 
   toggleEditing(): void {
     this.isEditing = !this.isEditing;
@@ -457,6 +463,7 @@ export class PlotComponent implements AfterViewInit {
       console.error('Errore nel caricamento dati evaluation:', error);
     } finally {
       this.loading = false;
+      this.cdr.detectChanges();
     }
   }
   private setupSelectOptions() {
