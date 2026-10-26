@@ -5,20 +5,35 @@ import { catchError, timeout } from 'rxjs/operators';
 import { NotificationService } from '../services/notifications.service';
 import { AuthenticationService } from '../services/authentication.service';
 import { TranslateService } from '@ngx-translate/core';
+import { environment } from '../../environments/environment';
+
 export const SKIP_ERROR_NOTIFICATION = new HttpContextToken<boolean>(() => false);
+export const CUSTOM_TIMEOUT = new HttpContextToken<number | null>(() => null);
 
 @Injectable()
 export class HttpErrorInterceptor implements HttpInterceptor {
+  private readonly DEFAULT_TIMEOUT_MS = 60000;        // 60 secondi per tutte le chiamate normali
+  private readonly AGENT_TIMEOUT_MS = 180000;         // 3 minuti (180s) solo per l'Agent
+
   constructor(
     private notificationService: NotificationService,
     private authService: AuthenticationService,
     private translate: TranslateService
-
   ) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    // Rileva se la chiamata è diretta all'Agent
+    const isAgentCall =
+      (!!environment.agentApiUrl && req.url.startsWith(environment.agentApiUrl)) ||
+      req.url.includes('/agent');
+
+    // Usa il timeout custom se specificato nel contesto, altrimenti quello dell'agent o il default
+    const currentTimeout =
+      req.context.get(CUSTOM_TIMEOUT) ??
+      (isAgentCall ? this.AGENT_TIMEOUT_MS : this.DEFAULT_TIMEOUT_MS);
+
     return next.handle(req).pipe(
-      timeout(60000),
+      timeout(currentTimeout),
       catchError((error: any) => {
         const skipNotification = req.context.get(SKIP_ERROR_NOTIFICATION);
 
