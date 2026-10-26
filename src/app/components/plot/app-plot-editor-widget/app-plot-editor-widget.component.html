@@ -23,17 +23,21 @@
               <div *ngFor="let widget of widgets[group]" class="col-12 col-md-6 mb-4">
                 <div>
                   <div class="p-2  rounded h-100">
-                    <div class="d-flex justify-content-between align-items-center small">
-                      <label class="form-label mb-0"
-                        [itTooltip]="!isEditable(widget) ? 'Modifica non disponibile per questo indice' :  undefined ">
-                        {{ widget.label }}
-                      </label>
-                      <span *ngIf="widget.description" class="material-icons text-muted ms-2"
-                        style="font-size: 16px; cursor: pointer;" [itTooltip]="widget.description"
-                        itTooltipPosition="right">
-                        help_outline
-                      </span>
-                    </div>
+                      <div class="d-flex justify-content-start align-items-center gap-1 mb-1">
+                        <label class="form-label fw-bold mb-0 text-truncate" [title]="widget.label">
+                          {{ widget.label }}
+                        </label>
+                    
+                        <span *ngIf="widget.description"
+                              class="material-icons text-muted align-middle ms-1"
+                              style="font-size: 18px; cursor: pointer;"
+                              [itTooltip]="widget.description"
+                              [tooltipPlacement]="'top'"
+                              role="img"
+                              [attr.aria-label]="widget.description">
+                          info_outline
+                        </span>
+                      </div>
                    <!-- CATEGORIALE -->
                    <ng-container *ngIf="widget.kind === 'categorical'; else distributionBlock">
                     <div class="dropdown mt-2 position-relative" 
