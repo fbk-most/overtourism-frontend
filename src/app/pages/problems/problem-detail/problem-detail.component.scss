@@ -1,0 +1,29 @@
+.col-fit {
+    width: 1%;
+    white-space: nowrap;
+  }
+  
+  .col-title {
+    white-space: nowrap;
+    min-width: 180px;
+  }
+  
+  .col-actions {
+    width: 1%;
+    white-space: nowrap;
+    min-width: 120px;
+  }
+  
+  .col-desc {
+    max-width: 400px;
+  }
+  
+  .table-desc-clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    line-height: 1.4;
+  }

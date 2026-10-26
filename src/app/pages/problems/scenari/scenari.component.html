@@ -19,32 +19,36 @@
   <it-table>
     <ng-container thead>
       <tr>
-        <th *ngIf="comparazioneAttiva" class="text-start align-middle"></th>
-        <th class="text-start align-middle">#</th>
+        <th *ngIf="comparazioneAttiva" class="text-start align-middle col-fit"></th>
+        <th class="text-start align-middle col-fit">#</th>
 
-        <th class="text-start align-middle">{{ 'scenari.name' | translate }}</th>
-        <th class="text-start align-middle">{{ 'scenari.description' | translate }}</th>
-        <th class="text-start align-middle" >{{ 'scenari.parameters' | translate }}</th>
-        <th class="text-start align-middle">{{ 'scenari.actions' | translate }}</th>
+        <th class="text-start align-middle text-nowrap col-title">{{ 'scenari.name' | translate }}</th>
+        <th class="text-start align-middle col-desc">{{ 'scenari.description' | translate }}</th>
+        <th class="text-center align-middle text-nowrap col-fit">{{ 'scenari.parameters' | translate }}</th>
+        <th class="text-end align-middle text-nowrap col-actions">{{ 'scenari.actions' | translate }}</th>
       </tr>
     </ng-container>
-    <ng-container tbody >
+    <ng-container tbody>
       <tr *ngFor="let scenario of scenari; let i = index"
       [ngClass]="{'bg-custom-light': i % 2 === 0, 'bg-white': i % 2 !== 0}"
       (click)="goToScenario(scenario)" style="cursor: pointer;">
-        <td *ngIf="comparazioneAttiva">
+        <td *ngIf="comparazioneAttiva" class="col-fit">
           <it-checkbox class="me-2" [label]="''" [(ngModel)]="checkboxStates[scenario.id]"
             [disabled]="!checkboxStates[scenario.id] && selectedScenari.length >= 2" (click)="$event.stopPropagation()"
             (ngModelChange)="onScenarioCheck(scenario, $event)">
           </it-checkbox>
         </td>
-        <td class="text-start align-middle">{{ i + 1 }}</td>
-        <td class="text-start align-middle">{{ scenario.name }}</td>
-        <td class="text-start align-middle">{{ scenario.description }}</td>
-        <td class="text-start align-middle">
+        <td class="text-start align-middle col-fit">{{ i + 1 }}</td>
+        <td class="text-start align-middle text-nowrap fw-semibold col-title">{{ scenario.name }}</td>
+        <td class="text-start align-middle col-desc">
+          <div class="table-desc-clamp" [title]="scenario.description || ''">
+            {{ scenario.description || '—' }}
+          </div>
+        </td>
+        <td class="text-center align-middle col-fit">
           <button
             *ngIf="hasParams(scenario) && widgets"
-            class="btn btn-sm btn-icon text-primary  "
+            class="btn btn-sm btn-icon text-primary"
             [itPopover]="getDiffDescription(scenario)"
             [popoverTitle]="'scenari.parametersChanged' | translate"
             [popoverPlacement]="'left'"
@@ -52,33 +56,27 @@
             popoverTrigger="focus"
             popoverHtml="true"
             (click)="$event.stopPropagation()"
-            
             aria-label="Visualizza parametri"
           >
             <span class="material-icons align-middle">description</span>
           </button>
         </td>
-        <td class="text-start align-middle">
-          <div class="d-flex flex-wrap justify-content-start gap-2">
+        <td class="text-end align-middle col-actions">
+          <div class="d-inline-flex justify-content-end gap-2 text-nowrap">
             <button class="btn btn-sm btn-icon text-primary" (click)="goToScenario(scenario); $event.stopPropagation()"
-            [disabled]="comparazioneAttiva" aria-label="Dettaglio scenario">
-            <span class="material-icons">
-              visibility
-              </span>
-             </button>
+              [disabled]="comparazioneAttiva" aria-label="Dettaglio scenario">
+              <span class="material-icons">visibility</span>
+            </button>
             
-             <button *ngIf="scenario.id !== 'model_0'  && authService.canEdit()"  
-             class="btn btn-sm btn-icon text-primary"
-             (click)="openDeleteModal(scenario); $event.stopPropagation()" 
-             [disabled]="comparazioneAttiva"
-             aria-label="Elimina scenario">
-       <span class="material-icons">delete</span>
-     </button>
+            <button *ngIf="scenario.id !== 'model_0' && authService.canEdit()"  
+              class="btn btn-sm btn-icon text-primary"
+              (click)="openDeleteModal(scenario); $event.stopPropagation()" 
+              [disabled]="comparazioneAttiva"
+              aria-label="Elimina scenario">
+              <span class="material-icons">delete</span>
+            </button>
           </div>
         </td>
-
-
-
       </tr>
     </ng-container>
   </it-table>
