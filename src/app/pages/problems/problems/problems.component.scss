@@ -1,17 +1,23 @@
+.territory-selector-wrapper {
+  background-color: #ffffff;
+  border-color: #dee2e6;
+  gap: 0.5rem;
+}
+
 .base-scenario-banner {
-    background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
-    border: 1px solid #cce5ff;
-    border-left: 5px solid #0066cc;
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
-  
-    &:hover {
-      box-shadow: 0 4px 12px rgba(0, 102, 204, 0.12) !important;
-    }
-  
-    .banner-icon-wrapper {
-      width: 48px;
-      height: 48px;
-      background-color: #e3f2fd;
-      flex-shrink: 0;
-    }
+  background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+  border: 1px solid #cce5ff;
+  border-left: 5px solid #0066cc;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.12) !important;
   }
+
+  .banner-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    background-color: #e3f2fd;
+    flex-shrink: 0;
+  }
+}

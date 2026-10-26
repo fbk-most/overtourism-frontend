@@ -1,21 +1,36 @@
 <div *ngIf="loading">{{ 'loading' | translate }}</div>
 
 <div *ngIf="!loading" class="bd-example">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="mb-0">{{ 'problems.title' | translate }}</h3>
 
-    <!-- Mostrato solo a chi ha permessi di scrittura -->
-    <button
-      itButton="primary"
-      *ngIf="authService.canEdit()"
-      (click)="openCreateProblemModal()"
-      class="d-flex align-items-center gap-2">
-      <span class="material-icons" style="font-size: 20px;">add_circle_outline</span>
-      <span>{{ 'problems.create' | translate }}</span>
-    </button>
+  <!-- SELETTORE CONTESTO CENTRALE -->
+  <div *ngIf="territories.length > 0" class="d-flex justify-content-center align-items-center mb-4">
+    <div class="territory-selector-wrapper d-inline-flex align-items-center p-2 rounded-pill shadow-sm bg-white border">
+      <span class="text-muted fw-semibold me-2 ms-3 small text-uppercase">Contesto Territoriale:</span>
+      <div class="dropdown">
+        <button
+          class="btn btn-primary d-flex align-items-center gap-2 rounded-pill px-3 py-2 fw-semibold"
+          type="button"
+          data-bs-toggle="dropdown"
+          aria-expanded="false">
+          <span class="text-uppercase">{{ currentTerritory || 'Seleziona Territorio' }}</span>
+          <span class="material-icons" style="font-size: 18px;">expand_more</span>
+        </button>
+        <div class="dropdown-menu shadow">
+          <div class="link-list-wrapper">
+            <ul class="link-list">
+              <li *ngFor="let t of territories">
+                <a class="list-item" style="cursor: pointer;" (click)="onTerritoryChange(t)">
+                  <span class="text-uppercase" [ngClass]="{'fw-bold text-primary': currentTerritory === t}">{{ t }}</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- BANNER SCENARIO BASE -->
+  <!-- BANNER SCENARIO BASE A TUTTA RIGA -->
   <div *ngIf="baseProblemRoute" class="base-scenario-banner mb-4 p-3 p-md-4 rounded shadow-sm d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
     <div class="d-flex align-items-center gap-3">
       <div class="banner-icon-wrapper rounded-circle d-flex align-items-center justify-content-center">
@@ -44,6 +59,20 @@
     </div>
   </div>
 
+  <!--  INTESTAZIONE: TITOLO A SINISTRA E AGGIUNGI AMBITO A DESTRA -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0">{{ 'problems.title' | translate }}</h3>
+
+    <!-- Mostrato solo a chi ha permessi di scrittura -->
+    <button
+      itButton="primary"
+      *ngIf="authService.canEdit()"
+      (click)="openCreateProblemModal()"
+      class="d-flex align-items-center gap-2">
+      <span class="material-icons" style="font-size: 20px;">add_circle_outline</span>
+      <span>{{ 'problems.create' | translate }}</span>
+    </button>
+  </div>
 
   <it-modal #problemModal size="xl" *ngIf="authService.canEdit()">
     <ng-container modalTitle>
@@ -60,7 +89,7 @@
     </app-problem-create>
   </it-modal>
 
-  <!-- LISTA AMBITI DI ANALISI (cards) -->
+  <!-- 4. LISTA AMBITI DI ANALISI (cards) -->
   <div class="row">
     <div class="col-12 col-lg-4 mb-4" *ngFor="let problem of problems">
       <div class="card-wrapper" [routerLink]="['/problems', problem.problem_id]">

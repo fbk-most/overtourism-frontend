@@ -7,6 +7,7 @@ import { ItModalComponent, SearchItem } from 'design-angular-kit';
 import { Router } from '@angular/router';
 import { ChatbotContextService } from '../../../services/chatbot/chatbotContext.service';
 import { AuthenticationService } from '../../../services/authentication.service';
+import { ScenarioService } from '../../../services/scenario.service';
 
 @Component({
   selector: 'app-problems',
@@ -37,17 +38,38 @@ export class ProblemsComponent {
     private notificationService: NotificationService,
     private router: Router,
     private chatbotCtx: ChatbotContextService,
-    public authService: AuthenticationService
+    public authService: AuthenticationService,
+    private scenarioService: ScenarioService
+
   ) {}
 
   ngOnInit(): void {
     this.chatbotCtx.setContext(null, null, []);
+
+    if (this.authService.isLoggedIn && this.territories.length === 0) {
+      this.scenarioService.getTerritories().subscribe({
+        next: (res) => this.authService.setAvailableTerritories(res),
+        error: (err) => console.error('Errore recupero lista territory: ', err)
+      });
+    }
+
     this.territorySub = this.authService.activeTerritory$.subscribe((territory) => {
       if (territory) {
         this.problems = [];
         this.loadProblems();
       }
     });
+  }
+  get territories(): string[] {
+    return (this.authService.availableTerritories || []).filter(t => t.toLowerCase() !== 'default');
+  }
+
+  get currentTerritory(): string {
+    const curr = this.authService.activeTerritory || '';
+    return curr.toLowerCase() === 'default' ? '' : curr;
+  }
+  onTerritoryChange(selectedTerritory: string): void {
+    this.authService.setActiveTerritory(selectedTerritory);
   }
   ngOnDestroy(): void {
     this.territorySub?.unsubscribe();
