@@ -164,7 +164,7 @@ export class SharedKpisComponent implements OnChanges {
     const delta = right - left;
     if (Math.abs(delta) <= (this.isPercentage(key) ? 2 : 5)) return 'btn-outline-secondary';
     
-    return delta > 0 ? 'btn-outline-danger' : 'btn-outline-success';
+    return delta > 0 ? 'btn-outline-success' : 'btn-outline-danger';
   }
 
   getKpiLabel(key: string): string {
