@@ -23,13 +23,13 @@
   
     // 1. EXECUTOR (Arancione)
     &.agent-executor {
-      border-left-color: #e67e22;
-      border-top-color: #e67e22;
+      border-left-color: #16a085;
+      border-top-color: #16a085;
   
       .agent-type-header {
-        color: #d35400;
+        color: #117a65;
         ::ng-deep svg {
-          fill: #d35400;
+          fill: #117a65;
         }
       }
     }
@@ -62,13 +62,14 @@
   
     // 4. EXPLOITATIVE (Verde Smeraldo)
     &.agent-exploitative {
-      border-left-color: #16a085;
-      border-top-color: #16a085;
+      
+      border-left-color: #e67e22;
+      border-top-color: #e67e22;
   
       .agent-type-header {
-        color: #117a65;
+        color: #d35400;
         ::ng-deep svg {
-          fill: #117a65;
+          fill: #d35400;
         }
       }
     }

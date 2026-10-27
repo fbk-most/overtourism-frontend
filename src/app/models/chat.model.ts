@@ -36,7 +36,6 @@ export interface AgentResponse {
   session_id?: string;
   active_context?: string;
   chart_data?: SharedChartPayload | null;
-  sliders_data?: SlidersData | null;
   assistant_action_data?: DomainEvent[]; 
 }
 
@@ -48,28 +47,7 @@ export interface ChatMessage {
   html?: string;                            // testo pre-renderizzato markdown (opzionale)
   index?: number;                           // per il feedback keying
   chartData?: SharedChartPayload | null;
-  slidersData?: SlidersData | null;
   inlineActions?: UIAction[];
-}
-
-export interface SlidersData {
-  widgets: Record<string, SliderWidget[]>;
-}
-
-export interface SliderWidget {
-  index_id: string;
-  index_name: string;
-  index_type: string;
-  index_category: string;
-  min: number;
-  max: number;
-  step: number;
-  loc?: number;
-  v?: number;
-  scale?: number;
-  editable: boolean;
-  _val: number;
-  _initial: number;
 }
 
 export interface ChatFeedback {

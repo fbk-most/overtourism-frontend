@@ -1,10 +1,9 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
 import { ChatMessageComponent } from './chat-message/chat-message.component';
 import { DesignAngularKitModule } from 'design-angular-kit';
-import { AgentService } from '../../../services/agent.service';
+import { AgentService, AgentSessionUnavailableError } from '../../../services/agent.service';
 import { ChatbotActionTranslatorService } from '../../../services/chatbot/chatbot-action-translator.service';
 import { ChatMockService } from '../../../services/chatbot/chat-mock.service';
 import { AgentResponse, ChatFeedback,ChatMessage, UIAction } from '../../../models/chat.model';
@@ -41,41 +40,66 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
   messages: ChatMessage[] = [];
   input = '';
   loading = false;
-  attachments: File[] = [];
   activeContext = '-';
   statusMessage: string | null = null;
   feedbacks: Record<number, ChatFeedback> = {};
-  sessionId: string;
 
   @ViewChild('chatRef') chatRef!: ElementRef;
   @ViewChild('textareaRef') textareaRef!: ElementRef;
-  @ViewChild('fileInputRef') fileInputRef!: ElementRef;
 
   private shouldScroll = false;
 
 
-  constructor(private agentSvc: AgentService, private chatbotSvc: ChatbotService) {
-    const savedSession = this.chatbotSvc.loadSessionId();
-    this.sessionId = savedSession ?? this.agentSvc.generateSessionId();
-    if (!savedSession) {
-      this.chatbotSvc.saveSessionId(this.sessionId);
+  constructor(private agentSvc: AgentService, private chatbotSvc: ChatbotService) {}
+
+  async startNewChat(): Promise<void> {
+    if (this.loading) return;
+    this.loading = true;
+    try {
+      await this.agentSvc.reset({ language: 'Italiano' });
+      this.chatbotSvc.clearMessages();
+      this.messages = [];
+      this.feedbacks = {};
+      this.input = '';
+      this.statusMessage = null;
+      this.activeContext = '-';
+    } catch (error) {
+      console.error('Errore durante il reset della chat:', error);
+      this.messages = [
+        ...this.messages,
+        { role: 'assistant', content: 'Impossibile iniziare una nuova chat. Riprova.' }
+      ];
+      this.saveMessages(this.messages);
+    } finally {
+      this.loading = false;
     }
   }
-  startNewChat(): void {
-    this.chatbotSvc.clearSession();
-    this.sessionId = this.agentSvc.generateSessionId();
-    this.chatbotSvc.saveSessionId(this.sessionId);
-    this.messages = [];
-    this.feedbacks = {};
-    this.input = '';
-    this.attachments = [];
-    this.statusMessage = null;
-    this.loading = false;
-    this.activeContext = '-';
-  }
-  ngOnInit() {
+  ngOnInit(): void {
     this.messages = this.chatbotSvc.loadMessages();
     if (this.messages.length > 0) this.shouldScroll = true;
+    this.loading = true;
+    void this.agentSvc.resumeIfRunning(
+      { language: 'Italiano' },
+      message => {
+        this.statusMessage = message;
+        this.shouldScroll = true;
+      }
+    ).then(async response => {
+      if (response) {
+        await this.handleAgentResponse(this.messages, response);
+      }
+    }).catch(error => {
+      console.error('Errore durante il ripristino della chat:', error);
+      this.messages = [
+        ...this.messages,
+        { role: 'assistant', content: 'Impossibile ripristinare la risposta in corso. Riprova.' }
+      ];
+      this.saveMessages(this.messages);
+    }).finally(() => {
+      this.loading = false;
+      this.statusMessage = null;
+      this.shouldScroll = true;
+    });
   }
   ngAfterViewChecked() {
     if (this.shouldScroll && this.chatRef) {
@@ -97,16 +121,6 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
     }
   }
 
-  onFileChange(event: Event) {
-    const files = Array.from((event.target as HTMLInputElement).files || []);
-    const existing = new Set(this.attachments.map(f => f.name));
-    this.attachments = [...this.attachments, ...files.filter(f => !existing.has(f.name))];
-    (event.target as HTMLInputElement).value = '';
-  }
-
-  removeAttachment(idx: number) {
-    this.attachments = this.attachments.filter((_, i) => i !== idx);
-  }
     /** Salva i messaggi nel localStorage ogni volta che cambiano */
     private saveMessages(msgs: ChatMessage[]): void {
       this.chatbotSvc.saveMessages(msgs);    }
@@ -128,18 +142,17 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
       content: data.response,
       agentType: data.agent_type,
       chartData: data.chart_data ?? null,
-      slidersData: data.sliders_data ?? null,
       inlineActions: inlineActions.length > 0 ? inlineActions : undefined
     }];
 
     this.messages = updated;
     this.saveMessages(updated);  
   }
-  async sendMessage() {
-    if (!this.input.trim() && this.attachments.length === 0) return;
+  async sendMessage(): Promise<void> {
+    if (!this.input.trim()) return;
 
     const currentInput = this.input;
-    const newMessages: ChatMessage[] = [...this.messages, { role: 'user', content: currentInput || '[Attachment]' }];
+    const newMessages: ChatMessage[] = [...this.messages, { role: 'user', content: currentInput }];
     this.messages = newMessages;
     this.saveMessages(newMessages);
     this.input = '';
@@ -157,115 +170,43 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
       return;
     }
 
-    const files = [...this.attachments];
-    this.attachments = [];
-    if (this.fileInputRef) this.fileInputRef.nativeElement.value = '';
-
-    this.agentSvc.sendMessage(this.sessionId, currentInput, 'Italiano', files).subscribe({
-      next: () => {
-        const eventSource = this.agentSvc.createEventSource(this.sessionId);
-
-        eventSource.addEventListener('status', (e: MessageEvent) => {
-          this.statusMessage = e.data;
+    try {
+      const response = await this.agentSvc.sendMessage(
+        currentInput,
+        { language: 'Italiano' },
+        message => {
+          this.statusMessage = message;
           this.shouldScroll = true;
-        });
-
-        eventSource.addEventListener('done', async () => {
-          eventSource.close();
-          try {
-            const data = await firstValueFrom(this.agentSvc.getResult(this.sessionId));
-            this.activeContext = data.active_context || '-';
-            this.handleAgentResponse(newMessages, data);
-          } catch (e) {
-            console.error('Errore nel recuperare la risposta:', e);
-            this.messages = [...newMessages, { role: 'assistant', content: 'Errore nel recuperare la risposta.' }];
-          }
-          this.loading = false;
-          this.statusMessage = null;
-          this.shouldScroll = true;
-        });
-
-        eventSource.onerror = (err: any) => {
-          console.error('Errore SSE durante lo streaming:', err);
-          eventSource.close();
-          
-          this.messages = [
-            ...newMessages,
-            { 
-              role: 'assistant', 
-              content: '⚠️ La connessione con il server è stata interrotta durante la generazione della risposta. Riprova tra poco.' 
-            }
-          ];
-          this.chatbotSvc.saveMessages(this.messages);
-
-          this.loading = false;
-          this.statusMessage = null;
-          this.shouldScroll = true;
-        };
-      },
-      error: (err) => {
-        console.error('Errore invio messaggio:', err);
-        this.messages = [
-          ...newMessages, 
-          { 
-            role: 'assistant', 
-            content: '⚠️ Impossibile contattare il server. Verifica la connessione e riprova.' 
-          }
-        ];
-        this.chatbotSvc.saveMessages(this.messages);
-        this.loading = false;
-        this.statusMessage = null;
-        this.shouldScroll = true;
-      }
-    });
-  }
-
-  onSliderSubmit(sessionId: string) {
-    this.loading = true;
-    this.statusMessage = '';
-    const currentMessages = [...this.messages];
-
-    const eventSource = this.agentSvc.createEventSource(sessionId);
-    const timeout = setTimeout(() => {
-      eventSource.close();
-      this.loading = false;
-      this.statusMessage = null;
-    }, 30000);
-
-    eventSource.addEventListener('status', (e: MessageEvent) => { this.statusMessage = e.data; });
-
-    eventSource.addEventListener('done', async () => {
-      clearTimeout(timeout);
-      eventSource.close();
-      try {
-        const data = await firstValueFrom(this.agentSvc.getResult(sessionId));
-        this.activeContext = data.active_context || '-';
-        this.handleAgentResponse(currentMessages, data);
-      } catch {
-        this.messages = [...currentMessages, { role: 'assistant', content: 'Errore nel recuperare la risposta.' }];
-      }
+        }
+      );
+      await this.handleAgentResponse(newMessages, response);
+    } catch (error) {
+      console.error('Errore durante l’invio del messaggio:', error);
+      const content = error instanceof AgentSessionUnavailableError
+        ? 'La sessione non è più disponibile. Invia di nuovo il messaggio per continuare.'
+        : '⚠️ Impossibile contattare il server. Verifica la connessione e riprova.';
+      this.messages = [...newMessages, { role: 'assistant', content }];
+      this.chatbotSvc.saveMessages(this.messages);
+    } finally {
       this.loading = false;
       this.statusMessage = null;
       this.shouldScroll = true;
-    });
-
-    eventSource.onerror = () => {
-      clearTimeout(timeout);
-      eventSource.close();
-      this.loading = false;
-      this.statusMessage = null;
-    };
+    }
   }
 
   onVote(index: number, vote: string | null) {
     const updated = { ...this.feedbacks[index], vote: vote as any };
     this.feedbacks = { ...this.feedbacks, [index]: updated };
-    this.agentSvc.submitFeedback(this.sessionId, index, vote || undefined, updated.comment).subscribe();
+    this.agentSvc.submitFeedback(index, vote || undefined, updated.comment).subscribe({
+      error: error => console.error('Errore nell’invio del feedback:', error)
+    });
   }
 
   onComment(index: number, comment: string) {
     const updated = { ...this.feedbacks[index], comment };
     this.feedbacks = { ...this.feedbacks, [index]: updated };
-    this.agentSvc.submitFeedback(this.sessionId, index, updated.vote || undefined, comment).subscribe();
+    this.agentSvc.submitFeedback(index, updated.vote || undefined, comment).subscribe({
+      error: error => console.error('Errore nell’invio del feedback:', error)
+    });
   }
 }

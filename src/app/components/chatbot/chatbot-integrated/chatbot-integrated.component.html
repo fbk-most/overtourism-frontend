@@ -43,7 +43,6 @@
       placeholder="Scrivi qui il tuo messaggio..."
       rows="1"
     ></textarea>
-    <button (click)="send()">Invia</button>
+    <button (click)="send()" [disabled]="isTyping">Invia</button>
   </div>
 </div>
-

@@ -23,8 +23,13 @@ export class ChatbotService {
   }
 
   clearSession(): void {
-    localStorage.removeItem(this.STORAGE_KEY);
+    this.clearMessages();
     localStorage.removeItem(this.SESSION_KEY);
+    localStorage.removeItem('integrated_chatbot_session_id');
+  }
+
+  clearMessages(): void {
+    localStorage.removeItem(this.STORAGE_KEY);
   }
 
   // Salva i messaggi nel localStorage ogni volta che cambiano
@@ -58,14 +63,6 @@ export class ChatbotService {
     } catch {
       return [];
     }
-  }
-
-  loadSessionId(): string | null {
-    return localStorage.getItem(this.SESSION_KEY);
-  }
-
-  saveSessionId(id: string): void {
-    localStorage.setItem(this.SESSION_KEY, id);
   }
 
   sendConversation(messages: ChatMessage[]): Observable<ChatResponse> {

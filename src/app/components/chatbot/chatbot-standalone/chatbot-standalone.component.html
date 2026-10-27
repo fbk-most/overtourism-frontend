@@ -27,9 +27,7 @@
        
         <app-chat-message
           [msg]="msg"
-          [sessionId]="sessionId"
           [feedback]="feedbacks[i] || {}"
-          (sliderSubmit)="onSliderSubmit($event)"
           (voteChange)="onVote(i, $event)"
           (commentChange)="onComment(i, $event)">
         </app-chat-message>
@@ -60,20 +58,7 @@
   <div class="input-container">
     <div class="input-wrapper">
       
-      <div *ngIf="attachments.length > 0" class="attachments-preview mb-2">
-        <div *ngFor="let file of attachments; let i = index" class="attachment-badge">
-          <it-icon name="clip" size="xs"></it-icon>
-          <span class="file-name text-truncate">{{ file.name }}</span>
-          <it-icon name="close" size="xs" class="remove-attachment" (click)="removeAttachment(i)"></it-icon>
-        </div>
-      </div>
-
       <div class="input-inner shadow-sm focus-ring">
-        <!-- <button class="icon-btn attach-btn" (click)="fileInputRef.click()" title="Allega file">
-          <it-icon name="plus" size="sm"></it-icon>
-        </button>
-        <input type="file" multiple (change)="onFileChange($event)" #fileInputRef style="display:none" />
-         -->
         <textarea
           #textareaRef
           [(ngModel)]="input"
@@ -86,9 +71,9 @@
         </textarea>
         
         <button class="icon-btn send-btn"
-          [class.active]="input.trim().length > 0 || attachments.length > 0"
+          [class.active]="input.trim().length > 0"
           (click)="sendMessage()"
-          [disabled]="loading || (!input.trim() && attachments.length === 0)">
+          [disabled]="loading || !input.trim()">
           <it-icon name="arrow-right" class="icon-white bg-white" size="sm"></it-icon>
         </button>
       </div>

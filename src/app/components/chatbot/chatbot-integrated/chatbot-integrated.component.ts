@@ -1,36 +1,36 @@
-import { Component, Input, OnInit, OnDestroy, inject, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
+import {
+  AfterViewChecked,
+  Component,
+  ElementRef,
+  inject,
+  OnInit,
+  ViewChild
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { marked } from 'marked';
+import { firstValueFrom } from 'rxjs';
+import { AgentChatContext, AgentService } from '../../../services/agent.service';
 import { ChatbotContextService } from '../../../services/chatbot/chatbotContext.service';
-import { SharedHistogramComponent } from '../../shared/shared-histogram/shared-histogram.component';
-import { SharedKpisComponent } from '../../shared/shared-kpis/shared-kpis.component';
 import { ChatbotActionTranslatorService } from '../../../services/chatbot/chatbot-action-translator.service';
 import { ChatbotActionService } from '../../../services/chatbot/chatbotAction.service';
 import { ChatMockService } from '../../../services/chatbot/chat-mock.service';
 import { AgentResponse, ChatFeedback, ChatMessage } from '../../../models/chat.model';
 import { ChatFeedbackBarComponent } from '../chatbot-standalone/chat-feedback-bar/chat-feedback-bar.component';
-import { AgentService } from '../../../services/agent.service';
-import { firstValueFrom } from 'rxjs';
-
-
 
 @Component({
   selector: 'app-chatbot-integrated',
   standalone: true,
-  imports: [CommonModule, FormsModule,ChatFeedbackBarComponent],
+  imports: [CommonModule, FormsModule, ChatFeedbackBarComponent],
   templateUrl: './chatbot-integrated.component.html',
   styleUrls: ['./chatbot-integrated.component.scss']
 })
-export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
+export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked {
   private translator = inject(ChatbotActionTranslatorService);
   private actionService = inject(ChatbotActionService);
   private mockService = inject(ChatMockService);
-  private http = inject(HttpClient);
   private contextService = inject(ChatbotContextService);
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
-
 
   isOpen = false;
   isTyping = false;
@@ -41,29 +41,29 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
   messages: ChatMessage[] = [];
   feedbacks: Record<number, ChatFeedback> = {};
 
-  // Modal state
   showFeedbackModal = false;
   modalMsgIndex = -1;
   modalDraft = '';
-
-  sessionId!: string;
   language = 'Italian';
 
-  private eventSource: any = null;
   constructor(private agentSvc: AgentService) {}
 
-  private parseMarkdown(text: string): string {
-    return marked.parse(text) as string;
-  }
-
   ngOnInit(): void {
-    this.sessionId = this.generateSessionId();
     this.pushBot('Ciao! Come posso aiutarti?');
+    this.isTyping = true;
+    void this.agentSvc.resumeIfRunning(this.agentOptions(), message => {
+      this.statusMessage = message;
+    }).then(response => {
+      if (response) this.handleAgentResponse(response);
+    }).catch(error => {
+      console.error('Errore durante il ripristino della chat integrata:', error);
+      this.pushBot('Impossibile ripristinare la risposta in corso. Riprova.');
+    }).finally(() => {
+      this.isTyping = false;
+      this.statusMessage = '';
+    });
   }
 
-  ngOnDestroy(): void {
-    this.closeEventSource();
-  }
   ngAfterViewChecked(): void {
     if (this.shouldScrollToBottom) {
       this.scrollToBottom();
@@ -73,70 +73,66 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
 
   private scrollToBottom(): void {
     try {
-      if (this.scrollContainer && this.scrollContainer.nativeElement) {
-        const el = this.scrollContainer.nativeElement;
-        el.scrollTop = el.scrollHeight;
+      if (this.scrollContainer?.nativeElement) {
+        const element = this.scrollContainer.nativeElement;
+        element.scrollTop = element.scrollHeight;
       }
     } catch (error) {
-      // Ignora errori di scroll
+      console.error('Errore nello scorrimento della chat:', error);
     }
   }
 
   private triggerScroll(): void {
     this.shouldScrollToBottom = true;
   }
-  private generateSessionId(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    return Array.from({ length: 8 }, () =>
-      chars.charAt(Math.floor(Math.random() * chars.length))
-    ).join('');
-  }
 
-  private closeEventSource(): void {
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
-    }
-  }
-
-  /** Push a bot message and assign it a stable index for feedback. */
   private pushBot(text: string): void {
     const index = this.messages.length - 1;
     this.messages.push({
-      role: 'assistant',        
-      content: text,           
+      role: 'assistant',
+      content: text,
       html: this.parseMarkdown(text),
       index
     });
     this.triggerScroll();
+  }
 
+  private parseMarkdown(text: string): string {
+    return marked.parse(text) as string;
+  }
+
+  private agentOptions() {
+    const context = this.contextService.getPayloadContext();
+    const agentContext: AgentChatContext = {
+      problem_id: context.problem_id,
+      proposal_id: context.proposal_id,
+      scenario_ids: context.scenario_ids
+    };
+    return { mode: 'integrated' as const, language: this.language, context: agentContext };
   }
 
   toggle(): void {
     this.isOpen = !this.isOpen;
-    if (this.isOpen) {
-      this.triggerScroll();
-    }
+    if (this.isOpen) this.triggerScroll();
   }
-  handleKeyDown(event: KeyboardEvent) {
+
+  handleKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault(); 
+      event.preventDefault();
       this.send();
     }
   }
+
   private handleAgentResponse(data: AgentResponse): void {
     this.pushBot(data.response ?? 'Nessuna risposta.');
-
     if (data.assistant_action_data?.length) {
       data.assistant_action_data
-        .flatMap(e => this.translator.translateForIntegrated(e))
+        .flatMap(event => this.translator.translateForIntegrated(event))
         .forEach(action => this.actionService.execute(action));
     }
   }
-  // ─── Send ──────────────────────────────────────────────────────────────────
 
-  send(): void {
-    if (!this.inputText.trim()) return;
+  async send(): Promise<void> {
     const text = this.inputText.trim();
     if (!text || this.isTyping) return;
 
@@ -145,106 +141,57 @@ export class ChatbotIntegratedComponent implements OnInit, OnDestroy {
     this.isTyping = true;
     this.statusMessage = '';
     this.triggerScroll();
+
     const mock = this.mockService.find(text);
     if (mock) {
-      setTimeout(() => {
-        this.handleAgentResponse(mock);
-        this.isTyping = false;
-        this.triggerScroll(); 
-      }, 800);
+      await new Promise(resolve => setTimeout(resolve, 800));
+      this.handleAgentResponse(mock);
+      this.isTyping = false;
       return;
     }
 
-    this.closeEventSource();
-
-    // const formData = new FormData();
-    // formData.append('message', text);
-    // formData.append('session_id', this.sessionId);
-    // formData.append('user_lang', this.language);
-    // formData.append('integrated_mode', 'true');
-
-    // Manda IL CONTESTO COMPLETO
-    if (!this.sessionId) {
-      this.sessionId = this.agentSvc.generateSessionId();
+    try {
+      const response = await this.agentSvc.sendMessage(
+        text,
+        this.agentOptions(),
+        message => {
+          this.statusMessage = message;
+        }
+      );
+      this.handleAgentResponse(response);
+    } catch (error) {
+      console.error('Errore durante l’invio del messaggio integrato:', error);
+      this.pushBot('Si è verificato un problema. Riprova a inviare il messaggio.');
+    } finally {
+      this.isTyping = false;
+      this.statusMessage = '';
     }
-
-    // //  Estrai il contesto dal service
-    // const ctx = this.contextService.getPayloadContext();
-    
-    // //  Crea il dizionario del contesto da passare al service
-    // const contextData: Record<string, any> = {
-    //   integrated_mode: 'true',
-    //   route: ctx.route
-    // };
-    
-
-    const ctx = this.contextService.getPayloadContext();
-
-    const contextArray = [JSON.stringify(ctx)];
-    this.agentSvc.sendMessage(this.sessionId, text, this.language, [], true, contextArray).subscribe({
-      next: () => {
-        // Apri stream solo dopo che la sessione è registrata
-        this.eventSource = this.agentSvc.createEventSource(this.sessionId);
-
-        this.eventSource.addEventListener('status', (e: MessageEvent) => {
-          this.statusMessage = e.data;
-        });
-
-        this.eventSource.addEventListener('done', async () => {
-          this.closeEventSource();
-          try {
-            const data = await firstValueFrom(this.agentSvc.getResult(this.sessionId));
-            if (data.session_id) this.sessionId = data.session_id;
-            this.pushBot(data.response ?? 'No response received.');
-          } catch {
-            this.pushBot('Error fetching result.');
-          }
-          this.isTyping = false;
-          this.statusMessage = '';
-        });
-
-        this.eventSource.onerror = () => {
-          this.closeEventSource();
-          this.pushBot('Connection error. Please try again.');
-          this.isTyping = false;
-          this.statusMessage = '';
-        };
-      },
-      error: () => {
-        this.closeEventSource();
-        this.pushBot('Sorry, something went wrong.');
-        this.isTyping = false;
-      }
-    });
   }
 
-  
   getFeedback(index: number): ChatFeedback {
     return this.feedbacks[index] ?? {};
   }
 
   handleVote(index: number, vote: 'up' | 'down'): void {
     const current = this.getFeedback(index);
-    // Se non serve il toggle deseleziona, basta assegnare il nuovo voto
     this.feedbacks[index] = { ...current, vote };
     this.submitFeedback(index);
   }
 
   handleComment(index: number, comment: string): void {
     const current = this.getFeedback(index);
-    this.feedbacks[index] = { ...current, comment };
+    this.feedbacks[index] = { ...this.getFeedback(index), comment };
     this.submitFeedback(index);
   }
 
   private async submitFeedback(index: number): Promise<void> {
-    const fb = this.getFeedback(index);
+    const feedback = this.getFeedback(index);
     try {
-      await firstValueFrom(this.agentSvc.submitFeedback(this.sessionId, index-1, fb.vote, fb.comment));
-    } catch (err) {
-      console.error('Failed to submit feedback', err);
+      await firstValueFrom(
+        this.agentSvc.submitFeedback(index - 1, feedback.vote, feedback.comment, 'integrated')
+      );
+    } catch (error) {
+      console.error('Failed to submit feedback', error);
     }
   }
-
-
-   
 }
