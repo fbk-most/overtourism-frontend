@@ -48,6 +48,7 @@ export class ConfrontoScenariComponent implements OnInit, OnDestroy {
   showControls: boolean = false;
   isDownloading = false;
   isLoading = false;
+  isRenderingCharts = false;
   histogramPayload: any = null; 
   baseWidgets: Record<string, Widget[]> = {};
 
@@ -249,8 +250,30 @@ export class ConfrontoScenariComponent implements OnInit, OnDestroy {
   }
 
   renderBoth() {
-    if (this.selectedScenario1Id) this.loadScenario(1);
-    if (this.selectedScenario2Id) this.loadScenario(2);
+    this.isRenderingCharts = true;
+
+    // Timeout per permettere ad Angular di mostrare subito lo spinner prima del calcolo
+    setTimeout(async () => {
+      try {
+        if (this.selectedScenario1Id) {
+          if (this.plotInputLeft) {
+            this.renderChart(this.chartLeft.nativeElement, this.plotInputLeft);
+          } else {
+            await this.loadScenario(1);
+          }
+        }
+
+        if (this.selectedScenario2Id) {
+          if (this.plotInputRight) {
+            this.renderChart(this.chartRight.nativeElement, this.plotInputRight);
+          } else {
+            await this.loadScenario(2);
+          }
+        }
+      } finally {
+        this.isRenderingCharts = false;
+      }
+    }, 50);
   }
 
   async loadScenario(slot: 1 | 2) {
