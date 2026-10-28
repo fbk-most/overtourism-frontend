@@ -23,9 +23,6 @@
     </div>
   </ng-container>
 
-  <app-chat-sliders-panel *ngIf="msg.slidersData" [slidersData]="msg.slidersData" [sessionId]="sessionId"
-    (sliderSubmit)="sliderSubmit.emit($event)">
-  </app-chat-sliders-panel>
   <app-chat-feedback-bar [feedback]="feedback"
     (voteChange)="voteChange.emit($event)"
     (commentChange)="commentChange.emit($event)">

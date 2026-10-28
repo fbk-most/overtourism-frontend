@@ -119,32 +119,6 @@ $primary-color: #0066cc;
   margin: 0 auto; 
 }
 
-.attachments-preview {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
-
-  .attachment-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: #e8f0fe;
-    color: $primary-color;
-    padding: 4px 12px;
-    border-radius: 16px;
-    font-size: 0.8rem;
-    max-width: 200px;
-    
-    .remove-attachment {
-      cursor: pointer;
-      opacity: 0.6;
-      transition: opacity 0.2s;
-      &:hover { opacity: 1; color: #c00; }
-    }
-  }
-}
-
 .input-inner {
   display: flex; 
   align-items: flex-end; 

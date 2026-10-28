@@ -1,6 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ChatSlidersPanelComponent } from '../chat-sliders-panel/chat-sliders-panel.component';
 import { ChatFeedbackBarComponent } from '../chat-feedback-bar/chat-feedback-bar.component';
 import { AgentType, ChatFeedback, ChatMessage } from '../../../../models/chat.model';
 import { MarkdownPipe } from '../../../../pipes/markdown.pipe';
@@ -39,16 +38,14 @@ const AGENT_TYPE_MAP: Record<AgentType, AgentTypeMeta> = {
 @Component({
   selector: 'app-chat-message',
   standalone: true,
-  imports: [CommonModule, ChatSlidersPanelComponent, ChatFeedbackBarComponent, SharedPlotComponent, MarkdownPipe, ItIconComponent],
+  imports: [CommonModule, ChatFeedbackBarComponent, SharedPlotComponent, MarkdownPipe, ItIconComponent],
   templateUrl:'./chat-message.component.html',
   styleUrls: ['./chat-message.component.scss']
 
 })
 export class ChatMessageComponent {
   @Input() msg!: ChatMessage;
-  @Input() sessionId!: string;
   @Input() feedback: ChatFeedback = {};
-  @Output() sliderSubmit = new EventEmitter<string>();
   @Output() voteChange = new EventEmitter<string | null>();
   @Output() commentChange = new EventEmitter<string>();
   get agentMeta(): AgentTypeMeta | null {
@@ -56,4 +53,3 @@ export class ChatMessageComponent {
     return AGENT_TYPE_MAP[this.msg.agentType] || null;
   }
 }
-
