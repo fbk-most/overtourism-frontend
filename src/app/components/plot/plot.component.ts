@@ -321,10 +321,18 @@ export class PlotComponent implements AfterViewInit {
   }
   async updateData(values: Record<string, number | [number, number]>) {
     this.loading = true;
+
+    // Aggiornamento ottimistico immediato: mostra subito il valore cambiato e la differenza
+    if (values && Object.keys(values).length > 0) {
+      this.indexDiffs = { ...this.indexDiffs, ...values };
+    }
+
     this.sessionScenarioId = null;
     this.sessionEvaluationId = null;
     this.savedSummary = null;
     this.currentSummary = null;
+    this.cdr.detectChanges();
+
     try {
       const sessionScenario = await firstValueFrom(
         this.scenarioService.createSessionScenario(this.sessionId, this.problemId, this.scenarioId, values)

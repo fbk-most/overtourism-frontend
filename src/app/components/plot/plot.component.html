@@ -139,41 +139,51 @@
 <ng-container>
   <div class="row mt-4">
     <div class="col">
-      <div class="p-3  h-100">
-        <div class="callout callout-highlight note ">
-          <h6 class="text-primary mb-3 d-flex align-items-center gap-2">
-            <span class="material-icons">error_outline</span>
-            {{ 'plot.infoTitle' | translate }}
-          </h6>
+      <div class="p-3 h-100">
+        <div class="callout callout-highlight note position-relative">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="text-primary mb-0 d-flex align-items-center gap-2">
+              <span class="material-icons">error_outline</span>
+              {{ 'plot.infoTitle' | translate }}
+            </h6>
+
+            <!-- Badge animato di calcolo in corso -->
+            <div *ngIf="loading" class="d-flex align-items-center gap-2 text-primary">
+              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              <small class="fw-semibold fst-italic">Calcolo in corso...</small>
+            </div>
+          </div>
+
           <p class="small text-muted mb-2">
             Differenze rispetto allo scenario base:
           </p>
 
-          <div *ngIf="indexDiffs && objectKeys(indexDiffs).length; else noDifferences">
-            <ul class="list-unstyled small">
-              <li *ngFor="let key of objectKeys(indexDiffs)">
-                <span class="fw-bold">{{ getIndexNameFromKey(key) }}</span>:
-                <span [ngClass]="{
-                    'text-danger fw-bold': getLocallyChangedKeys().includes(key),
-                    'text-body': !getLocallyChangedKeys().includes(key)
-                  }">
-                  {{ formatValue(indexDiffs[key]) }}
-                </span>
-                <span class="text-muted ms-2"
-                  *ngIf="getLocallyChangedKeys().includes(key) && originalIndexDiffs[key] !== undefined">
-                  (originale: {{ formatValue(originalIndexDiffs[key]) }})
-                </span>
-              </li>
-            </ul>
+          <!-- Blocco con blur e overlay durante il loading -->
+          <div class="diffs-container position-relative" [class.loading-blur]="loading">
+            <div *ngIf="indexDiffs && objectKeys(indexDiffs).length; else noDifferences">
+              <ul class="list-unstyled small mb-0">
+                <li *ngFor="let key of objectKeys(indexDiffs)">
+                  <span class="fw-bold">{{ getIndexNameFromKey(key) }}</span>:
+                  <span [ngClass]="{
+                      'text-danger fw-bold': getLocallyChangedKeys().includes(key),
+                      'text-body': !getLocallyChangedKeys().includes(key)
+                    }">
+                    {{ formatValue(indexDiffs[key]) }}
+                  </span>
+                  <span class="text-muted ms-2"
+                    *ngIf="getLocallyChangedKeys().includes(key) && originalIndexDiffs[key] !== undefined">
+                    (originale: {{ formatValue(originalIndexDiffs[key]) }})
+                  </span>
+                </li>
+              </ul>
+            </div>
+            <ng-template #noDifferences>
+              <span class="fw-bold">Nessuna</span>
+            </ng-template>
           </div>
-          <ng-template #noDifferences>
-            <span class="fw-bold">Nessuna</span>
-          </ng-template>
+
           <hr />
 
-          <!-- <h6 class="text-primary mb-3 mt-3 d-flex align-items-center gap-2">
-            Lettura delle informazioni elaborate
-          </h6> -->
           <app-reading [widgets]="widgets" [indexDiffs]="indexDiffs" [dataFacts]="inputData?.dataFacts || []"
             [originalIndexDiffs]="originalIndexDiffs"
             [savedSummary]="savedSummary"
@@ -188,6 +198,5 @@
       </div>
     </div>
   </div>
-
 </ng-container>
 <app-back-button data-html2canvas-ignore="true"></app-back-button>

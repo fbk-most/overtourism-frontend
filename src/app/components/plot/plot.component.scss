@@ -31,3 +31,14 @@
       border-radius: 4px;
       padding: 0 4px;
     }
+    .diffs-container {
+      transition: opacity 0.25s ease, filter 0.25s ease;
+      min-height: 36px;
+    
+      &.loading-blur {
+        opacity: 0.55;
+        filter: blur(1px);
+        pointer-events: none;
+        user-select: none;
+      }
+    }
