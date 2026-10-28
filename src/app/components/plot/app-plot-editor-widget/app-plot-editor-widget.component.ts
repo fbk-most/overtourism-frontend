@@ -78,20 +78,37 @@ export class AppPlotEditorWidgetComponent implements OnInit, OnDestroy {
   //   this.onWidgetChange();
   // }
   isEditable(widget: Widget): boolean {
-    return true
-    // return this.editableIndexes.includes(widget.name); 
+    return true;
   }
+
+  private roundWithStep(value: number, step: number): number {
+    const stepStr = step.toString();
+    const decimals = stepStr.includes('.') ? stepStr.split('.')[1].length : 0;
+    return Number(value.toFixed(decimals));
+  }
+
   increase(widget: Widget): void {
     const step = widget.step || 1;
     const max = widget.max_value ?? Infinity;
-    widget.v = Math.min(Number(widget.v ?? 0) + step, max);
+    const rawVal = Math.min(Number(widget.v ?? 0) + step, max);
+    widget.v = this.roundWithStep(rawVal, step);
     this.onWidgetChange(); 
   }
+
+  decrease(widget: Widget): void {
+    const step = widget.step || 1;
+    const min = widget.min_value ?? -Infinity;
+    const rawVal = Math.max(Number(widget.v ?? 0) - step, min);
+    widget.v = this.roundWithStep(rawVal, step);
+    this.onWidgetChange(); 
+  }
+
   openDropdown: Record<string, boolean> = {};
 
   toggleDropdown(widgetName: string): void {
     this.openDropdown[widgetName] = !this.openDropdown[widgetName];
   }
+
 
   closeDropdown(widgetName: string): void {
     this.openDropdown[widgetName] = false;
@@ -112,12 +129,7 @@ export class AppPlotEditorWidgetComponent implements OnInit, OnDestroy {
     }
     return String(value);
   }
-  decrease(widget: Widget): void {
-    const step = widget.step || 1;
-    const min = widget.min_value ?? -Infinity;
-    widget.v = Math.max(Number(widget.v ?? 0) - step, min);
-    this.onWidgetChange(); 
-  }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
