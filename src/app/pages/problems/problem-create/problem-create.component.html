@@ -47,6 +47,7 @@
                 <!-- Aggiungi nuova risorsa -->
                 <div class="d-flex align-items-center mb-3">
                   <it-input id="problem-newResource" [(ngModel)]="newResource" name="newResource"
+                             (keydown.enter)="addResource($event)"
                             placeholder="{{ 'problems.fields.resourcePlaceholder' | translate }}"
                             style="flex: 1; min-width: 0;">
                   </it-input>

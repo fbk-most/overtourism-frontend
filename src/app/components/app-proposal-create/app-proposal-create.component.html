@@ -36,6 +36,7 @@
             <td>
               <div class="d-flex align-items-center mb-3">
                 <it-input id="proposal-newResource" [(ngModel)]="newResource" name="newResource"
+                          (keydown.enter)="addResource($event)"
                           placeholder="{{ 'problems.proposals.fields.resourcePlaceholder' | translate }}"
                           style="flex: 1; min-width: 0;"></it-input>
                 <button type="button" class="btn btn-outline-primary ms-2 rounded-circle p-0"

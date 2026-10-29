@@ -149,11 +149,23 @@ export class ProposalCreateComponent {
     });
   }
 
-  addResource() {
-    if (this.newResource.trim()) {
-      this.model.resources.push(this.newResource.trim());
-      this.newResource = '';
+  addResource(event?: Event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
     }
+
+    const trimmedValue = this.newResource?.trim();
+    if (!trimmedValue) {
+      const errorMsg = this.translate.instant('problems.proposals.empty_resource') !== 'problems.proposals.empty_resource'
+        ? this.translate.instant('problems.proposals.empty_resource')
+        : 'Inserisci un dato o tecnologia prima di aggiungerlo';
+      this.notif.showError(errorMsg);
+      return;
+    }
+
+    this.model.resources.push(trimmedValue);
+    this.newResource = '';
   }
 
   removeResource(i: number) {
