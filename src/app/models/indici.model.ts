@@ -60,7 +60,5 @@ export interface IndicatorMeta {
     enableVariation: boolean;
     startDateComparison?: string;
     endDateComparison?: string;
-    enableImpactPercentage: boolean;
-    impactSeasonality?: string;
     showOption: ShowOption;
   }

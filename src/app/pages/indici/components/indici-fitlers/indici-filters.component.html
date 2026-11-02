@@ -136,40 +136,6 @@
       </div>
     </ng-container>
 
-    <!-- Incidenza Periodo -->
-    <span class="d-inline-flex ms-2">
-      <div class="form-check mb-0 d-flex align-items-center">
-        <input type="checkbox" class="form-check-input me-2" [(ngModel)]="enableImpactPercentage" [disabled]="showOption !== 'map'" id="impactCheck" name="impactCheck" (change)="onImpactPercentageToggle()">
-        <label class="form-check-label fw-bold mb-0 text-primary" [ngClass]="showOption === 'map' ? 'text-primary' : 'text-muted opacity-50'" for="impactCheck" style="font-size:14px; cursor:pointer;">
-          {{ impactMeta?.label || 'incidenza percentuale del sottoperiodo' }}
-        </label>
-        <div class="info-hover-wrapper ms-1 d-flex align-items-center" *ngIf="impactMeta?.index_description">
-          <span class="material-icons text-primary" style="font-size: 16px; cursor: help;" aria-hidden="true">info</span>
-          <div class="html-tooltip shadow border rounded bg-white text-dark p-2 text-start" [innerHTML]="impactMeta?.index_description"></div>
-        </div>
-      </div>
-    </span>
-
-    <ng-container *ngIf="enableImpactPercentage">
-      <div class="dropdown ms-1">
-        <button class="btn btn-outline-primary d-flex align-items-center py-1" type="button" data-bs-toggle="dropdown" style="min-height: 38px;" aria-label="Seleziona tipologia sottoperiodo per incidenza">
-          <span class="text-start me-2" style="font-size: 13px;">{{ impactSeasonalityLabel }}</span>
-          <span class="material-icons ms-auto" style="font-size: 18px;" aria-hidden="true">expand_more</span>
-        </button>
-        <div class="dropdown-menu shadow">
-          <div class="link-list-wrapper">
-            <ul class="link-list">
-              <li><a class="list-item" (click)="impactSeasonality = 'weekend'; markDirty()" style="cursor:pointer"><span>Weekend</span></a></li>
-              <li><a class="list-item" (click)="impactSeasonality = 'weekdays'; markDirty()" style="cursor:pointer"><span>Giorni feriali</span></a></li>
-              <li><a class="list-item" (click)="impactSeasonality = 'festivities'; markDirty()" style="cursor:pointer"><span>Festività</span></a></li>
-              <li><a class="list-item" (click)="impactSeasonality = 'summer-months'; markDirty()" style="cursor:pointer"><span>Mesi estivi</span></a></li>
-              <li><a class="list-item" (click)="impactSeasonality = 'winter-months'; markDirty()" style="cursor:pointer"><span>Mesi invernali</span></a></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </ng-container>
-
     <!-- Bottone Applica -->
     <div class="ms-auto pt-1">
       <button itButton="primary"

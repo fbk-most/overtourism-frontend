@@ -25,23 +25,9 @@ export class IndiciFiltersComponent implements OnInit {
   enableVariation = false;
   startDateComparison = '';
   endDateComparison = '';
-  enableImpactPercentage = false;
-  impactSeasonality = 'weekend';
   visibleIndicators: IndicatorMeta[] = [];
   isDirty = false;
   error = '';
-
-  private impactSeasonalityLabels: Record<string, string> = {
-    'weekend': 'Weekend',
-    'weekdays': 'Giorni feriali',
-    'festivities': 'Festività',
-    'summer-months': 'Mesi estivi',
-    'winter-months': 'Mesi invernali'
-  };
-
-  get impactSeasonalityLabel(): string {
-    return this.impactSeasonalityLabels[this.impactSeasonality] || this.impactSeasonality;
-  }
 
   get currentMeta(): IndicatorMeta | undefined {
     return this.allIndicators.find(i => i.value === this.selectedIndicator);
@@ -49,10 +35,6 @@ export class IndiciFiltersComponent implements OnInit {
 
   get variationMeta(): AdditionalLabelMeta | undefined {
     return this.additionalLabels.find(l => l.value === 'tasso-variazione');
-  }
-
-  get impactMeta(): AdditionalLabelMeta | undefined {
-    return this.additionalLabels.find(l => l.value === 'incidenza-periodo');
   }
 
   get minDateBound(): string | null {
@@ -87,14 +69,6 @@ export class IndiciFiltersComponent implements OnInit {
   }
 
   onVariationToggle(): void {
-    if (this.enableVariation) this.enableImpactPercentage = false;
-    this.updateVisibleIndicators();
-    this.markDirty();
-    this.emitState();
-  }
-
-  onImpactPercentageToggle(): void {
-    if (this.enableImpactPercentage) this.enableVariation = false;
     this.updateVisibleIndicators();
     this.markDirty();
     this.emitState();
@@ -230,8 +204,6 @@ export class IndiciFiltersComponent implements OnInit {
       enableVariation: this.enableVariation,
       startDateComparison: this.startDateComparison,
       endDateComparison: this.endDateComparison,
-      enableImpactPercentage: this.enableImpactPercentage,
-      impactSeasonality: this.impactSeasonality,
       showOption: this.showOption
     };
   }

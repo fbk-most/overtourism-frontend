@@ -63,7 +63,7 @@ export class IndiciComponent implements OnInit {
   }
 
   get isChartDisabled(): boolean {
-    return !!(this.filterState?.enableVariation || this.filterState?.enableImpactPercentage);
+    return !!this.filterState?.enableVariation;
   }
 
   onTabSelected(event: any): void {
@@ -83,11 +83,6 @@ export class IndiciComponent implements OnInit {
       const prefix = meta?.label || 'Tasso di variazione';
       return this.currentMeta?.label ? `${prefix}: ${this.currentMeta.label}` : prefix;
     }
-    if (this.filterState.enableImpactPercentage) {
-      const meta = this.additionalLabels.find(l => l.value === 'incidenza-periodo');
-      const prefix = meta?.label || 'incidenza percentuale del sottoperiodo';
-      return this.currentMeta?.label ? `${prefix}: ${this.currentMeta.label}` : prefix;
-    }
     return this.currentMeta?.label || '';
   }
 
@@ -96,14 +91,11 @@ export class IndiciComponent implements OnInit {
     if (this.filterState.enableVariation) {
       return this.additionalLabels.find(l => l.value === 'tasso-variazione')?.index_value_unit_description || 'Percentuale di variazione';
     }
-    if (this.filterState.enableImpactPercentage) {
-      return this.additionalLabels.find(l => l.value === 'incidenza-periodo')?.index_value_unit_description || 'Percentuale di impatto';
-    }
     return this.currentMeta?.index_value_unit_description || '';
   }
 
   get colorScaleMode(): 'linear' | 'log' {
-    if (this.filterState?.enableVariation || this.filterState?.enableImpactPercentage) return 'linear';
+    if (this.filterState?.enableVariation) return 'linear';
     return ['indice-densita-turistica', 'turismo-sommerso'].includes(this.filterState?.indicator || '') ? 'log' : 'linear';
   }
 
@@ -130,24 +122,16 @@ export class IndiciComponent implements OnInit {
     } else {
       if (filters.enableVariation) {
         this.svc.getIndexData(
-          'tasso-variazione', filters.startDate, filters.endDate, undefined,
+          'tasso-variazione', filters.startDate, filters.endDate,
           filters.spatialGranularity, filters.indicator,
           filters.startDateComparison, filters.endDateComparison
         ).subscribe({
           next: res => { this.geoEnvelope = res.geo_data; this.loading = false; },
           error: () => { this.error = 'Errore nel caricamento dati mappa.'; this.loading = false; }
         });
-      } else if (filters.enableImpactPercentage) {
-        this.svc.getIndexData(
-          'incidenza-periodo', filters.startDate, filters.endDate,
-          filters.impactSeasonality, filters.spatialGranularity, filters.indicator
-        ).subscribe({
-          next: res => { this.geoEnvelope = res.geo_data; this.loading = false; },
-          error: () => { this.error = 'Errore nel caricamento dati mappa.'; this.loading = false; }
-        });
       } else {
         this.svc.getIndexData(
-          filters.indicator, filters.startDate, filters.endDate, undefined, filters.spatialGranularity
+          filters.indicator, filters.startDate, filters.endDate, filters.spatialGranularity
         ).subscribe({
           next: res => { this.geoEnvelope = res.geo_data; this.loading = false; },
           error: () => { this.error = 'Errore nel caricamento dati mappa.'; this.loading = false; }

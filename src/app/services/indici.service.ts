@@ -28,7 +28,6 @@ export class IndiciService {
     index: string,
     startDate?: string,
     endDate?: string,
-    seasonality?: string,
     spatialGranularity = 'comune',
     indicator?: string,           
     startDateComparison?: string,  
@@ -39,7 +38,6 @@ export class IndiciService {
       .set('spatial_granularity', spatialGranularity);
     if (startDate)            params = params.set('start_date', startDate);
     if (endDate)              params = params.set('end_date', endDate);
-    if (seasonality)          params = params.set('seasonality', seasonality);
     if (indicator)            params = params.set('indicator', indicator);
     if (startDateComparison)  params = params.set('start_date_comparison', startDateComparison);
     if (endDateComparison)    params = params.set('end_date_comparison', endDateComparison);
