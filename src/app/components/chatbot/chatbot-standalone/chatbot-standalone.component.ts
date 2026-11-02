@@ -6,7 +6,7 @@ import { DesignAngularKitModule } from 'design-angular-kit';
 import { AgentService, AgentSessionUnavailableError } from '../../../services/agent.service';
 import { ChatbotActionTranslatorService } from '../../../services/chatbot/chatbot-action-translator.service';
 import { ChatMockService } from '../../../services/chatbot/chat-mock.service';
-import { AgentResponse, ChatFeedback,ChatMessage, UIAction } from '../../../models/chat.model';
+import { AgentRole, AgentResponse, ChatFeedback,ChatMessage, UIAction } from '../../../models/chat.model';
 import { SharedHistogramComponent } from '../../shared/shared-histogram/shared-histogram.component';
 import { SharedKpisComponent } from '../../shared/shared-kpis/shared-kpis.component';
 import { SharedPlotComponent } from '../../shared/shared-plot/shared-plot.component';
@@ -14,6 +14,15 @@ import { IndiciMapComponent } from '../../indici-map/indici-map.component';
 import { ChatbotService } from '../../../services/chatbot/chatbot.service';
 import { SharedLineChartComponent } from '../../shared/shared-line-chart/shared-line-chart.component';  
 import { SharedBarChartComponent } from '../../shared/shared-bar-chart/shared-bar-chart.component';    
+import { AuthenticationService } from '../../../services/authentication.service';
+import { AGENT_TYPE_MAP } from './chat-message/chat-message.component';
+import { IconName } from 'design-angular-kit';
+
+interface AgentModeOption {
+  value: AgentRole;
+  label: string;
+  icon: IconName;
+}
 
 @Component({
   selector: 'app-chatbot-standalone',
@@ -43,6 +52,15 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
   activeContext = '-';
   statusMessage: string | null = null;
   feedbacks: Record<number, ChatFeedback> = {};
+  readonly modeOptions: AgentModeOption[] = [
+    { value: 'auto', label: 'Automatico', icon: 'comment' },
+    { value: 'executor', ...AGENT_TYPE_MAP.executor },
+    { value: 'operative', ...AGENT_TYPE_MAP.operative },
+    { value: 'methodological', ...AGENT_TYPE_MAP.methodological },
+    { value: 'exploitative', ...AGENT_TYPE_MAP.exploitative }
+  ];
+  selectedRole: AgentRole = 'auto';
+  modeMenuOpen = false;
 
   @ViewChild('chatRef') chatRef!: ElementRef;
   @ViewChild('textareaRef') textareaRef!: ElementRef;
@@ -50,11 +68,52 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
   private shouldScroll = false;
 
 
-  constructor(private agentSvc: AgentService, private chatbotSvc: ChatbotService) {}
+  constructor(
+    private agentSvc: AgentService,
+    private chatbotSvc: ChatbotService,
+    private authService: AuthenticationService
+  ) {
+    const storedRole = localStorage.getItem('chatbot_force_role');
+    this.selectedRole = this.modeOptions.find(option => option.value === storedRole)?.value ?? 'auto';
+  }
+
+  get canChangeMode(): boolean {
+    return this.messages.length === 0 && !this.loading;
+  }
+
+  get selectedMode(): AgentModeOption {
+    return this.modeOptions.find(option => option.value === this.selectedRole) ?? this.modeOptions[0];
+  }
+
+  get isViewer(): boolean {
+    return this.authService.isViewer;
+  }
+
+  private normalizeViewerMode(): void {
+    if (this.isViewer && (this.selectedRole === 'methodological' || this.selectedRole === 'exploitative')) {
+      this.selectedRole = 'auto';
+      localStorage.setItem('chatbot_force_role', this.selectedRole);
+    }
+  }
+
+  toggleModeMenu(): void {
+    if (this.canChangeMode) this.modeMenuOpen = !this.modeMenuOpen;
+  }
+
+  selectMode(role: AgentRole): void {
+    if (!this.canChangeMode || (this.isViewer && (role === 'methodological' || role === 'exploitative'))) {
+      return;
+    }
+
+    this.selectedRole = role;
+    localStorage.setItem('chatbot_force_role', role);
+    this.modeMenuOpen = false;
+  }
 
   async startNewChat(): Promise<void> {
     if (this.loading) return;
     this.loading = true;
+    this.modeMenuOpen = false;
     try {
       await this.agentSvc.reset({ language: 'Italiano' });
       this.chatbotSvc.clearMessages();
@@ -63,6 +122,8 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
       this.input = '';
       this.statusMessage = null;
       this.activeContext = '-';
+      this.selectedRole = 'auto';
+      localStorage.setItem('chatbot_force_role', this.selectedRole);
     } catch (error) {
       console.error('Errore durante il reset della chat:', error);
       this.messages = [
@@ -76,6 +137,7 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
   }
   ngOnInit(): void {
     this.messages = this.chatbotSvc.loadMessages();
+    if (this.messages.length === 0) this.normalizeViewerMode();
     if (this.messages.length > 0) this.shouldScroll = true;
     this.loading = true;
     void this.agentSvc.resumeIfRunning(
@@ -173,7 +235,7 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
     try {
       const response = await this.agentSvc.sendMessage(
         currentInput,
-        { language: 'Italiano' },
+        { language: 'Italiano', force_role: this.selectedRole },
         message => {
           this.statusMessage = message;
           this.shouldScroll = true;

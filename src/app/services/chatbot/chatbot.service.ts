@@ -26,6 +26,7 @@ export class ChatbotService {
     this.clearMessages();
     localStorage.removeItem(this.SESSION_KEY);
     localStorage.removeItem('integrated_chatbot_session_id');
+    localStorage.removeItem('chatbot_force_role');
   }
 
   clearMessages(): void {

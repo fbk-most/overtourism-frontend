@@ -2,8 +2,33 @@
   <div class="chatbot-app">
 
     <div class="context-bar">
-      <div class="d-flex align-items-center gap-2">
-            </div>
+      <div class="mode-selector">
+        <button type="button"
+                class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2 py-1 px-2"
+                [disabled]="!canChangeMode"
+                [attr.aria-label]="'Modalità: ' + selectedMode.label"
+                aria-haspopup="listbox"
+                [attr.aria-expanded]="modeMenuOpen"
+                [attr.title]="'Modalità: ' + selectedMode.label"
+                (click)="toggleModeMenu()">
+          <it-icon [name]="selectedMode.icon" class="icon-primary" size="xs"></it-icon>
+          <span class="small fw-semibold">{{ selectedMode.label }}</span>
+          <it-icon name="expand" size="xs" aria-hidden="true"></it-icon>
+        </button>
+
+        <div class="mode-menu" role="listbox" aria-label="Seleziona modalità" *ngIf="modeMenuOpen">
+          <button type="button"
+                  class="mode-option"
+                  role="option"
+                  *ngFor="let option of modeOptions"
+                  [disabled]="isViewer && (option.value === 'methodological' || option.value === 'exploitative')"
+                  [attr.aria-selected]="selectedRole === option.value"
+                  (click)="selectMode(option.value)">
+            <it-icon [name]="option.icon" size="xs" aria-hidden="true"></it-icon>
+            <span>{{ option.label }}</span>
+          </button>
+        </div>
+      </div>
   
       <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1 py-1 px-2"
               (click)="startNewChat()"

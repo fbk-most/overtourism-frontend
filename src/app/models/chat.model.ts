@@ -15,6 +15,7 @@ export type DomainEventType =
   // | 'EVALUATION_READY'
   // | 'NAVIGATION_REQUESTED';  //??
   export type AgentType = 'executor' | 'operative' | 'methodological' | 'exploitative';
+  export type AgentRole = 'auto' | AgentType;
 
 export interface DomainEvent {
   type: DomainEventType;
