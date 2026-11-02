@@ -65,14 +65,6 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 
 The application needs Node.js v20 for running: https://nodejs.org/en/download
 
-### Local Environment Setup
-
-Before starting the application locally, you must configure your local environment file:
-
-1. Create the `src/assets/env.js` file (this file is ignored by git and will not be committed):
-
-   ```bash
-   cp src/assets/env.template.js src/assets/env.js
 
 ## Docker
 
@@ -110,36 +102,6 @@ docker run -p 8080:8080 -e API_BASE_URL=http://localhost:8081/api/v1 tn-aixpa/ov
 ```
 
 The application will be available at `http://localhost:8080`
-
-### Environment Variables
-
-| Variable | Description | Default Value |
-|----------|-------------|---------------|
-| API_BASE_URL | Base URL for the backend API | https://overtourism.digitalhub-test.smartcommunitylab.it/api/v1 |
-
-## Angular app development
-
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.12.
-
-The application needs node v20 for running
-https://nodejs.org/en/download
-
-
-### Install packages
-Install dependencies
-
-```bash
-npm i
-```
-### Development server
-
-To start a local development server, run:
-
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
 ### Code scaffolding
 
