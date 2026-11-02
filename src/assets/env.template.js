@@ -6,5 +6,6 @@
     window["env"]["issuer"] = "${ISSUER}";
     window["env"]["clientId"] = "${CLIENTID}";
     window['env']['cartoApiKey'] = '${CARTO_API_KEY}';
+    window['env']['scope'] = '${SCOPE}';
 
 })(this);
