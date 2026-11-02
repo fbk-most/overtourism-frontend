@@ -117,6 +117,7 @@
               popoverTrigger="focus"
               popoverHtml="true"
               (click)="$event.stopPropagation()"
+              title="Visualizza"
               aria-label="Visualizza parametri">
               <span class="material-icons align-middle">description</span>
             </button>
@@ -126,6 +127,7 @@
               <button class="btn btn-sm btn-icon text-primary" 
                       (click)="goToScenario(scenario); $event.stopPropagation()"
                       [disabled]="comparazioneAttiva" 
+                      title="Visualizza"
                       aria-label="Dettaglio scenario">
                 <span class="material-icons">visibility</span>
               </button>
@@ -133,6 +135,7 @@
                       class="btn btn-sm btn-icon text-primary"
                       (click)="openDeleteScenarioModal(scenario); $event.stopPropagation()" 
                       [disabled]="comparazioneAttiva"
+                      title="Elimina"
                       aria-label="Elimina scenario">
                 <span class="material-icons">delete</span>
               </button>
