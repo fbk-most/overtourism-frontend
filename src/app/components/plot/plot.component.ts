@@ -10,6 +10,7 @@ import { ItModalComponent } from 'design-angular-kit';
 import { TranslateService } from '@ngx-translate/core';
 import { ProblemService } from '../../services/problem.service';
 import { AuthenticationService } from '../../services/authentication.service';
+import { ReadingComponent } from './reading/reading.component';
 
 @Component({
   selector: 'app-plot',
@@ -23,6 +24,7 @@ export class PlotComponent implements AfterViewInit {
   @ViewChild('chartLib', { static: false }) chartLib!: ElementRef<HTMLElement>;
   @ViewChild('saveModal') saveModal!: ItModalComponent;
   @ViewChild('unsavedModal') unsavedModal!: ItModalComponent;
+  @ViewChild('readingComponent') readingComponent?: ReadingComponent;
 
   @Input() editing: boolean = false;
   @Input() scenarioId!: string;
@@ -155,23 +157,36 @@ export class PlotComponent implements AfterViewInit {
   openSaveModal(): void {
     this.saveModal.toggle();
   }
+
+  generateCurrentSummary(): void {
+    this.readingComponent?.generateAiSummary();
+  }
+
+  get hasCurrentSummary(): boolean {
+    return !!this.currentSummary?.trim();
+  }
+
   formInvalid = false;
 
   confirmSave(): void {
+    const summary = this.currentSummary?.trim();
+    if (!summary) {
+      return;
+    }
     if (!this.titolo?.trim() || !this.descrizione?.trim()) {
       this.formInvalid = true;
       return;
     }
     this.formInvalid = false;
     this.isSaving = true;
-    this.saveAsNewScenario();
+    this.saveAsNewScenario(summary);
   }
   onSaveFromUnsaved(): void {
     this.unsavedModal.hide();
     this.saveModal.toggle();
   }
 
-  saveAsNewScenario(): void {
+  saveAsNewScenario(summary: string): void {
     const targetScenarioId = this.sessionScenarioId || this.scenarioId;
     this.scenarioService
       .saveSessionScenario(
@@ -183,7 +198,7 @@ export class PlotComponent implements AfterViewInit {
         this.titolo,
         this.descrizione,
         this.changedWidgets,
-        this.currentSummary
+        summary
       )
       .subscribe({
         next: (res) => {
@@ -431,7 +446,7 @@ export class PlotComponent implements AfterViewInit {
       const problemData = await firstValueFrom(this.problemService.getProblemById(this.problemId));
       const scenarioMetadata = await firstValueFrom(this.scenarioService.getScenarioData(this.scenarioId, this.problemId));
       this.savedSummary = scenarioMetadata.summary ?? scenarioMetadata.extras?.summary ?? null;
-      this.currentSummary = this.savedSummary;
+      this.currentSummary = null;
       const rawOverrides = scenarioMetadata.param_overrides || scenarioMetadata.index_values || {};
       const actualNumericalValues = Array.isArray(rawOverrides) ? this.scenarioService.arrayToDict(rawOverrides) : rawOverrides;
 
