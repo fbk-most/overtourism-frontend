@@ -3,7 +3,7 @@ import {
   AfterViewInit, ViewChild, ElementRef, SimpleChanges
 } from '@angular/core';
 import * as L from 'leaflet';
-import { ClusterLegendDefinition, ClusterValueLegend } from '../../models/indici.model';
+import { ClusterLegendDefinition, ClusterValueLegend, FlowDataEnvelope } from '../../models/indici.model';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -17,6 +17,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() minValue = 0;
   @Input() maxValue = 10;
   @Input() legend?: ClusterValueLegend;
+  @Input() flows: FlowDataEnvelope | null = null;
   @Input() colorScaleMode: 'linear' | 'log' = 'linear';
   @Input() unitDescription: string = ''; 
   @Input() mapTitle: string = '';
@@ -24,6 +25,8 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
 
   private map?: L.Map;
   private geoLayer?: L.GeoJSON;
+  private flowLayer?: L.LayerGroup;
+  private flowArrowMarkers: { marker: L.Marker; from: L.LatLng; to: L.LatLng }[] = [];
   private colorbarControl?: L.Control;
   private ready = false;
   private currentHoveredLayer: L.Path | null = null; 
@@ -33,6 +36,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   ngAfterViewInit(): void {
     this.map = L.map(this.mapEl.nativeElement, { zoomControl: true, attributionControl: false })
       .setView([44.3, 9], 8);
+    this.map.on('zoomend', this.updateFlowArrowDirections, this);
 
     const apiKey = environment.cartoApiKey;
     const tileUrl = apiKey
@@ -50,7 +54,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.ready && (changes['geojsonStr'] || changes['minValue'] || changes['maxValue'] || changes['legend'] || changes['colorScaleMode'] || changes['unitDescription'] || changes['mapTitle'])) {
+    if (this.ready && (changes['geojsonStr'] || changes['minValue'] || changes['maxValue'] || changes['legend'] || changes['flows'] || changes['colorScaleMode'] || changes['unitDescription'] || changes['mapTitle'])) {
       this.render();
     }
   }
@@ -66,6 +70,8 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.currentHoveredLayer = null;
     // Pulisci vecchi layer e controlli
     if (this.geoLayer) { this.map.removeLayer(this.geoLayer); }
+    if (this.flowLayer) { this.map.removeLayer(this.flowLayer); }
+    this.flowArrowMarkers = [];
     if (this.colorbarControl) { this.map.removeControl(this.colorbarControl); }
 
     let geojson: any;
@@ -160,8 +166,97 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     setTimeout(() => {
       this.map!.invalidateSize();
       this.map!.fitBounds(this.geoLayer!.getBounds(), { padding: [10, 10] });
+      this.renderFlows();
       this.renderColorbar(geojson); // Crea la legenda
     }, 0);
+  }
+
+  private renderFlows(): void {
+    if (!this.map || !this.flows?.data?.features?.length) return;
+
+    this.flowLayer = L.layerGroup().addTo(this.map);
+    const maxValue = Number.isFinite(this.flows.max_value) && this.flows.max_value > 0
+      ? this.flows.max_value
+      : Math.max(...this.flows.data.features.map(feature => feature.properties.value).filter(Number.isFinite), 0);
+
+    for (const feature of this.flows.data.features) {
+      const coordinates = feature.geometry?.coordinates;
+      if (feature.geometry?.type !== 'LineString' || !Array.isArray(coordinates) || coordinates.length < 2) {
+        console.warn('Skipping invalid flow feature: expected a LineString with at least two coordinates.', feature);
+        continue;
+      }
+
+      const latLngs = coordinates
+        .filter((coordinate): coordinate is [number, number] =>
+          Array.isArray(coordinate) &&
+          Number.isFinite(coordinate[0]) &&
+          Number.isFinite(coordinate[1])
+        )
+        .map(([longitude, latitude]) => L.latLng(latitude, longitude));
+      if (latLngs.length < 2) {
+        console.warn('Skipping invalid flow feature: it has fewer than two valid coordinates.', feature);
+        continue;
+      }
+
+      const value = Number.isFinite(feature.properties.value) ? Math.max(0, feature.properties.value) : 0;
+      const width = maxValue > 0 ? 1 + 2 * Math.sqrt(value / maxValue) : 1;
+      const line = L.polyline(latLngs, {
+        color: '#000000',
+        weight: width,
+        opacity: 0.8,
+        lineCap: 'round',
+      }).addTo(this.flowLayer);
+
+      const { from_label, to_label } = feature.properties;
+      const route = [from_label || feature.properties.from, to_label || feature.properties.to]
+        .filter((label): label is string => !!label)
+        .join(' → ');
+      const tooltip = `${route ? `<strong>${this.escapeHtml(route)}</strong><br>` : ''}Flusso: ${value.toFixed(1)}${this.flows.unit ? ` ${this.escapeHtml(this.flows.unit)}` : ''}`;
+      line.bindTooltip(tooltip, { sticky: true, opacity: 0.95 });
+
+      const from = latLngs[0];
+      const to = latLngs[latLngs.length - 1];
+      const marker = L.marker(to, {
+        icon: this.createFlowArrowIcon(0),
+        interactive: true,
+        keyboard: false,
+        zIndexOffset: 1000,
+      }).addTo(this.flowLayer);
+      marker.bindTooltip(tooltip, { sticky: true, opacity: 0.95 });
+      this.flowArrowMarkers.push({ marker, from, to });
+    }
+
+    this.updateFlowArrowDirections();
+  }
+
+  private updateFlowArrowDirections(): void {
+    if (!this.map) return;
+
+    for (const { marker, from, to } of this.flowArrowMarkers) {
+      const start = this.map.latLngToLayerPoint(from);
+      const end = this.map.latLngToLayerPoint(to);
+      const angle = Math.atan2(end.x - start.x, start.y - end.y) * 180 / Math.PI;
+      marker.setIcon(this.createFlowArrowIcon(angle));
+    }
+  }
+
+  private createFlowArrowIcon(angle: number): L.DivIcon {
+    return L.divIcon({
+      className: 'flow-arrow-icon',
+      html: `<span style="display:block;width:14px;height:14px;transform:rotate(${angle}deg);transform-origin:50% 0;"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 0 13 13 7 10 1 13Z" fill="#000000"/></svg></span>`,
+      iconSize: [14, 14],
+      iconAnchor: [7, 1],
+    });
+  }
+
+  private escapeHtml(value: string): string {
+    return value.replace(/[&<>"']/g, char => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    })[char] || char);
   }
   private fixEncoding(obj: any): any {
     if (typeof obj === 'string') {

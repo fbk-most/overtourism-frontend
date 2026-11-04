@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
-import { AdditionalLabelMeta, Comune, GeoDataEnvelope, IndicatorMeta, IndiciFilterState, ShowOption, VariationSeries } from '../../models/indici.model';
+import { AdditionalLabelMeta, Comune, FlowDataEnvelope, GeoDataEnvelope, IndicatorMeta, IndiciFilterState, ShowOption, VariationSeries } from '../../models/indici.model';
 import { IndiciService } from '../../services/indici.service';
 import { IndiciFiltersComponent } from './components/indici-fitlers/indici-filters.component';
 
@@ -20,6 +20,7 @@ export class IndiciComponent implements OnInit {
 
   // Dati Mappa e Grafici
   geoEnvelope: GeoDataEnvelope | null = null;
+  flowData: FlowDataEnvelope | null = null;
   chartLabels: string[] = [];
   chartSeries: VariationSeries[] = [];
   selectedComuni: string[] = [];
@@ -107,6 +108,7 @@ export class IndiciComponent implements OnInit {
     this.filterState = filters;
     this.loading = true;
     this.error = '';
+    this.flowData = null;
 
     if (filters.showOption === 'chart') {
       this.svc.getVariationData(
@@ -130,14 +132,22 @@ export class IndiciComponent implements OnInit {
           filters.spatialGranularity, filters.indicator,
           filters.startDateComparison, filters.endDateComparison
         ).subscribe({
-          next: res => { this.geoEnvelope = res.geo_data; this.loading = false; },
+          next: res => {
+            this.geoEnvelope = res.geo_data;
+            this.flowData = res.flows || null;
+            this.loading = false;
+          },
           error: () => { this.error = 'Errore nel caricamento dati mappa.'; this.loading = false; }
         });
       } else {
         this.svc.getIndexData(
           filters.indicator, filters.startDate, filters.endDate, filters.spatialGranularity
         ).subscribe({
-          next: res => { this.geoEnvelope = res.geo_data; this.loading = false; },
+          next: res => {
+            this.geoEnvelope = res.geo_data;
+            this.flowData = res.flows || null;
+            this.loading = false;
+          },
           error: () => { this.error = 'Errore nel caricamento dati mappa.'; this.loading = false; }
         });
       }

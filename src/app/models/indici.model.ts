@@ -48,6 +48,33 @@ export interface IndicatorMeta {
   
   export interface IndexDataResponse {
     geo_data: GeoDataEnvelope;
+    flows?: FlowDataEnvelope;
+  }
+
+  export interface FlowDataEnvelope {
+    data: {
+      type: 'FeatureCollection';
+      features: FlowFeature[];
+    };
+    max_value: number;
+    unit: string;
+    n_days: number;
+  }
+
+  export interface FlowFeature {
+    type: 'Feature';
+    geometry: {
+      type: 'LineString';
+      coordinates: [number, number][];
+    };
+    properties: {
+      rank?: number;
+      value: number;
+      from?: string;
+      to?: string;
+      from_label?: string;
+      to_label?: string;
+    };
   }
   
   export interface VariationSeries {
