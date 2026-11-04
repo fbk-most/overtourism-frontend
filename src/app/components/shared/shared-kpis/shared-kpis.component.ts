@@ -116,12 +116,20 @@ export class SharedKpisComponent implements OnChanges {
   }
 
   /**
-   * Restituisce la stringa formattata: "{value} ({share}%)" per i dropout,
-   * oppure solo il numero formattato per gli altri.
+   * Formats value/share KPIs as "{value} ({share}%)"; other KPIs retain their unit.
    */
   getDisplayValue(key: string, val: any): string {
     const level = this.getLevel(val);
     if (level === null) return '—';
+
+    if (!this.isDropout(key) && typeof val === 'object' && typeof val.value === 'number') {
+      const share = this.getShare(val);
+      if (share !== null) {
+        const formattedValue = this.decimalPipe.transform(Math.trunc(level), '1.0-0') ?? String(Math.trunc(level));
+        const formattedShare = this.decimalPipe.transform(share, '1.0-0') ?? String(share);
+        return `${formattedValue} (${formattedShare}%)`;
+      }
+    }
 
     const formattedLevel = this.decimalPipe.transform(level, '1.1-1') ?? String(level);
 
