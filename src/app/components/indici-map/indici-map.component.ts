@@ -288,15 +288,27 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     [1.0,  [8,   48,  107]],
   ];
 
-  private normalize(value: number): number {
-    if (this.colorScaleMode === 'log') {
-      const shift  = this.minValue <= 0 ? 1 - this.minValue : 0;
-      const logMin = Math.log(this.minValue + shift);
-      const logMax = Math.log(this.maxValue + shift);
+  private usesLogScale(): boolean {
+    if (this.colorScaleMode === 'log') return true;
+    return this.minValue > 0 && this.maxValue / this.minValue >= 100;
+  }
+
+  private normalizeRange(value: number, min: number, max: number): number {
+    if (max === min) return 0.5;
+
+    if (this.usesLogScale()) {
+      const shift = min <= 0 ? 1 - min : 0;
+      const logMin = Math.log(min + shift);
+      const logMax = Math.log(max + shift);
       const logVal = Math.log(value + shift);
       return Math.max(0, Math.min(1, (logVal - logMin) / (logMax - logMin)));
     }
-    return Math.max(0, Math.min(1, (value - this.minValue) / (this.maxValue - this.minValue)));
+
+    return Math.max(0, Math.min(1, (value - min) / (max - min)));
+  }
+
+  private normalize(value: number): number {
+    return this.normalizeRange(value, this.minValue, this.maxValue);
   }
 
   private viridisColor(value: number): string {
@@ -353,9 +365,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     const value = this.toFiniteNumber(feature?.properties?.INDICE);
     if (value === null) return null;
 
-    const fraction = range.max === range.min
-      ? 0.5
-      : Math.max(0, Math.min(1, (value - range.min) / (range.max - range.min)));
+    const fraction = this.normalizeRange(value, range.min, range.max);
     return this.shadeClusterColor(definition.color, fraction);
   }
 
@@ -404,7 +414,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
           align-items: flex-start; gap: 4px;`;
 
           const title = document.createElement('div');
-          title.textContent = `Legenda${self.colorScaleMode === 'log' ? ' (log)' : ''}`;
+          title.textContent = `Legenda${self.usesLogScale() ? ' (log)' : ''}`;
           title.style.cssText = 'font-weight: bold; margin-bottom: 4px; max-width: 200px; line-height: 1.2;';
           div.appendChild(title);
 
@@ -424,7 +434,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
         for (let y = 0; y < BAR_H; y++) {
           const fraction = y / BAR_H;
           let val: number;
-          if (self.colorScaleMode === 'log') {
+          if (self.usesLogScale()) {
             const shift  = self.minValue <= 0 ? 1 - self.minValue : 0;
             const logMin = Math.log(self.minValue + shift);
             const logMax = Math.log(self.maxValue + shift);
@@ -443,7 +453,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
         const steps = 5;
         for (let i = 0; i <= steps; i++) {
           let val: number;
-          if (self.colorScaleMode === 'log') {
+          if (self.usesLogScale()) {
             const shift  = self.minValue <= 0 ? 1 - self.minValue : 0;
             const logMin = Math.log(self.minValue + shift);
             const logMax = Math.log(self.maxValue + shift);
@@ -482,7 +492,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
         L.DomEvent.disableClickPropagation(div);
 
         const title = document.createElement('div');
-        title.textContent = 'Legenda';
+        title.textContent = `Legenda${self.usesLogScale() ? ' (log)' : ''}`;
         title.style.cssText = 'font-weight: bold; line-height: 1.2;';
         div.appendChild(title);
 
@@ -507,13 +517,22 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
 
           const swatch = document.createElement('div');
           const range = ranges.get(String(cluster.id));
-          const lowColor = self.shadeClusterColor(cluster.color, 0);
-          const highColor = self.shadeClusterColor(cluster.color, 1);
           const middleColor = self.shadeClusterColor(cluster.color, 0.5);
+          const gradient = range
+            ? Array.from({ length: 11 }, (_, i) => {
+                const fraction = i / 10;
+                const value = range.min + fraction * (range.max - range.min);
+                const shade = self.shadeClusterColor(
+                  cluster.color,
+                  self.normalizeRange(value, range.min, range.max)
+                ) || '#cccccc';
+                return `${shade} ${fraction * 100}%`;
+              }).join(', ')
+            : '#cccccc, #cccccc';
           swatch.style.cssText = `width: 14px; border: 1px solid #ddd; background: ${
             range?.min === range?.max
               ? middleColor || '#cccccc'
-              : `linear-gradient(to top, ${lowColor || '#cccccc'}, ${highColor || '#cccccc'})`
+              : `linear-gradient(to top, ${gradient})`
           };`;
           row.appendChild(swatch);
 
