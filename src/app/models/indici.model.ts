@@ -31,6 +31,19 @@ export interface IndicatorMeta {
     data: string;        
     min_value: number;
     max_value: number;
+    legend?: ClusterValueLegend;
+  }
+
+  export interface ClusterValueLegend {
+    type: 'cluster-value';
+    cluster_property: string;
+    clusters: ClusterLegendDefinition[];
+  }
+
+  export interface ClusterLegendDefinition {
+    id: string | number;
+    label?: string;
+    color: string;
   }
   
   export interface IndexDataResponse {
