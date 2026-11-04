@@ -2,24 +2,31 @@
   <!-- RIGA 1 -->
   <div class="row g-3 align-items-start">
     <!-- Indicatore -->
-    <div class="col-12 col-md-auto">
+    <div class="col-12 col-md-5 col-lg-4">
       <label id="lbl-indici" class="form-label fw-bold mb-1" style="font-size:13px;">Indici territoriali</label>
-      <div class="dropdown">
-        <button class="btn btn-outline-primary d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-labelledby="lbl-indici" aria-haspopup="true">
-          <span class="text-truncate text-start me-2">{{ currentMeta?.label || 'Seleziona Indice' }}</span>
-          <div class="info-hover-wrapper me-1 d-flex align-items-center" *ngIf="currentMeta?.index_description">
-            <span class="material-icons text-primary" style="font-size: 18px; cursor: help;" aria-hidden="true">info</span>
-            <div class="html-tooltip shadow border rounded bg-white text-dark p-2 text-start" [innerHTML]="currentMeta?.index_description"></div>
-          </div>
+      <div class="indicator-picker">
+        <button class="btn btn-outline-primary indicator-picker-button d-flex align-items-center w-100" type="button"
+          aria-labelledby="lbl-indici" aria-haspopup="listbox" [attr.aria-expanded]="indicatorMenuOpen"
+          aria-controls="indicator-options" (click)="toggleIndicatorMenu()">
+          <span class="text-truncate text-start me-2">{{ currentMeta ? indicatorDisplayName(currentMeta) : 'Seleziona indice' }}</span>
+          <span class="indicator-category-label me-2">{{ currentMeta ? indicatorCategory(currentMeta) : '' }}</span>
           <span class="material-icons ms-auto" style="font-size: 18px;" aria-hidden="true">expand_more</span>
         </button>
-        <div class="dropdown-menu shadow">
-          <div class="link-list-wrapper">
-            <ul class="link-list">
-              <li *ngFor="let ind of visibleIndicators">
-                <a class="list-item" (click)="selectIndicator(ind.value)" style="cursor:pointer"><span>{{ ind.label }}</span></a>
-              </li>
-            </ul>
+        <div class="indicator-picker-menu shadow" id="indicator-options" *ngIf="indicatorMenuOpen"
+          (keydown.escape)="closeIndicatorMenu()">
+          <label class="visually-hidden" for="indicator-search">Cerca un indicatore</label>
+          <input id="indicator-search" class="form-control form-control-sm mb-2" type="search"
+            placeholder="Cerca indicatore..." [ngModel]="indicatorSearch" (ngModelChange)="onIndicatorSearchChange($event)">
+          <div class="indicator-picker-options" role="listbox" aria-labelledby="lbl-indici">
+            <ng-container *ngFor="let group of indicatorGroups; trackBy: trackByCategory">
+              <div class="indicator-picker-category">{{ group.category }}</div>
+              <button type="button" class="indicator-picker-option" role="option"
+                *ngFor="let ind of group.indicators; trackBy: trackByValue" [attr.aria-selected]="ind.value === selectedIndicator"
+                (click)="selectIndicator(ind.value)">
+                {{ indicatorDisplayName(ind) }}
+              </button>
+            </ng-container>
+            <p class="text-muted small mb-0 p-2" *ngIf="!indicatorGroups.length">Nessun indicatore trovato.</p>
           </div>
         </div>
       </div>
@@ -49,69 +56,52 @@
       </div>
     </div>
 
-    <!-- Date Inizio e Fine -->
-    <div class="col-12 col-md-auto">
-      <div class="date-group-box">
-        <div class="date-group-header">
-          <span class="material-icons date-group-icon" aria-hidden="true">date_range</span>
-          <span class="date-group-title">Periodo base</span>
-        </div>
-        <div class="d-flex gap-2">
-          <div>
-            <label for="filter-start-date" class="form-label date-sub-label">Inizio </label>
-            <input id="filter-start-date" type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
-              [(ngModel)]="startDate" (ngModelChange)="markDirty()" [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="min-height: 48px;"
-              aria-label="Inizio periodo base">
-          </div>
-          <div>
-            <label for="filter-end-date" class="form-label date-sub-label">Fine </label>
-            <input id="filter-end-date" type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
-              [(ngModel)]="endDate" (ngModelChange)="markDirty()" [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="min-height: 48px;"
-              aria-label="Fine periodo base">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Granularità Temporale (solo per tab grafici) -->
-    <div class="col-12 col-md-auto" *ngIf="showOption === 'chart'">
-      <label id="lbl-gran-temp" class="form-label fw-bold mb-1" style="font-size:13px;">Granularità temp.</label>
-      <div class="dropdown">
-        <button class="btn btn-outline-primary d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-labelledby="lbl-gran-temp" aria-haspopup="true">
-          <span class="text-start me-2">
-            {{ { giornaliero: 'Giornaliero', settimanale: 'Settimanale', mensile: 'Mensile', annuale: 'Annuale' }[granularity] }}
-          </span>
-          <span class="material-icons ms-auto" style="font-size: 18px;" aria-hidden="true">expand_more</span>
-        </button>
-        <div class="dropdown-menu shadow">
-          <div class="link-list-wrapper">
-            <ul class="link-list">
-              <li><a class="list-item" (click)="granularity = 'annuale'; markDirty()" style="cursor:pointer"><span>Annuale</span></a></li>
-              <li><a class="list-item" (click)="granularity = 'mensile'; markDirty()" style="cursor:pointer"><span>Mensile</span></a></li>
-              <li><a class="list-item" (click)="granularity = 'settimanale'; markDirty()" style="cursor:pointer"><span>Settimanale</span></a></li>
-              <li><a class="list-item" (click)="granularity = 'giornaliero'; markDirty()" style="cursor:pointer"><span>Giornaliero</span></a></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 
-  <!-- RIGA 2 (Confronti + Applica) -->
+  <!-- RIGA 2 (Periodi e confronto) -->
   <div class="filtri-row2 d-flex flex-wrap align-items-center gap-3">
-    <!-- Tasso variazione -->
-    <span [title]="showOption !== 'map' ? 'Disponibile solo in vista Mappa.' : ''" class="d-inline-flex">
-      <div class="form-check mb-0 d-flex align-items-center">
-        <input type="checkbox" class="form-check-input me-2" [(ngModel)]="enableVariation" [disabled]="showOption !== 'map'" id="varCheck" name="varCheck" (change)="onVariationToggle()">
-        <label class="form-check-label fw-bold mb-0" [ngClass]="showOption === 'map' ? 'text-primary' : 'text-muted opacity-50'" for="varCheck" style="font-size:14px; cursor:pointer;">
-          {{ variationMeta?.label || 'Tasso di variazione' }}
-        </label>
-        <div class="info-hover-wrapper ms-1 d-flex align-items-center" *ngIf="variationMeta?.index_description">
-          <span class="material-icons text-primary" style="font-size: 16px; cursor: help;" aria-hidden="true">info</span>
-          <div class="html-tooltip shadow border rounded bg-white text-dark p-2 text-start" [innerHTML]="variationMeta?.index_description"></div>
+    <!-- Periodo base -->
+    <div class="date-group-box">
+      <div class="date-group-header">
+        <span class="material-icons date-group-icon" aria-hidden="true">date_range</span>
+        <span class="date-group-title">Periodo base</span>
+      </div>
+      <div class="d-flex gap-2" *ngIf="!currentMeta?.year_only; else annualYearFilter">
+        <div>
+          <label for="filter-start-date" class="form-label date-sub-label">Inizio</label>
+          <input id="filter-start-date" type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
+            [(ngModel)]="startDate" (ngModelChange)="markDirty()" [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="min-height: 48px;"
+            aria-label="Inizio periodo base">
+        </div>
+        <div>
+          <label for="filter-end-date" class="form-label date-sub-label">Fine</label>
+          <input id="filter-end-date" type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
+            [(ngModel)]="endDate" (ngModelChange)="markDirty()" [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="min-height: 48px;"
+            aria-label="Fine periodo base">
         </div>
       </div>
-    </span>
+    </div>
+
+    <ng-template #annualYearFilter>
+      <div class="year-filter">
+        <label for="filter-year" class="form-label date-sub-label">Anno</label>
+        <select id="filter-year" class="form-select border-primary" [ngModel]="selectedYear"
+          (ngModelChange)="selectYear($event)" aria-label="Seleziona anno">
+          <option *ngFor="let year of yearOptions" [ngValue]="year">{{ year }}</option>
+        </select>
+      </div>
+    </ng-template>
+
+    <!-- Tasso di variazione -->
+    <div class="form-check mb-0 d-flex align-items-center" *ngIf="!currentMeta?.year_only">
+      <input type="checkbox" class="form-check-input me-2" [(ngModel)]="enableVariation"
+        [disabled]="showOption !== 'map'" id="varCheck" name="varCheck" (change)="onVariationToggle()">
+      <label class="form-check-label fw-bold mb-0"
+        [ngClass]="showOption === 'map' ? 'text-primary' : 'text-muted opacity-50'"
+        for="varCheck" style="font-size:14px; cursor:pointer;">
+        {{ variationMeta?.label || 'Tasso di variazione' }}
+      </label>
+    </div>
 
     <ng-container *ngIf="enableVariation">
       <div class="date-group-box date-group-box--comparison border-start ps-3 ms-1">
@@ -120,24 +110,24 @@
           <span class="date-group-title">Periodo di confronto</span>
         </div>
         <div class="d-flex gap-2">
-          <div>
-            <label for="filter-start-comp" class="form-label date-sub-label">Inizio </label>
-            <input id="filter-start-comp" type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
-              [(ngModel)]="startDateComparison" (ngModelChange)="markDirty()" [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="min-height: 48px; min-width: 140px;"
-              aria-label="Inizio periodo di confronto">
-          </div>
-          <div>
-            <label for="filter-end-comp" class="form-label date-sub-label">Fine </label>
-            <input id="filter-end-comp" type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
-              [(ngModel)]="endDateComparison" (ngModelChange)="markDirty()" [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="min-height: 48px; min-width: 140px;"
-              aria-label="Fine periodo di confronto">
-          </div>
+            <div>
+              <label for="filter-start-comp" class="form-label date-sub-label">Inizio</label>
+              <input id="filter-start-comp" type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
+                [(ngModel)]="startDateComparison" (ngModelChange)="markDirty()" [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="min-height: 48px; min-width: 140px;"
+                aria-label="Inizio periodo di confronto">
+            </div>
+            <div>
+              <label for="filter-end-comp" class="form-label date-sub-label">Fine</label>
+              <input id="filter-end-comp" type="date" class="form-control btn btn-outline-primary date-custom-outline text-start px-2 py-1"
+                [(ngModel)]="endDateComparison" (ngModelChange)="markDirty()" [attr.min]="minDateBound || null" [attr.max]="maxDateBound || null" style="min-height: 48px; min-width: 140px;"
+                aria-label="Fine periodo di confronto">
+            </div>
         </div>
       </div>
     </ng-container>
 
     <!-- Bottone Applica -->
-    <div class="ms-auto pt-1">
+    <div class="ms-auto align-self-end pt-1">
       <button itButton="primary"
         type="button"
         [attr.itButton]="isDirty ? 'warning' : 'primary'"
@@ -152,6 +142,25 @@
           <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Caricamento...
         </ng-container>
       </button>
+    </div>
+  </div>
+
+  <!-- Descrizione indicatore -->
+  <div class="mt-2">
+    <button *ngIf="currentMeta?.index_description || (enableVariation && variationMeta?.index_description)"
+      type="button" class="btn btn-link btn-sm p-0 mt-1 description-toggle"
+      [attr.aria-expanded]="descriptionExpanded" aria-controls="indicator-description"
+      (click)="descriptionExpanded = !descriptionExpanded">
+      {{ descriptionExpanded ? 'Nascondi descrizione indice' : 'Mostra descrizione indice' }}
+    </button>
+    <div class="indicator-description mt-2" id="indicator-description" *ngIf="descriptionExpanded">
+      <h3 class="h6 mb-2">{{ currentMeta?.label }}</h3>
+      <div *ngIf="currentMeta?.index_description" [innerHTML]="currentMeta?.index_description"></div>
+      <ng-container *ngIf="enableVariation && variationMeta?.index_description">
+        <hr>
+        <h4 class="h6 mb-2">{{ variationMeta?.label }}</h4>
+        <div [innerHTML]="variationMeta?.index_description"></div>
+      </ng-container>
     </div>
   </div>
 </div>

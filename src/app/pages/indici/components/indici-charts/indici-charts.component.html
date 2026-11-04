@@ -14,17 +14,44 @@
         </ng-template>
       </div>
 
-      <div class="d-flex align-items-center gap-2 mt-auto" *ngIf="chartSeries.length">
-        <button class="btn btn-sm"
-          [ngClass]="{'btn-primary': chartType === 'scatter', 'btn-outline-primary': chartType !== 'scatter'}"
-          (click)="chartType = 'scatter'">
-          Linee
-        </button>
-        <button class="btn btn-sm"
-          [ngClass]="{'btn-primary': chartType === 'bar', 'btn-outline-primary': chartType !== 'bar'}"
-          (click)="chartType = 'bar'">
-          Barre
-        </button>
+      <div class="d-flex align-items-end gap-3 mt-auto flex-wrap">
+        <div>
+          <label id="lbl-chart-granularity" class="form-label fw-bold mb-1" style="font-size:13px;">Granularità temporale</label>
+          <div class="dropdown">
+            <button class="btn btn-outline-primary d-flex align-items-center" type="button" data-bs-toggle="dropdown"
+              aria-labelledby="lbl-chart-granularity" aria-haspopup="true">
+              <span class="text-start me-2">
+                {{ granularity === 'giornaliero' ? 'Giornaliero' : granularity === 'settimanale' ? 'Settimanale' : granularity === 'annuale' ? 'Annuale' : 'Mensile' }}
+              </span>
+              <span class="material-icons ms-auto" style="font-size:18px;" aria-hidden="true">expand_more</span>
+            </button>
+            <div class="dropdown-menu shadow">
+              <div class="link-list-wrapper">
+                <ul class="link-list">
+                  <li><a class="list-item" (click)="granularityChange.emit('annuale')"><span>Annuale</span></a></li>
+                  <li><a class="list-item" (click)="granularityChange.emit('mensile')"><span>Mensile</span></a></li>
+                  <li><a class="list-item" (click)="granularityChange.emit('settimanale')"><span>Settimanale</span></a></li>
+                  <li><a class="list-item" (click)="granularityChange.emit('giornaliero')"><span>Giornaliero</span></a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="chartSeries.length">
+          <label id="lbl-chart-type" class="form-label fw-bold mb-1" style="font-size:13px;">Tipologia grafico</label>
+          <div class="d-flex gap-2" role="group" aria-labelledby="lbl-chart-type">
+            <button type="button" class="btn"
+              [ngClass]="{'btn-primary': chartType === 'scatter', 'btn-outline-primary': chartType !== 'scatter'}"
+              [attr.aria-pressed]="chartType === 'scatter'" (click)="chartType = 'scatter'">
+              Linee
+            </button>
+            <button type="button" class="btn"
+              [ngClass]="{'btn-primary': chartType === 'bar', 'btn-outline-primary': chartType !== 'bar'}"
+              [attr.aria-pressed]="chartType === 'bar'" (click)="chartType = 'bar'">
+              Barre
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 

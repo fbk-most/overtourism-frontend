@@ -46,6 +46,7 @@
           [(selectedAreas)]="selectedAreas"
           [spatialGranularity]="filterState?.spatialGranularity || 'comune'"
           [granularity]="filterState?.granularity || 'mensile'"
+          (granularityChange)="onGranularityChange($event)"
           [chartTitle]="currentMeta?.label || ''"
           [unitDescription]="unitDescription"
           [codeToName]="codeToName"

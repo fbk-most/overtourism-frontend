@@ -63,7 +63,11 @@ export class IndiciComponent implements OnInit {
   }
 
   get isChartDisabled(): boolean {
-    return !!this.filterState?.enableVariation;
+    return !!this.filterState?.enableVariation || !!this.currentMeta?.year_only;
+  }
+
+  onGranularityChange(granularity: IndiciFilterState['granularity']): void {
+    this.filtersComp?.setGranularity(granularity);
   }
 
   onTabSelected(event: any): void {
