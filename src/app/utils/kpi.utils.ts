@@ -13,6 +13,12 @@ export function normalizeKpiKey(key: string): string {
     .replace(/\s+/g, ' ');
 }
 
+export function isValueShareKpi(value: unknown): value is { value: number; share: number } {
+  if (typeof value !== 'object' || value === null) return false;
+  const kpi = value as Record<string, unknown>;
+  return typeof kpi['value'] === 'number' && typeof kpi['share'] === 'number';
+}
+
 export function getKpiLabel(key: string, kpiMapper: Record<string, string> = {}): string {
   if (!kpiMapper) return key;
 
@@ -31,9 +37,6 @@ export function getKpiLabel(key: string, kpiMapper: Record<string, string> = {})
 export function isPercentageKpi(key: string): boolean {
   const norm = normalizeKpiKey(key);
   if (norm.includes('dropout')) {
-    return false;
-  }
-  if (norm === 'excursionists mean' || norm === 'excursionists peak') {
     return false;
   }
   return true;

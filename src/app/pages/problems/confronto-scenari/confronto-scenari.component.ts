@@ -12,7 +12,7 @@ import { ChatbotDialogComponent } from '../../../components/chatbot/chatbot-inte
 import { AgentService } from '../../../services/agent.service';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { stripSystemKpis } from '../../../utils/kpi.utils';
+import { isValueShareKpi, stripSystemKpis } from '../../../utils/kpi.utils';
 import { PlotMapper } from '../../../models/plot.model';
 
 @Component({
@@ -191,6 +191,12 @@ export class ConfrontoScenariComponent implements OnInit, OnDestroy {
     if ((this.selectedScenario1Id && this.kpisLeft) || (this.selectedScenario2Id && this.kpisRight)) {
       const cleanLeft = stripSystemKpis(this.kpisLeft);
       const cleanRight = stripSystemKpis(this.kpisRight);
+      Object.keys(cleanLeft).forEach(key => {
+        if (isValueShareKpi(cleanLeft[key])) delete cleanLeft[key];
+      });
+      Object.keys(cleanRight).forEach(key => {
+        if (isValueShareKpi(cleanRight[key])) delete cleanRight[key];
+      });
 
       this.histogramPayload = {
         dataLeft: cleanLeft,
@@ -377,17 +383,14 @@ export class ConfrontoScenariComponent implements OnInit, OnDestroy {
   filterKpis(rawData: Record<string, any>): Record<string, any> {
     return Object.keys(rawData)
       .filter(key => {
-        const normalizedKey = key.trim().toLowerCase().replace(/\s+/g, '_');
         return key.includes('constraint_level_')
           || key === 'sustainability_level'
           || key === 'critical_constraint'
-          || normalizedKey === 'excursionists_mean'
-          || normalizedKey === 'excursionists_peak';
+          || isValueShareKpi(rawData[key]);
       })
       .reduce((obj, key) => {
         const value = rawData[key];
-        const normalizedKey = key.trim().toLowerCase().replace(/\s+/g, '_');
-        obj[key] = normalizedKey === 'excursionists_mean' || normalizedKey === 'excursionists_peak'
+        obj[key] = isValueShareKpi(value)
           ? value
           : typeof value === 'number'
             ? { level: value, confidence: 0 }

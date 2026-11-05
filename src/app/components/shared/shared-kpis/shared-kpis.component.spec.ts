@@ -13,15 +13,17 @@ describe('SharedKpisComponent', () => {
       .toBe('535 (100%)');
   });
 
-  it('formats excursionist KPIs as counts with their percentage share', () => {
+  it('formats any value/share KPI as a count with its percentage share', () => {
     expect(component.getDisplayValue('excursionists mean', { value: 2715, share: 98.28 }))
       .toBe('2,715 (98%)');
-    expect(component.getDisplayValue('excursionists_peak', { value: 5673.3, share: 91.92 }))
-      .toBe('5,673 (92%)');
+    expect(component.getDisplayValue('arrivals_peak', { value: 1361.3, share: 91.1 }))
+      .toBe('1,361 (91%)');
+    expect(component.getDisplayValue('vehicles mean', { value: 28.3, share: 19.76 }))
+      .toBe('28 (20%)');
   });
 
-  it('treats excursionist deltas as counts rather than percentages', () => {
-    expect(component.getDeltaPerc('excursionists_mean', { value: 100, share: 10 }, { value: 125, share: 12 }))
+  it('treats value/share KPI deltas as counts rather than percentages', () => {
+    expect(component.getDeltaPerc('vehicles_peak', { value: 50, share: 10 }, { value: 75, share: 12 }))
       .toBe('+25');
   });
 

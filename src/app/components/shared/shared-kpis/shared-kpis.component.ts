@@ -2,7 +2,7 @@ import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { DesignAngularKitModule } from 'design-angular-kit';
-import { getKpiLabel, isPercentageKpi, stripSystemKpis, normalizeKpiKey } from '../../../utils/kpi.utils';
+import { getKpiLabel, isPercentageKpi, isValueShareKpi, stripSystemKpis, normalizeKpiKey } from '../../../utils/kpi.utils';
 
 @Component({
   selector: 'app-shared-kpis',
@@ -151,7 +151,7 @@ export class SharedKpisComponent implements OnChanges {
     if (left === null || right === null || left === right) return '—';
     
     const delta = right - left;
-    const isPerc = this.isPercentage(key);
+    const isPerc = this.isPercentage(key) && !isValueShareKpi(leftVal) && !isValueShareKpi(rightVal);
 
     if (isPerc) {
       const rounded = Math.round(delta);
@@ -170,7 +170,8 @@ export class SharedKpisComponent implements OnChanges {
     if (left === null || right === null) return 'btn-outline-secondary';
 
     const delta = right - left;
-    if (Math.abs(delta) <= (this.isPercentage(key) ? 2 : 5)) return 'btn-outline-secondary';
+    const isPerc = this.isPercentage(key) && !isValueShareKpi(leftVal) && !isValueShareKpi(rightVal);
+    if (Math.abs(delta) <= (isPerc ? 2 : 5)) return 'btn-outline-secondary';
     
     return delta > 0 ? 'btn-outline-success' : 'btn-outline-danger';
   }
