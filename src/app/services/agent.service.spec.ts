@@ -66,6 +66,29 @@ describe('AgentService turn protocol', () => {
 
   afterEach(() => http.verify());
 
+  it('sends the selected force_role with the message', fakeAsync(() => {
+    localStorage.setItem('chatbot_session_id', 'server-session');
+    let response: AgentResponse | undefined;
+    void service.sendMessage('hello', { force_role: 'operative' }).then(result => { response = result; });
+    flushMicrotasks();
+
+    const messageRequest = http.expectOne(environment.agentApiUrl);
+    expect((messageRequest.request.body as FormData).get('force_role')).toBe('operative');
+    messageRequest.flush({ session_id: 'server-session', turn_id: 'turn-role' });
+    flushMicrotasks();
+
+    http.expectOne(`${environment.agentApiUrl}/turns/turn-role`).flush({
+      turn_id: 'turn-role',
+      session_id: 'server-session',
+      status: 'done',
+      last_event_id: 0,
+      result: { response: 'Role applied.' }
+    });
+    flushMicrotasks();
+
+    expect(response?.response).toBe('Role applied.');
+  }));
+
   it('retries the same message with the same Idempotency-Key', fakeAsync(() => {
     localStorage.setItem('chatbot_session_id', 'server-session');
     let response: AgentResponse | undefined;

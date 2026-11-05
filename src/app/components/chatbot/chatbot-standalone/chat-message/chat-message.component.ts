@@ -12,7 +12,7 @@ export interface AgentTypeMeta {
   cssClass: string;
 }
 
-const AGENT_TYPE_MAP: Record<AgentType, AgentTypeMeta> = {
+export const AGENT_TYPE_MAP: Record<AgentType, AgentTypeMeta> = {
   executor: {
     label: 'Executor',
     icon: 'settings',

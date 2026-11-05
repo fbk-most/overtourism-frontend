@@ -22,6 +22,8 @@
             [geojsonStr]="geoEnvelope.data"
             [minValue]="geoEnvelope.min_value" 
             [maxValue]="geoEnvelope.max_value" 
+            [legend]="geoEnvelope.legend"
+            [flows]="flowData"
             [colorScaleMode]="colorScaleMode"
             [unitDescription]="unitDescription" 
             [mapTitle]="currentMapTitle">
@@ -46,6 +48,7 @@
           [(selectedAreas)]="selectedAreas"
           [spatialGranularity]="filterState?.spatialGranularity || 'comune'"
           [granularity]="filterState?.granularity || 'mensile'"
+          (granularityChange)="onGranularityChange($event)"
           [chartTitle]="currentMeta?.label || ''"
           [unitDescription]="unitDescription"
           [codeToName]="codeToName"

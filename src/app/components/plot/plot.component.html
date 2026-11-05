@@ -102,6 +102,28 @@
     piattaforma.
   </div>
 
+  <div class="mb-3" aria-live="polite">
+    <ng-container *ngIf="!hasCurrentSummary">
+      <div class="alert alert-info mb-0">
+        Genera il sommario dello scenario modificato prima di procedere con il salvataggio.
+        <button itButton="outline-primary" size="sm" type="button" class="ms-2"
+          [disabled]="isSaving || loading || readingComponent?.aiSummaryLoading"
+          (click)="generateCurrentSummary()">
+          <ng-container *ngIf="!readingComponent?.aiSummaryLoading; else generatingSummary">
+            Genera sommario
+          </ng-container>
+          <ng-template #generatingSummary>
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Generazione...
+          </ng-template>
+        </button>
+      </div>
+      <div class="alert alert-warning mt-2 mb-0" *ngIf="readingComponent?.aiSummaryError" role="alert">
+        Non è stato possibile generare il sommario. Riprova.
+      </div>
+    </ng-container>
+  </div>
+
   <it-input label="{{ 'save.title' | translate }} *" name="titolo" [(ngModel)]="titolo"
     #titoloInput="ngModel"></it-input>
 
@@ -112,7 +134,7 @@
     <button itButton="outline-primary" size="sm" type="button" data-bs-dismiss="modal"
       (click)="closeModal()">Annulla</button>
     <button itButton="primary" size="sm" type="button"
-      [disabled]="isSaving || (titoloInput.invalid ?? false) || (descrizioneInput.invalid ?? false)"
+      [disabled]="isSaving || !hasCurrentSummary || (titoloInput.invalid ?? false) || (descrizioneInput.invalid ?? false)"
       (click)="confirmSave()">
       <ng-container *ngIf="!isSaving; else saving">
         Salva e Condividi
@@ -184,7 +206,7 @@
 
           <hr />
 
-          <app-reading [widgets]="widgets" [indexDiffs]="indexDiffs" [dataFacts]="inputData?.dataFacts || []"
+          <app-reading #readingComponent [widgets]="widgets" [indexDiffs]="indexDiffs" [dataFacts]="inputData?.dataFacts || []"
             [originalIndexDiffs]="originalIndexDiffs"
             [savedSummary]="savedSummary"
             [loading]="loading"

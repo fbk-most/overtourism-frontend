@@ -26,6 +26,7 @@ export class IndiciChartComponent  {
 
   @Output() selectedComuniChange = new EventEmitter<string[]>();
   @Output() selectedAreasChange = new EventEmitter<string[]>();
+  @Output() granularityChange = new EventEmitter<TemporalGranularity>();
   chartType: 'scatter' | 'bar' = 'scatter';
 
   get currentSelection(): string[] {

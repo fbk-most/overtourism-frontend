@@ -4,6 +4,7 @@ export interface IndicatorMeta {
     index_description?: string; 
     index_value_unit_description?: string;
     availableForVariation: boolean;
+    year_only?: boolean;
     extraFields: string[];
     years_range: { min_year: number; max_year: number };
   }
@@ -30,10 +31,50 @@ export interface IndicatorMeta {
     data: string;        
     min_value: number;
     max_value: number;
+    legend?: ClusterValueLegend;
+  }
+
+  export interface ClusterValueLegend {
+    type: 'cluster-value';
+    cluster_property: string;
+    clusters: ClusterLegendDefinition[];
+  }
+
+  export interface ClusterLegendDefinition {
+    id: string | number;
+    label?: string;
+    color: string;
   }
   
   export interface IndexDataResponse {
     geo_data: GeoDataEnvelope;
+    flows?: FlowDataEnvelope;
+  }
+
+  export interface FlowDataEnvelope {
+    data: {
+      type: 'FeatureCollection';
+      features: FlowFeature[];
+    };
+    max_value: number;
+    unit: string;
+    n_days: number;
+  }
+
+  export interface FlowFeature {
+    type: 'Feature';
+    geometry: {
+      type: 'LineString';
+      coordinates: [number, number][];
+    };
+    properties: {
+      rank?: number;
+      value: number;
+      from?: string;
+      to?: string;
+      from_label?: string;
+      to_label?: string;
+    };
   }
   
   export interface VariationSeries {
@@ -60,7 +101,5 @@ export interface IndicatorMeta {
     enableVariation: boolean;
     startDateComparison?: string;
     endDateComparison?: string;
-    enableImpactPercentage: boolean;
-    impactSeasonality?: string;
     showOption: ShowOption;
   }

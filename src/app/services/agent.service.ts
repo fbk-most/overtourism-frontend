@@ -11,7 +11,7 @@ import { environment } from '../../environments/environment';
 import { AuthenticationService } from './authentication.service';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { CUSTOM_TIMEOUT, SKIP_ERROR_NOTIFICATION } from '../interceptors/http-error.interceptor';
-import { AgentResponse } from '../models/chat.model';
+import { AgentResponse, AgentRole } from '../models/chat.model';
 
 export type AgentChatMode = 'standalone' | 'integrated';
 
@@ -25,6 +25,7 @@ export interface AgentChatOptions {
   mode?: AgentChatMode;
   language?: string;
   context?: AgentChatContext;
+  force_role?: AgentRole;
 }
 
 export interface AgentInitResponse {
@@ -214,6 +215,7 @@ export class AgentService {
     const formData = new FormData();
     formData.append('message', message);
     formData.append('session_id', sessionId);
+    if (options.force_role) formData.append('force_role', options.force_role);
     changedContext?.forEach(value => formData.append('context[]', value));
 
     let turnId: string;

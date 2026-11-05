@@ -104,6 +104,7 @@
               <!-- 👁️ Pulsante di dettaglio -->
               <button
                 class="btn btn-sm btn-icon text-primary"
+                title="Visualizza"
                 (click)="viewProposalDetail(proposal.proposal_id)">
                 <span class="material-icons align-middle">visibility</span>
               </button>
@@ -112,6 +113,7 @@
               <button
                 *ngIf="authService.canEdit()"
                 class="btn btn-sm btn-icon text-primary"
+                title="Modifica"
                 (click)="editProposal(proposal.proposal_id)">
                 <span class="material-icons align-middle">edit</span>
               </button>
@@ -121,6 +123,7 @@
                 *ngIf="authService.canEdit()"
                 class="btn btn-sm btn-icon text-primary"
                 (click)="openDeleteProposalModal(proposal); $event.stopPropagation()"
+                title="Elimina"
                 aria-label="Elimina proposta">
                 <span class="material-icons align-middle">delete</span>
               </button>
