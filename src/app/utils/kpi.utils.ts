@@ -33,5 +33,8 @@ export function isPercentageKpi(key: string): boolean {
   if (norm.includes('dropout')) {
     return false;
   }
+  if (norm === 'excursionists mean' || norm === 'excursionists peak') {
+    return false;
+  }
   return true;
 }

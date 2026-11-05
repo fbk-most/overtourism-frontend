@@ -374,16 +374,26 @@ export class ConfrontoScenariComponent implements OnInit, OnDestroy {
     this.diffsRightToLeft = this.getWidgetDiffs(this.widgetsRight, this.widgetsLeft);
   }
 
-  filterKpis(rawData: Record<string, any>): Record<string, { level: number, confidence: number }> {
+  filterKpis(rawData: Record<string, any>): Record<string, any> {
     return Object.keys(rawData)
-      .filter(key => key.includes('constraint_level_') || key === 'sustainability_level' || key === 'critical_constraint')
+      .filter(key => {
+        const normalizedKey = key.trim().toLowerCase().replace(/\s+/g, '_');
+        return key.includes('constraint_level_')
+          || key === 'sustainability_level'
+          || key === 'critical_constraint'
+          || normalizedKey === 'excursionists_mean'
+          || normalizedKey === 'excursionists_peak';
+      })
       .reduce((obj, key) => {
         const value = rawData[key];
-        obj[key] = typeof value === 'number'
-          ? { level: value, confidence: 0 }
-          : { level: value.level ?? 0, confidence: value.confidence ?? 0 };
+        const normalizedKey = key.trim().toLowerCase().replace(/\s+/g, '_');
+        obj[key] = normalizedKey === 'excursionists_mean' || normalizedKey === 'excursionists_peak'
+          ? value
+          : typeof value === 'number'
+            ? { level: value, confidence: 0 }
+            : { level: value.level ?? 0, confidence: value.confidence ?? 0 };
         return obj;
-      }, {} as Record<string, { level: number, confidence: number }>);
+      }, {} as Record<string, any>);
   }
 
   formatDiffValue(val: any): string {
