@@ -1,17 +1,16 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Optional } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { PlotInput, Curve, Point } from '../models/plot.model';
 import { ChartSummary, ChartSeriesSummary } from '../models/chart-summary.model';
 import Plotly from 'plotly.js-dist-min';
 import { DEFAULT_LAYOUT, PLOT_COLORS } from '../components/plot/plot.config';
 import { DataFact } from '../models/data-fact.model';
+import { TranslateService } from '@ngx-translate/core';
 
 @Injectable({ providedIn: 'root' })
 export class PlotService {
 
-  constructor() {
-
-  }
+  constructor(@Optional() private translate?: TranslateService) { }
   private dashStyles = ['dot', 'dashdot', 'dash', 'longdash', 'longdashdot'];
   private dashMap = new Map<string, string>();
   private dashIndex = 0;
@@ -35,11 +34,65 @@ export class PlotService {
     return style;
   }
   private getBiLabel(plotMapper: any, axis: 'x' | 'y', fallback: string): string {
-    return plotMapper?.bidimensional?.[axis]?.label ?? fallback;
+    return this.getAxisLabel(plotMapper?.bidimensional?.[axis], `plot.labels.axes.${axis}`, fallback);
   }
 
   private getMonoLabel(plotMapper: any, axis: 'x' | 'y', fallback: string): string {
-    return plotMapper?.monodimensional?.[axis]?.label ?? fallback;
+    const axisMapper = plotMapper?.monodimensional?.[axis];
+    const normalizedLabel = typeof axisMapper?.label === 'string'
+      ? axisMapper.label.trim().toLowerCase()
+      : '';
+    if (normalizedLabel.includes('giorni') && normalizedLabel.includes('utilizzo')) {
+      return this.translation('plot.labels.axes.daysOrderedByUsage') || axisMapper.label;
+    }
+    if (normalizedLabel.includes('utilizzo') && normalizedLabel.includes('destinazione')) {
+      return this.translation('plot.labels.axes.destinationUsage') || axisMapper.label;
+    }
+    return this.getAxisLabel(axisMapper, `plot.labels.axes.${axis}`, fallback);
+  }
+
+  private getAxisLabel(axisMapper: any, fallbackKey: string, fallback: string): string {
+    const fieldKey = typeof axisMapper?.field === 'string'
+      ? `plot.labels.axes.${axisMapper.field}`
+      : fallbackKey;
+    const translatedField = this.translation(fieldKey);
+    if (translatedField) return translatedField;
+
+    return typeof axisMapper?.label === 'string' ? axisMapper.label : fallback;
+  }
+
+  private translation(key: string, params?: Record<string, string>): string {
+    const translated = this.translate?.instant(key, params);
+    return translated && translated !== key ? translated : '';
+  }
+
+  private translationKey(value: string): string {
+    return value.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  }
+
+  private localizedSubsystem(value: string): string {
+    return this.translation(`plot.labels.subsystems.${this.translationKey(value)}`);
+  }
+
+  private localizedSeriesName(value: string): string {
+    const normalized = value.trim().toLowerCase();
+    return ['presenze', 'presences', 'visitors'].includes(normalized)
+      ? this.translation('plot.labels.presences') || value
+      : value;
+  }
+
+  private getMappedLabel(mapper: any, value: string): string {
+    const normalize = (label: unknown): string =>
+      typeof label === 'string'
+        ? label.trim().toLowerCase().replace(/[\s_-]+/g, ' ')
+        : '';
+    const normalizedValue = normalize(value);
+    const match = Array.isArray(mapper)
+      ? mapper.find((item: any) => normalize(item?.value) === normalizedValue)
+      : undefined;
+    const translated = this.localizedSubsystem(value);
+
+    return translated || match?.label || value;
   }
 
   private extractField(point: any, configuredField: string | undefined, fallbackKeys: string[]): number {
@@ -58,7 +111,7 @@ export class PlotService {
            (labels.y ? `<b>${labels.y}:</b> %{y}<br>` : '') +
            '<extra></extra>';
   }
-  async renderFunctionPlot(sottosistemaSelezionato: string, container: HTMLElement, input: PlotInput): Promise<void> {
+  async renderFunctionPlot(sottosistemaSelezionato: string, container: HTMLElement, input: PlotInput, title = ''): Promise<void> {
 
     const data: Partial<Plotly.PlotData>[] = [];
     const curvesToRender = sottosistemaSelezionato === 'default'
@@ -68,12 +121,11 @@ export class PlotService {
       const mapper = (input as any).mapper || [];
 const plotMapper = (input as any).plotMapper;
 
-    const xLabel = this.getBiLabel(plotMapper, 'x', 'Turisti');
-    const yLabel = this.getBiLabel(plotMapper, 'y', 'Escursionisti');
+    const xLabel = this.getBiLabel(plotMapper, 'x', this.translation('plot.labels.axes.tourists') || 'Turisti');
+    const yLabel = this.getBiLabel(plotMapper, 'y', this.translation('plot.labels.axes.hikers') || 'Escursionisti');
 
     for (const curve of curvesToRender) {
-      const foundLabel = mapper.find((m: any) => m.value === curve.name);
-      const translatedName = foundLabel ? foundLabel.label : curve.name;
+      const translatedName = this.getMappedLabel(mapper, curve.name);
 
       data.push({
         x: curve.x,
@@ -97,15 +149,15 @@ const plotMapper = (input as any).plotMapper;
           y: pt.y,
           type: 'scatter',
           mode: 'markers',
-          name: pt.name,
-          text: pt.name,
+          name: this.localizedSeriesName(pt.name),
+          text: this.localizedSeriesName(pt.name),
           marker: pt.marker ?? {
             color: pt.color ?? 'black',
             size: 8,
             line: { width: 1, color: 'black' },
           },
           hovertemplate: this.buildHoverTemplate({
-            name: 'Presenze',
+            name: this.translation('plot.labels.presences') || 'Presenze',
             x: xLabel,
             y: yLabel
           })
@@ -132,7 +184,7 @@ const plotMapper = (input as any).plotMapper;
         layer: 'below traces',
         rangemode: 'tozero'        
       },
-      title: { text: '' },
+      title: { text: title },
       showlegend: true,
       legend: {
         orientation: 'h',
@@ -309,15 +361,15 @@ const plotMapper = (input as any).plotMapper;
       plotMapper 
     };
   }
-  async renderBidimensionale(sottosistemaSelezionato: string, container: HTMLElement, cloned: PlotInput, colorScale?: any): Promise<void> {
+  async renderBidimensionale(sottosistemaSelezionato: string, container: HTMLElement, cloned: PlotInput, colorScale?: any, title = ''): Promise<void> {
     const targetScale = colorScale || (cloned as any).colorScale;
     const plotMapper = (cloned as any).plotMapper;
 
     const uncertaintyData = this.getUncertaintyData(sottosistemaSelezionato, cloned.kpis);
     cloned.points = [this.createUncertaintyPoint('Presenze', uncertaintyData, false, targetScale, plotMapper) as Point];
-    await this.renderFunctionPlot(sottosistemaSelezionato, container, cloned);
+    await this.renderFunctionPlot(sottosistemaSelezionato, container, cloned, title);
   }
-  async renderMonoDimensionale(sottosistemaSelezionato: string, container: HTMLElement, input: PlotInput, colorScale?: any): Promise<void> {
+  async renderMonoDimensionale(sottosistemaSelezionato: string, container: HTMLElement, input: PlotInput, colorScale?: any, title = ''): Promise<void> {
     if (!container || !input?.kpis) return;
 
     const uncertaintyData = this.getUncertaintyData(sottosistemaSelezionato, input.kpis);
@@ -336,13 +388,21 @@ const plotMapper = (input as any).plotMapper;
 
     const plotMapper = (input as any).plotMapper;
     // 🔴 Label dinamiche per mono-dimensionale
-    const xAxisLabel = this.getMonoLabel(plotMapper, 'x', 'Giorni (ordinati per utilizzo)');
-    const yAxisLabelDefault = this.getMonoLabel(plotMapper, 'y', 'Livello di utilizzo della destinazione');
+    const xAxisLabel = this.getMonoLabel(
+      plotMapper,
+      'x',
+      this.translation('plot.labels.axes.daysOrderedByUsage') || 'Giorni (ordinati per utilizzo)'
+    );
+    const yAxisLabelDefault = this.getMonoLabel(
+      plotMapper,
+      'y',
+      this.translation('plot.labels.axes.destinationUsage') || 'Livello di utilizzo della destinazione'
+    );
 
     const hoverTemplate =
     sottosistemaSelezionato === 'default'
-      ? 'Giorno: %{x}<br>Utilizzo: %{y:.1f}%<br>Livello di rischio: %{customdata:.1f}%<extra></extra>'
-      : 'Giorno: %{x}<br>Utilizzo: %{y:.0f}<br>Livello di rischio: %{customdata:.1f}%<extra></extra>';
+      ? `${this.translation('plot.labels.day') || 'Giorno'}: %{x}<br>${this.translation('plot.labels.usage') || 'Utilizzo'}: %{y:.1f}%<br>${this.translation('plot.labels.riskLevel') || 'Livello di rischio'}: %{customdata:.1f}%<extra></extra>`
+      : `${this.translation('plot.labels.day') || 'Giorno'}: %{x}<br>${this.translation('plot.labels.usage') || 'Utilizzo'}: %{y:.0f}<br>${this.translation('plot.labels.riskLevel') || 'Livello di rischio'}: %{customdata:.1f}%<extra></extra>`;
   
     const trace: Partial<Plotly.PlotData> = {
       x,
@@ -350,7 +410,7 @@ const plotMapper = (input as any).plotMapper;
       customdata: risk,
       type: 'scatter',
       mode: 'markers',
-      name: 'Presenze',
+      name: this.translation('plot.labels.presences') || 'Presenze',
       marker: {
         color: colorValues,
         colorscale: colorScale || (input as any).colorScale, 
@@ -362,8 +422,7 @@ const plotMapper = (input as any).plotMapper;
       hovertemplate: hoverTemplate
     };
     const mapper = input.mapper || [];
-    const foundLabel = mapper.find((m: any) => m.value === sottosistemaSelezionato);
-    const titoloAsseY = foundLabel ? foundLabel.label : sottosistemaSelezionato;
+    const titoloAsseY = this.getMappedLabel(mapper, sottosistemaSelezionato);
 
     const layout: Partial<Plotly.Layout> = {
       ...DEFAULT_LAYOUT,
@@ -373,16 +432,17 @@ const plotMapper = (input as any).plotMapper;
       },
       yaxis: {
         title: {
-          text:
-          titoloAsseY === 'default' ?
-              yAxisLabelDefault :
-              'Livello di utilizzo della risorsa ' + titoloAsseY
+          text: sottosistemaSelezionato === 'default'
+            ? yAxisLabelDefault
+            : this.translation('plot.labels.resourceUsage', { resource: titoloAsseY })
+              || `Livello di utilizzo della risorsa ${titoloAsseY}`
         },
         range: [0, yAxisMax],
         tickformat: '.0f',
         layer: 'below traces'
       },
       margin: { t: 50, b: 80, l: 80, r: 60 },
+      title: { text: title },
       showlegend: true,
       legend: {
         orientation: 'h',
@@ -414,7 +474,10 @@ const plotMapper = (input as any).plotMapper;
     await this.renderPlot(container, traces, layout);
   }
   getCapacityLabel(subsystem: string): string {
-    return subsystem === 'default' ? 'Soglia di sovraffollamento' : 'Capacità di carico';
+    const key = subsystem === 'default'
+      ? 'plot.labels.crowdingThreshold'
+      : 'plot.labels.carryingCapacity';
+    return this.translation(key) || (subsystem === 'default' ? 'Soglia di sovraffollamento' : 'Capacità di carico');
   }
   async renderPlot(container: HTMLElement, data: any[], layout = DEFAULT_LAYOUT) {
     try {
@@ -429,9 +492,9 @@ const plotMapper = (input as any).plotMapper;
     container.on?.('plotly_legenddoubleclick', () => false);
   }
   private getDefaultHoverTemplate(plotMapper?: any): string {
-    const xLabel = this.getBiLabel(plotMapper, 'x', 'Turisti');
-    const yLabel = this.getBiLabel(plotMapper, 'y', 'Escursionisti');
-    return '<b>Livello di rischio:</b> %{customdata:.4f}%<br>' +
+    const xLabel = this.getBiLabel(plotMapper, 'x', this.translation('plot.labels.axes.tourists') || 'Turisti');
+    const yLabel = this.getBiLabel(plotMapper, 'y', this.translation('plot.labels.axes.hikers') || 'Escursionisti');
+    return `<b>${this.translation('plot.labels.riskLevel') || 'Livello di rischio'}:</b> %{customdata:.4f}%<br>` +
       `<b>${xLabel}:</b> %{x}<br>` +
       `<b>${yLabel}:</b> %{y}<br>` +
       '<extra></extra>';
@@ -450,7 +513,7 @@ const plotMapper = (input as any).plotMapper;
     plotMapper?: any // 🔴 nuovo parametro
   ): Point {
     return {
-      name,
+      name: this.translation('plot.labels.presences') || name,
       x: data.map(p => p.tourists),
       y: data.map(p => p.excursionists),
       customdata: data.map(p => 100 * (1 - p.usage_uncertainty)),

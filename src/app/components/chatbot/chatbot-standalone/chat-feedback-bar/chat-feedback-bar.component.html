@@ -10,8 +10,8 @@
 
 <div class="fb-overlay" *ngIf="showModal" (click)="onOverlayClick($event)">
   <div class="fb-modal">
-    <h3>Add feedback</h3>
-    <textarea [(ngModel)]="draft" placeholder="What could be improved? (optional)" rows="4"></textarea>
+    <h3>Aggiungi feedback</h3>
+    <textarea [(ngModel)]="draft" placeholder="Inserisci qui il tuo commento..." rows="4"></textarea>
     <div class="fb-modal-actions">
       <button class="fb-btn-cancel" (click)="showModal = false">Cancel</button>
       <button class="fb-btn-save" (click)="saveComment()">Save</button>

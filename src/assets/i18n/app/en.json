@@ -117,6 +117,33 @@
     "infoText": "This box shows read-only information related to the graph or selected data.",
     "notesTitle": "Notes",
     "notesLabel": "Add your notes here...",
+    "labels": {
+      "presences": "Visitors",
+      "day": "Day",
+      "usage": "Usage",
+      "riskLevel": "Risk level",
+      "resourceUsage": "Usage level of {{resource}}",
+      "crowdingThreshold": "Overcrowding threshold",
+      "carryingCapacity": "Carrying capacity",
+      "subsystems": {
+        "default": "All",
+        "parking": "Parking",
+        "beach": "Beach",
+        "accommodation": "Accommodation",
+        "food": "Restaurants",
+        "road": "Roads",
+        "all": "All"
+      },
+      "axes": {
+        "tourist": "Tourists per day",
+        "excursionist": "Hikers per day",
+        "visitors_total": "Total visitors arriving per day",
+        "visitors_car": "Visitors arriving by car per day",
+        "daysOrderedByUsage": "Days (ordered by usage)",
+        "destinationUsage": "Destination usage level",
+        "usage": "Destination usage level"
+      }
+    },
     "widget": {
       "title": "Edit Parameters",
       "sliderLabel": "Evidence Threshold",
