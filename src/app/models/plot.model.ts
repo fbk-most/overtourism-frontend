@@ -9,6 +9,7 @@ export interface SharedChartPayload {
   subsystem: string;                 
   data: PlotInput;                   
   themeOverrides?: any;             
+  title?: string;
 }
 
 export type Curve = {
@@ -80,11 +81,9 @@ export interface PlotInput {
 }
 
 export interface SharedHistogramPayload {
-  dataLeft: Record<string, { level: number; confidence: number }>;
-  dataRight: Record<string, { level: number; confidence: number }>;
+  dataLeft: Record<string, unknown>;
+  dataRight: Record<string, unknown>;
   labelLeft: string;
   labelRight: string;
 }
-
-
 

@@ -30,14 +30,18 @@ export class SharedPlotComponent implements OnChanges, AfterViewInit {
         await this.plotService.renderMonoDimensionale(
           this.payload.subsystem,
           this.chartContainer.nativeElement,
-          this.payload.data
+          this.payload.data,
+          undefined,
+          this.payload.title
         );
       } else {
         const cloned = JSON.parse(JSON.stringify(this.payload.data));
         await this.plotService.renderBidimensionale(
           this.payload.subsystem,
           this.chartContainer.nativeElement,
-          cloned
+          cloned,
+          undefined,
+          this.payload.title
         );
       }
     } finally {

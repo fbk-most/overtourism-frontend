@@ -30,6 +30,7 @@ export class PlotComponent implements AfterViewInit {
   @Input() scenarioId!: string;
   @Input() problemId!: string;
   @Input() proposalId!: string;
+  @Input() scenarioName = '';
   @Input() version: number = 1;
   private navigationAfterSave = false;
   private isNavigatingToCompare = false;

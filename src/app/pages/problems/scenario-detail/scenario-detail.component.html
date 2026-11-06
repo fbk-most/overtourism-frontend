@@ -1,6 +1,7 @@
-<div class="row my-2 align-items-center">
+<div class="row my-2 align-items-start">
   <div class="col">
-    <h4>{{ scenario?.name || 'Loading...' }}</h4>
+    <h4 class="mb-1">{{ scenario?.name || 'Loading...' }}</h4>
+    <p *ngIf="scenario?.description" class="mb-0 text-muted">{{ scenario?.description }}</p>
   </div>
   <div class="col-auto">
     <app-report-export [context]="{ scenarios: [scenarioId] }"></app-report-export>
@@ -13,7 +14,7 @@
 </div>
 
 <div class="my-4 d-flex flex-column w-100">
-  <app-plot [scenarioId]="scenarioId" [problemId]="problemId" [version]="scenario?.version || 0" [proposalId]="proposalId"></app-plot>
+  <app-plot [scenarioId]="scenarioId" [problemId]="problemId" [version]="scenario?.version || 0" [proposalId]="proposalId" [scenarioName]="scenario?.name || ''"></app-plot>
 </div>
 <it-modal #deleteModal id="deleteModal">
   <ng-container modalTitle>Elimina scenario</ng-container>

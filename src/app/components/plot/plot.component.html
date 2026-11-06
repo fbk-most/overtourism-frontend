@@ -30,7 +30,8 @@
         <app-shared-plot *ngIf="inputData" [payload]="{
           type: monoDimensionale ? 'mono' : 'bi',
           subsystem: sottosistemaSelezionato,
-          data: inputData
+          data: inputData,
+          title: scenarioName
         }" [loading]="loading">
         </app-shared-plot>
       </div>

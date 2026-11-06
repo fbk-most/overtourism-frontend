@@ -184,6 +184,34 @@
     "infoText": "Questa casella mostra informazioni in sola lettura relative al grafico o ai dati selezionati.",
     "notesTitle": "Note",
     "notesLabel": "Aggiungi le tue note qui...",
+    "labels": {
+      "presences": "Presenze",
+      "day": "Giorno",
+      "usage": "Utilizzo",
+      "riskLevel": "Livello di rischio",
+      "uncertainty": "Incertezza",
+      "resourceUsage": "Livello di utilizzo di {{resource}}",
+      "crowdingThreshold": "Soglia di sovraffollamento",
+      "carryingCapacity": "Capacità di carico",
+      "subsystems": {
+        "default": "Tutti",
+        "parking": "Parcheggi",
+        "beach": "Spiaggia",
+        "accommodation": "Alberghi",
+        "food": "Ristoranti",
+        "road": "Viabilità",
+        "all": "Tutti"
+      },
+      "axes": {
+        "tourist": "Turisti / giorno",
+        "excursionist": "Escursionisti / giorno",
+        "visitors_total": "Visitatori arrivati in totale / giorno",
+        "visitors_car": "Visitatori arrivati in auto / giorno",
+        "daysOrderedByUsage": "Giorni (ordinati per utilizzo)",
+        "destinationUsage": "Livello di utilizzo della destinazione",
+        "usage": "Livello di utilizzo della destinazione"
+      }
+    },
     "widget": {
       "title": "Modifica Parametri",
       "sliderLabel": "Soglia di evidenza",

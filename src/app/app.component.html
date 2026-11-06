@@ -7,12 +7,17 @@
   <div class="d-flex flex-grow-1">
     <main class="p-4 w-100">
       <app-breadcrumbs></app-breadcrumbs>
+      <div *ngIf="showTerritoryReference && authService.activeTerritory" class="territory-context-reference">
+        <span class="material-icons" aria-hidden="true">place</span>
+        <span>Contesto territoriale</span>
+        <strong>{{ authService.activeTerritory | titlecase }}</strong>
+      </div>
       <router-outlet></router-outlet>
     </main>
   </div>
   
   <app-footer></app-footer>
-  <app-chatbot-integrated></app-chatbot-integrated>
+  <app-chatbot-integrated *ngIf="showIntegratedChatbot"></app-chatbot-integrated>
 
   </div>
 </ng-container>

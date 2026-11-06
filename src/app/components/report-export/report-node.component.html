@@ -10,7 +10,11 @@
 
   <div *ngIf="node.plots?.length" class="report-plots">
     <ng-container *ngFor="let widget of node.plots">
-      <app-report-plot *ngIf="isPlotWidget(widget.widgetName); else dispatchedWidget" [widget]="widget"></app-report-plot>
+      <app-report-plot
+        *ngIf="isPlotWidget(widget.widgetName); else dispatchedWidget"
+        [widget]="widget"
+        [scenarioTitle]="node.type === 'scenario' ? node.title : ''">
+      </app-report-plot>
       <ng-template #dispatchedWidget>
         <ng-container *ngIf="widgetComponent(widget.widgetName); else unsupportedWidget">
           <ng-container

@@ -34,6 +34,7 @@ import { ScenarioService } from '../../services/scenario.service';
 })
 export class ReportPlotComponent implements OnChanges {
   @Input() widget!: ReportWidgetPayload;
+  @Input() scenarioTitle = '';
 
   payload: SharedChartPayload | null = null;
   error: string | null = null;
@@ -69,7 +70,8 @@ export class ReportPlotComponent implements OnChanges {
       if (this.isSharedChartPayload(data)) {
         this.payload = {
           ...data,
-          type: this.plotType(data['type'])
+          type: this.plotType(data['type']),
+          title: this.plotTitle(data, data['title'])
         };
         return;
       }
@@ -77,6 +79,8 @@ export class ReportPlotComponent implements OnChanges {
       const scenarioIds = Array.isArray(data['scenarioIds'])
         ? data['scenarioIds'].filter((id): id is string => typeof id === 'string')
         : [];
+      const labels = this.asRecord(data['labels']);
+      const title = this.plotTitle(data, scenarioIds[0] ? labels[scenarioIds[0]] : undefined);
       const scenarioData = this.scenarioData(data['data'], scenarioIds[0]);
       const plotData = this.asRecord(
         scenarioData['plot_data'] ?? scenarioData['data'] ?? scenarioData
@@ -87,7 +91,8 @@ export class ReportPlotComponent implements OnChanges {
         this.payload = {
           type: this.plotType(data['type']),
           subsystem: typeof data['subsystem'] === 'string' ? data['subsystem'] : 'default',
-          data: plotData
+          data: plotData,
+          title
         };
         return;
       }
@@ -109,7 +114,8 @@ export class ReportPlotComponent implements OnChanges {
       this.payload = {
         type: this.plotType(data['type']),
         subsystem: typeof data['subsystem'] === 'string' ? data['subsystem'] : 'default',
-        data: input
+        data: input,
+        title
       };
     } catch (error) {
       if (requestVersion !== this.requestVersion) return;
@@ -147,6 +153,12 @@ export class ReportPlotComponent implements OnChanges {
     if (this.widget?.widgetName === 'loadPlot') return 'mono';
     if (this.widget?.widgetName === 'capacityPlot') return 'bi';
     return fallback === 'mono' ? 'mono' : 'bi';
+  }
+
+  private plotTitle(data: Record<string, unknown>, fallback: unknown): string {
+    if (typeof data['title'] === 'string' && data['title'].trim()) return data['title'];
+    if (this.scenarioTitle.trim()) return this.scenarioTitle;
+    return typeof fallback === 'string' ? fallback : '';
   }
 
   private asRecord(value: unknown): Record<string, unknown> {

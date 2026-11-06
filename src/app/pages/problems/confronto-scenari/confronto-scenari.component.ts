@@ -11,7 +11,7 @@ import { ChatbotDialogComponent } from '../../../components/chatbot/chatbot-inte
 import { AgentService } from '../../../services/agent.service';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { isValueShareKpi, stripSystemKpis } from '../../../utils/kpi.utils';
+import { getComparisonChartKpis, isValueShareKpi } from '../../../utils/kpi.utils';
 import { PlotMapper } from '../../../models/plot.model';
 
 @Component({
@@ -191,14 +191,8 @@ export class ConfrontoScenariComponent implements OnInit, OnDestroy {
 
   private updateHistogramPayload() {
     if ((this.selectedScenario1Id && this.kpisLeft) || (this.selectedScenario2Id && this.kpisRight)) {
-      const cleanLeft = stripSystemKpis(this.kpisLeft);
-      const cleanRight = stripSystemKpis(this.kpisRight);
-      Object.keys(cleanLeft).forEach(key => {
-        if (isValueShareKpi(cleanLeft[key])) delete cleanLeft[key];
-      });
-      Object.keys(cleanRight).forEach(key => {
-        if (isValueShareKpi(cleanRight[key])) delete cleanRight[key];
-      });
+      const cleanLeft = getComparisonChartKpis(this.kpisLeft);
+      const cleanRight = getComparisonChartKpis(this.kpisRight);
 
       this.histogramPayload = {
         dataLeft: cleanLeft,
@@ -469,9 +463,19 @@ export class ConfrontoScenariComponent implements OnInit, OnDestroy {
     if (!container || !input) return;
 
     const cloned = JSON.parse(JSON.stringify(input)) as PlotInput;
+    const scenarioId = container === this.chartLeft.nativeElement
+      ? this.selectedScenario1Id
+      : this.selectedScenario2Id;
+    const title = this.getScenarioName(scenarioId) || '';
 
     if (this.monoDimensionale) {
-      this.plotService.renderMonoDimensionale(this.sottosistemaSelezionato, container, cloned, this.colorMap);
+      this.plotService.renderMonoDimensionale(
+        this.sottosistemaSelezionato,
+        container,
+        cloned,
+        this.colorMap,
+        title
+      );
       return;
     }
 
@@ -479,7 +483,8 @@ export class ConfrontoScenariComponent implements OnInit, OnDestroy {
       this.sottosistemaSelezionato,
       container,
       cloned,
-      this.colorMap
+      this.colorMap,
+      title
     );
   }
 

@@ -42,8 +42,13 @@
     </app-report-node>
   </section>
 
-  <section *ngIf="report.comparisons?.length" class="report-page-break">
+  <section *ngIf="report.comparison_summary || report.comparisons?.length" class="report-page-break">
     <h2>{{ 'report.comparisons' | translate }}</h2>
+    <div
+      *ngIf="report.comparison_summary"
+      class="report-copy"
+      [innerHTML]="sanitizedComparisonSummary()">
+    </div>
     <ng-container *ngFor="let widget of report.comparisons">
       <app-report-plot *ngIf="isPlotWidget(widget.widgetName); else dispatchedComparisonWidget" [widget]="widget"></app-report-plot>
       <ng-template #dispatchedComparisonWidget>

@@ -3,7 +3,7 @@ import { DomainEvent, UIAction } from '../../models/chat.model';
 import { PlotService } from '../plot.service';
 import { firstValueFrom } from 'rxjs';
 import { ScenarioService } from '../scenario.service';
-import { stripSystemKpis } from '../../utils/kpi.utils';
+import { getComparisonChartKpis } from '../../utils/kpi.utils';
 
 @Injectable({ providedIn: 'root' })
 export class ChatbotActionTranslatorService {
@@ -94,6 +94,7 @@ export class ChatbotActionTranslatorService {
         }
         if (widgetName === 'histogramComparison') {
           const innerPayload = mappedData['payload'] ?? mappedData;
+          const configuration = await firstValueFrom(this.scenarioService.getParsedConfiguration());
 
           if (innerPayload.scenarioIds && Array.isArray(innerPayload.scenarioIds)) {
             const id1 = innerPayload.scenarioIds[0];
@@ -114,57 +115,16 @@ export class ChatbotActionTranslatorService {
               payload: {
                 labelLeft: innerPayload.labels?.[id1] || 'Scenario 1',
                 labelRight: innerPayload.labels?.[id2] || 'Scenario 2',
-                dataLeft: stripSystemKpis(dataLeftRaw),
-                dataRight: stripSystemKpis(dataRightRaw)
-              }
+                dataLeft: getComparisonChartKpis(dataLeftRaw),
+                dataRight: getComparisonChartKpis(dataRightRaw)
+              },
+              kpiMapper: configuration.kpiMapper
             };
-          }
-        }
-        if (widgetName === 'loadPlot') {
-          const innerPayload = mappedData['payload'] ?? mappedData;
-
-          if (innerPayload.scenarioIds && Array.isArray(innerPayload.scenarioIds)) {
-            const id1 = innerPayload.scenarioIds[0];
-            const rawData = innerPayload.data || {};
-            const k1 = Object.keys(rawData).find(k => k.includes(id1));
-
-            if (k1 && rawData[k1]) {
-              const scenarioData = rawData[k1];
-              const plotRawData = scenarioData.plot_data || scenarioData;
-
-              // 🔴 RECUPERA config, colorMap e sottosistemi esattamente come PlotComponent
-              const config = await firstValueFrom(this.scenarioService.getConfiguration());
-              const meta = (config as any).metadata || config;
-
-
-              let sottosistemi: any[] = [];
-              if (meta.mapper && !Array.isArray(meta.mapper)) {
-                sottosistemi = Object.entries(meta.mapper).map(([key, label]) => ({
-                  value: key,
-                  label: label as string
-                }));
-              } else {
-                sottosistemi = meta.mapper || meta.map || [];
-              }
-
-              const colorMap = meta.color_map || [];
-              const plotMapper = meta.plot_mapper || {};
-
-              const processedPlotInput = this.plotService.preparePlotInput(
-                plotRawData,
-                colorMap,
-                sottosistemi,
-                plotMapper
-              );
-
-              mappedData = {
-                payload: {
-                  type: innerPayload.type || 'bi',
-                  subsystem: innerPayload.subsystem || 'default',
-                  data: processedPlotInput
-                }
-              };
-            }
+          } else {
+            mappedData = {
+              payload: innerPayload,
+              kpiMapper: configuration.kpiMapper
+            };
           }
         }
         if (widgetName === 'loadPlot' || widgetName === 'capacityPlot') {
@@ -177,6 +137,11 @@ export class ChatbotActionTranslatorService {
 
             if (k1 && rawData[k1]) {
               const scenarioData = rawData[k1];
+              const scenarioTitle = innerPayload.title
+                || innerPayload.labels?.[id1]
+                || scenarioData.name
+                || scenarioData.scenario_name
+                || '';
 
               const plotRawData = {
                 ...(scenarioData.plot_data || scenarioData),
@@ -213,7 +178,8 @@ export class ChatbotActionTranslatorService {
                 payload: {
                   type: innerPayload.type || defaultType,
                   subsystem: innerPayload.subsystem || 'default',
-                  data: processedPlotInput
+                  data: processedPlotInput,
+                  title: scenarioTitle
                 }
               };
             }
