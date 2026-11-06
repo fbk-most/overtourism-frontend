@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TranslateService } from '@ngx-translate/core';
+import DOMPurify from 'dompurify';
 import { firstValueFrom, timer } from 'rxjs';
 import { NotificationService } from '../../services/notifications.service';
 import { ReportService } from '../../services/report.service';
@@ -59,6 +60,10 @@ export class ReportExportComponent {
 
   paragraphs(text?: string): string[] {
     return text?.split('\n\n').map(paragraph => paragraph.trim()).filter(Boolean) ?? [];
+  }
+
+  sanitizedComparisonSummary(): string {
+    return DOMPurify.sanitize(this.report?.comparison_summary ?? '');
   }
 
   widgetComponent(widgetName: string) {

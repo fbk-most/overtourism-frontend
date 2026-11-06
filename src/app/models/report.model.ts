@@ -14,6 +14,7 @@ export interface ReportDocument {
   warnings: string[];
   introduction?: string;
   conclusion?: string;
+  comparison_summary?: string;
   comparisons?: ReportWidgetPayload[];
   plots_unavailable?: Array<{
     scenario_id?: string;
