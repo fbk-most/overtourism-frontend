@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnChanges, SimpleChanges, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild, AfterViewInit } from '@angular/core';
 import { PlotInput, SharedChartPayload } from '../../../models/plot.model';
 import { PlotService } from '../../../services/plot.service';
 import { CommonModule } from '@angular/common';
@@ -12,31 +12,36 @@ import { CommonModule } from '@angular/common';
 export class SharedPlotComponent implements OnChanges, AfterViewInit {
   @Input() payload!: SharedChartPayload | null;
   @Input() loading: boolean = false;
+  @Output() renderComplete = new EventEmitter<void>();
 
   @ViewChild('chartContainer', { static: false }) chartContainer!: ElementRef<HTMLElement>;
 
   constructor(private plotService: PlotService) { }
 
-  ngAfterViewInit() { this.renderGraph(); }
+  ngAfterViewInit() { void this.renderGraph(); }
 
-  ngOnChanges() { this.renderGraph(); }
+  ngOnChanges() { void this.renderGraph(); }
 
-  private renderGraph() {
+  private async renderGraph(): Promise<void> {
     if (!this.chartContainer || !this.payload?.data) return;
 
-    if (this.payload.type === 'mono') {
-      this.plotService.renderMonoDimensionale(
-        this.payload.subsystem,
-        this.chartContainer.nativeElement,
-        this.payload.data
-      );
-    } else {
-      const cloned = JSON.parse(JSON.stringify(this.payload.data));
-      this.plotService.renderBidimensionale(
-        this.payload.subsystem,
-        this.chartContainer.nativeElement,
-        cloned
-      );
+    try {
+      if (this.payload.type === 'mono') {
+        await this.plotService.renderMonoDimensionale(
+          this.payload.subsystem,
+          this.chartContainer.nativeElement,
+          this.payload.data
+        );
+      } else {
+        const cloned = JSON.parse(JSON.stringify(this.payload.data));
+        await this.plotService.renderBidimensionale(
+          this.payload.subsystem,
+          this.chartContainer.nativeElement,
+          cloned
+        );
+      }
+    } finally {
+      this.renderComplete.emit();
     }
   }
 }

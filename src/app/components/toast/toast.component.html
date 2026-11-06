@@ -5,10 +5,13 @@
 >
   <div
     *ngIf="notification$ | async as notif"
-    class="toast align-items-center text-white border-0 show"
+    class="toast align-items-center border-0 show"
+    [class.text-white]="notif.type !== 'warning'"
+    [class.text-dark]="notif.type === 'warning'"
     [ngClass]="{
       'bg-success': notif.type === 'success',
-      'bg-danger': notif.type === 'danger'
+      'bg-danger': notif.type === 'danger',
+      'bg-warning': notif.type === 'warning'
     }"
     role="alert"
   >
@@ -18,7 +21,8 @@
       </div>
       <button
         type="button"
-        class="btn-close btn-close-white me-2 m-auto"
+        class="btn-close me-2 m-auto"
+        [class.btn-close-white]="notif.type !== 'warning'"
         aria-label="Close"
         (click)="clear()"
       ></button>

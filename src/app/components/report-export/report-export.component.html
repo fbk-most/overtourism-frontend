@@ -1,0 +1,76 @@
+<button
+  itButton="primary"
+  type="button"
+  class="report-export-controls"
+  [disabled]="isGenerating"
+  (click)="generateReport()"
+  [attr.aria-label]="(isGenerating ? 'report.generating' : 'report.button') | translate">
+  <ng-container *ngIf="!isGenerating; else generating">
+    {{ 'report.button' | translate }}
+  </ng-container>
+  <ng-template #generating>
+    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+    {{ 'report.generating' | translate }}
+  </ng-template>
+</button>
+
+<article class="report-print-root" *ngIf="report">
+  <header class="report-header">
+    <h1>{{ report.title }}</h1>
+    <p>{{ report.territory_label }} · {{ report.generated_at | date:'medium' }}</p>
+  </header>
+
+  <section *ngIf="report.introduction" class="report-copy">
+    <p *ngFor="let paragraph of paragraphs(report.introduction)">{{ paragraph }}</p>
+  </section>
+
+  <section *ngIf="report.base_scenario" class="report-base-scenario report-page-break">
+    <h2>{{ 'report.baseScenario' | translate }}</h2>
+    <app-report-node [node]="report.base_scenario" [depth]="1"></app-report-node>
+  </section>
+
+  <ng-container *ngFor="let node of report.sections">
+    <app-report-node [node]="node" [depth]="1"></app-report-node>
+  </ng-container>
+
+  <section *ngIf="report.unassigned_scenarios?.length" class="report-page-break">
+    <h2>{{ 'report.unassignedScenarios' | translate }}</h2>
+    <app-report-node
+      *ngFor="let scenario of report.unassigned_scenarios"
+      [node]="scenario"
+      [depth]="2">
+    </app-report-node>
+  </section>
+
+  <section *ngIf="report.comparisons?.length" class="report-page-break">
+    <h2>{{ 'report.comparisons' | translate }}</h2>
+    <ng-container *ngFor="let widget of report.comparisons">
+      <app-report-plot *ngIf="isPlotWidget(widget.widgetName); else dispatchedComparisonWidget" [widget]="widget"></app-report-plot>
+      <ng-template #dispatchedComparisonWidget>
+        <ng-container *ngIf="widgetComponent(widget.widgetName); else unsupportedComparisonWidget">
+          <ng-container *ngComponentOutlet="widgetComponent(widget.widgetName); inputs: widgetInputs(widget)">
+          </ng-container>
+        </ng-container>
+        <ng-template #unsupportedComparisonWidget>
+          <p class="text-muted">{{ 'report.unsupportedWidget' | translate }}: {{ widget.widgetName }}</p>
+        </ng-template>
+      </ng-template>
+    </ng-container>
+  </section>
+
+  <section *ngIf="report.plots_unavailable?.length">
+    <h2>{{ 'report.plotsUnavailable' | translate }}</h2>
+    <ul>
+      <li *ngFor="let plot of report.plots_unavailable">
+        {{ plot.plot }}
+        <span *ngIf="plot.scenario_id"> ({{ plot.scenario_id }})</span>
+        <span *ngIf="plot.scenario_ids?.length"> ({{ plot.scenario_ids?.join(', ') }})</span>
+      </li>
+    </ul>
+  </section>
+
+  <section *ngIf="report.conclusion" class="report-copy report-page-break">
+    <h2>{{ 'report.conclusion' | translate }}</h2>
+    <p *ngFor="let paragraph of paragraphs(report.conclusion)">{{ paragraph }}</p>
+  </section>
+</article>

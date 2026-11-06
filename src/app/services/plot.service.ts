@@ -58,7 +58,7 @@ export class PlotService {
            (labels.y ? `<b>${labels.y}:</b> %{y}<br>` : '') +
            '<extra></extra>';
   }
-  async renderFunctionPlot(sottosistemaSelezionato: string, container: HTMLElement, input: PlotInput) {
+  async renderFunctionPlot(sottosistemaSelezionato: string, container: HTMLElement, input: PlotInput): Promise<void> {
 
     const data: Partial<Plotly.PlotData>[] = [];
     const curvesToRender = sottosistemaSelezionato === 'default'
@@ -143,7 +143,7 @@ const plotMapper = (input as any).plotMapper;
       }
     };
 
-    this.renderPlot(container, data, layout);
+    await this.renderPlot(container, data, layout);
   }
   private createDataFactsFromKpis(kpis: Record<string, any>): DataFact[] {
     const dataFacts: DataFact[] = [];
@@ -309,13 +309,13 @@ const plotMapper = (input as any).plotMapper;
       plotMapper 
     };
   }
-  renderBidimensionale(sottosistemaSelezionato: string, container: HTMLElement, cloned: PlotInput, colorScale?: any) {
+  async renderBidimensionale(sottosistemaSelezionato: string, container: HTMLElement, cloned: PlotInput, colorScale?: any): Promise<void> {
     const targetScale = colorScale || (cloned as any).colorScale;
     const plotMapper = (cloned as any).plotMapper;
 
     const uncertaintyData = this.getUncertaintyData(sottosistemaSelezionato, cloned.kpis);
     cloned.points = [this.createUncertaintyPoint('Presenze', uncertaintyData, false, targetScale, plotMapper) as Point];
-    this.renderFunctionPlot(sottosistemaSelezionato, container, cloned);
+    await this.renderFunctionPlot(sottosistemaSelezionato, container, cloned);
   }
   async renderMonoDimensionale(sottosistemaSelezionato: string, container: HTMLElement, input: PlotInput, colorScale?: any): Promise<void> {
     if (!container || !input?.kpis) return;
@@ -411,7 +411,7 @@ const plotMapper = (input as any).plotMapper;
     ];
 
     traces.push(trace);
-    this.renderPlot(container, traces, layout);
+    await this.renderPlot(container, traces, layout);
   }
   getCapacityLabel(subsystem: string): string {
     return subsystem === 'default' ? 'Soglia di sovraffollamento' : 'Capacità di carico';

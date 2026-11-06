@@ -35,6 +35,31 @@
     "serverError": "Internal server error.",
     "clientError": "An error occurred in the application."
   },
+  "report": {
+    "button": "Generate PDF report",
+    "generating": "Generating report...",
+    "baseScenario": "Base scenario",
+    "baseScenarioNote": "Base scenario, associated with all proposals.",
+    "unassignedScenarios": "Scenarios not associated with a proposal",
+    "comparisons": "Comparison",
+    "plotsUnavailable": "Unavailable plots",
+    "conclusion": "Conclusions",
+    "objective": "Objective",
+    "problem": "Analysis area",
+    "status": "Status",
+    "context": "Context",
+    "impact": "Impact",
+    "changes": "Changes from the base scenario",
+    "relatedProposals": "Related proposals",
+    "evaluation": "Evaluation",
+    "constraints": "Constraints",
+    "unsupportedWidget": "Unsupported chart",
+    "types": {
+      "problem": "Problem (analysis area)",
+      "proposal": "Proposal",
+      "scenario": "Scenario"
+    }
+  },
   "problems": {
     "title": "Design Questions",
     "loading": "Loading design questions...",

@@ -35,6 +35,31 @@
     "serverError": "Errore interno del server.",
     "clientError": "Si è verificato un errore nell'applicazione."
   },
+  "report": {
+    "button": "Genera report PDF",
+    "generating": "Generazione report...",
+    "baseScenario": "Scenario di riferimento",
+    "baseScenarioNote": "Scenario di riferimento, associato a tutte le proposte.",
+    "unassignedScenarios": "Scenari non associati a una proposta",
+    "comparisons": "Confronto",
+    "plotsUnavailable": "Grafici non disponibili",
+    "conclusion": "Conclusioni",
+    "objective": "Obiettivo",
+    "problem": "Ambito di analisi",
+    "status": "Stato",
+    "context": "Contesto",
+    "impact": "Impatto",
+    "changes": "Modifiche rispetto allo scenario di riferimento",
+    "relatedProposals": "Proposte associate",
+    "evaluation": "Valutazione",
+    "constraints": "Vincoli",
+    "unsupportedWidget": "Grafico non supportato",
+    "types": {
+      "problem": "Problema (ambito di analisi)",
+      "proposal": "Proposta",
+      "scenario": "Scenario"
+    }
+  },
   "problems": {
     "title": "Ambiti di analisi",
     "loading": "Caricamento ambiti di analisi...",

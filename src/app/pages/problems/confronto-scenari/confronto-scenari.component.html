@@ -64,15 +64,7 @@
       <!-- <button itButton="secondary" (click)="openChatbot()">
         Apri Chatbot
       </button> -->
-      <button itButton="primary" (click)="downloadPdf()" [disabled]="isDownloading">
-        <ng-container *ngIf="!isDownloading; else loading">
-          Scarica PDF
-        </ng-container>
-        <ng-template #loading>
-          <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-          Creazione PDF...
-        </ng-template>
-      </button>
+      <app-report-export [context]="{ scenarios: reportScenarioIds }"></app-report-export>
     </div>
   </div>
   <div class="row mb-4">

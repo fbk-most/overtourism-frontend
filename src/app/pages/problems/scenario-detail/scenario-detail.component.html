@@ -3,15 +3,7 @@
     <h4>{{ scenario?.name || 'Loading...' }}</h4>
   </div>
   <div class="col-auto">
-    <button itButton="primary" type="button" (click)="downloadPdf()" [disabled]="isDownloading" title="Esporta scenario in PDF" aria-label="Scarica scenario in formato PDF">
-      <ng-container *ngIf="!isDownloading; else loading">
-        Scarica PDF
-      </ng-container>
-      <ng-template #loading>
-        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-        <span>Creazione PDF...</span>
-      </ng-template>
-    </button>
+    <app-report-export [context]="{ scenarios: [scenarioId] }"></app-report-export>
   </div>
   <div class="col-auto" *ngIf="scenarioId !== 'model_0' && authService.canEdit()">
     <button itButton="danger" type="button" (click)="openDeleteModal()" title="Elimina questo scenario" aria-label="Elimina definitivamente lo scenario">
@@ -21,7 +13,7 @@
 </div>
 
 <div class="my-4 d-flex flex-column w-100">
-  <app-plot [scenarioId]="scenarioId" [problemId]="problemId" [version]="scenario?.version || 0" [proposalId]="proposalId" id="pdfContent"></app-plot>
+  <app-plot [scenarioId]="scenarioId" [problemId]="problemId" [version]="scenario?.version || 0" [proposalId]="proposalId"></app-plot>
 </div>
 <it-modal #deleteModal id="deleteModal">
   <ng-container modalTitle>Elimina scenario</ng-container>
