@@ -4,6 +4,7 @@ import { ChatFeedbackBarComponent } from '../chat-feedback-bar/chat-feedback-bar
 import { AgentType, ChatFeedback, ChatMessage } from '../../../../models/chat.model';
 import { MarkdownPipe } from '../../../../pipes/markdown.pipe';
 import { IconName, ItIconComponent } from 'design-angular-kit';
+import { SharedPlotComponent } from '../../../shared/shared-plot/shared-plot.component';
 
 export interface AgentTypeMeta {
   label: string;
@@ -37,7 +38,7 @@ export const AGENT_TYPE_MAP: Record<AgentType, AgentTypeMeta> = {
 @Component({
   selector: 'app-chat-message',
   standalone: true,
-  imports: [CommonModule, ChatFeedbackBarComponent, MarkdownPipe, ItIconComponent],
+  imports: [CommonModule, ChatFeedbackBarComponent, MarkdownPipe, ItIconComponent, SharedPlotComponent],
   templateUrl:'./chat-message.component.html',
   styleUrls: ['./chat-message.component.scss']
 
