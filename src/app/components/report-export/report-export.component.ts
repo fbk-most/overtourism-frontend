@@ -5,10 +5,12 @@ import DOMPurify from 'dompurify';
 import { firstValueFrom, timer } from 'rxjs';
 import { NotificationService } from '../../services/notifications.service';
 import { ReportService } from '../../services/report.service';
+import { ScenarioService } from '../../services/scenario.service';
 import { ReportDocument, ReportWidgetPayload } from '../../models/report.model';
 import { SharedHistogramPayload } from '../../models/plot.model';
 import { CHAT_WIDGET_REGISTRY } from '../chatbot/chat-widget-registry';
 import { ReportRenderService } from '../../services/report-render.service';
+import { getComparisonChartKpis } from '../../utils/kpi.utils';
 
 @Component({
   selector: 'app-report-export',
@@ -20,6 +22,7 @@ export class ReportExportComponent {
   @Input() context: Record<string, string[]> = {};
   report: ReportDocument | null = null;
   isGenerating = false;
+  kpiMapper: Record<string, string> = {};
   readonly widgetRegistry = CHAT_WIDGET_REGISTRY;
   private readonly widgetInputCache = new WeakMap<ReportWidgetPayload, Record<string, unknown>>();
 
@@ -27,7 +30,8 @@ export class ReportExportComponent {
     private reportService: ReportService,
     private notifications: NotificationService,
     private reportRender: ReportRenderService,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private scenarioService: ScenarioService
   ) { }
 
   async generateReport(): Promise<void> {
@@ -40,6 +44,9 @@ export class ReportExportComponent {
     );
 
     try {
+      const configuration = await firstValueFrom(this.scenarioService.getParsedConfiguration());
+      this.kpiMapper = configuration.kpiMapper;
+
       const userLang = this.translate.currentLang?.toLowerCase().startsWith('en')
         ? 'English'
         : 'Italian';
@@ -104,7 +111,7 @@ export class ReportExportComponent {
     const payload = this.asRecord(data['payload'] ?? data);
 
     if (this.isSharedHistogramPayload(payload)) {
-      return { payload, loading: false };
+      return { payload, loading: false, kpiMapper: this.kpiMapper };
     }
 
     const scenarioIds = this.scenarioIds(payload);
@@ -116,7 +123,7 @@ export class ReportExportComponent {
       dataRight: this.histogramKpis(this.scenarioKpis(payload, scenarioIds[1]))
     };
 
-    return { payload: chartPayload, loading: false };
+    return { payload: chartPayload, loading: false, kpiMapper: this.kpiMapper };
   }
 
   private isSharedHistogramPayload(payload: Record<string, unknown>): payload is Record<string, unknown> & SharedHistogramPayload {
@@ -140,22 +147,14 @@ export class ReportExportComponent {
   }
 
   private histogramKpis(kpis: Record<string, unknown>): SharedHistogramPayload['dataLeft'] {
-    const systemKeys = new Set([
-      'critical constraint',
-      'critical_constraint',
-      'uncertainty',
-      'uncertainty_by_constraint',
-      'area',
-      'title'
-    ]);
-
     return Object.fromEntries(
-      Object.entries(kpis)
-        .filter(([key]) => !systemKeys.has(key))
+      Object.entries(getComparisonChartKpis(kpis))
         .map(([key, value]) => {
           const entry = this.asRecord(value);
           return [key, {
-            level: typeof entry['level'] === 'number' ? entry['level'] : 0,
+            level: typeof value === 'number'
+              ? value
+              : typeof entry['level'] === 'number' ? entry['level'] : 0,
             confidence: typeof entry['confidence'] === 'number' ? entry['confidence'] : 0
           }];
         })

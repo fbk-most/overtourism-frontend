@@ -3,7 +3,7 @@ import { DomainEvent, UIAction } from '../../models/chat.model';
 import { PlotService } from '../plot.service';
 import { firstValueFrom } from 'rxjs';
 import { ScenarioService } from '../scenario.service';
-import { stripSystemKpis } from '../../utils/kpi.utils';
+import { getComparisonChartKpis } from '../../utils/kpi.utils';
 
 @Injectable({ providedIn: 'root' })
 export class ChatbotActionTranslatorService {
@@ -94,6 +94,7 @@ export class ChatbotActionTranslatorService {
         }
         if (widgetName === 'histogramComparison') {
           const innerPayload = mappedData['payload'] ?? mappedData;
+          const configuration = await firstValueFrom(this.scenarioService.getParsedConfiguration());
 
           if (innerPayload.scenarioIds && Array.isArray(innerPayload.scenarioIds)) {
             const id1 = innerPayload.scenarioIds[0];
@@ -114,9 +115,15 @@ export class ChatbotActionTranslatorService {
               payload: {
                 labelLeft: innerPayload.labels?.[id1] || 'Scenario 1',
                 labelRight: innerPayload.labels?.[id2] || 'Scenario 2',
-                dataLeft: stripSystemKpis(dataLeftRaw),
-                dataRight: stripSystemKpis(dataRightRaw)
-              }
+                dataLeft: getComparisonChartKpis(dataLeftRaw),
+                dataRight: getComparisonChartKpis(dataRightRaw)
+              },
+              kpiMapper: configuration.kpiMapper
+            };
+          } else {
+            mappedData = {
+              payload: innerPayload,
+              kpiMapper: configuration.kpiMapper
             };
           }
         }

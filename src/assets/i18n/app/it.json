@@ -189,6 +189,7 @@
       "day": "Giorno",
       "usage": "Utilizzo",
       "riskLevel": "Livello di rischio",
+      "uncertainty": "Incertezza",
       "resourceUsage": "Livello di utilizzo di {{resource}}",
       "crowdingThreshold": "Soglia di sovraffollamento",
       "carryingCapacity": "Capacità di carico",

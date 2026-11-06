@@ -1,8 +1,15 @@
+const SYSTEM_KPI_KEYS = new Set([
+  'critical constraint',
+  'uncertainty',
+  'uncertainty by constraint',
+  'area',
+  'title'
+]);
+
 export function stripSystemKpis(kpis: Record<string, any> = {}): Record<string, any> {
-  const excluded = ['critical constraint', 'critical_constraint', 'uncertainty', 'uncertainty_by_constraint', 'area', 'title'];
-  const clean = { ...kpis };
-  excluded.forEach(k => delete clean[k]);
-  return clean;
+  return Object.fromEntries(
+    Object.entries(kpis).filter(([key]) => !SYSTEM_KPI_KEYS.has(normalizeKpiKey(key)))
+  );
 }
 
 export function normalizeKpiKey(key: string): string {
@@ -17,6 +24,14 @@ export function isValueShareKpi(value: unknown): value is { value: number; share
   if (typeof value !== 'object' || value === null) return false;
   const kpi = value as Record<string, unknown>;
   return typeof kpi['value'] === 'number' && typeof kpi['share'] === 'number';
+}
+
+export function getComparisonChartKpis(kpis: Record<string, unknown> = {}): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(stripSystemKpis(kpis)).filter(([, value]) =>
+      !isValueShareKpi(value)
+    )
+  );
 }
 
 export function getKpiLabel(key: string, kpiMapper: Record<string, string> = {}): string {

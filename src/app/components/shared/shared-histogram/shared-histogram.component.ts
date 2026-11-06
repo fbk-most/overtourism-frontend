@@ -1,7 +1,9 @@
 import { Component, ElementRef, Input, OnChanges, SimpleChanges, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import Plotly from 'plotly.js-dist-min';
-import { SharedHistogramPayload } from '../../../models/plot.model'; 
+import { TranslateService } from '@ngx-translate/core';
+import { SharedHistogramPayload } from '../../../models/plot.model';
+import { getComparisonChartKpis, getKpiLabel } from '../../../utils/kpi.utils';
 
 @Component({
   selector: 'app-shared-histogram',
@@ -15,12 +17,14 @@ export class SharedHistogramComponent implements AfterViewInit, OnChanges {
   @Input() kpiMapper: Record<string, string> = {};
   @ViewChild('histogramChart', { static: false }) chartEl!: ElementRef<HTMLElement>;
 
+  constructor(private translate: TranslateService) { }
+
   ngAfterViewInit(): void {
     this.renderChart();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['payload'] && !this.loading) {
+    if ((changes['payload'] || changes['kpiMapper']) && !this.loading) {
       this.renderChart();
     }
   }
@@ -32,17 +36,19 @@ export class SharedHistogramComponent implements AfterViewInit, OnChanges {
     );
   }
   private getKpiLabel(key: string): string {
-    if (!this.kpiMapper) return key;
+    const mappedLabel = getKpiLabel(key, this.kpiMapper);
+    if (mappedLabel !== key) return mappedLabel;
 
-    const mappedKeySpace = key.replace(/_/g, ' ');
-    const mappedKeyTrim = key.replace('constraint_level_', 'constraint level ');
-
-    return this.kpiMapper[key] || this.kpiMapper[mappedKeyTrim] || this.kpiMapper[mappedKeySpace] || key;
+    const translationKey = `kpi.${key.toLowerCase().trim().replace(/\s+/g, '_')}`;
+    const translatedLabel = this.translate.instant(translationKey);
+    return translatedLabel === translationKey ? key : translatedLabel;
   }
   private renderChart(): void {
     if (!this.chartEl?.nativeElement || !this.payload) return;
 
-    const { dataLeft, dataRight, labelLeft, labelRight } = this.payload;
+    const { labelLeft, labelRight } = this.payload;
+    const dataLeft = getComparisonChartKpis(this.payload.dataLeft);
+    const dataRight = getComparisonChartKpis(this.payload.dataRight);
 
     const categories = Array.from(new Set([
       ...Object.keys(dataLeft || {}),
@@ -51,11 +57,11 @@ export class SharedHistogramComponent implements AfterViewInit, OnChanges {
     
     const wrappedCategories = categories.map(c => this.wrapLabel(this.getKpiLabel(c)));
 
-    const valuesLeft = categories.map(c => +(dataLeft[c]?.level ?? 0));
-    const errorsLeft = categories.map(c => +(dataLeft[c]?.confidence ?? 0));
+    const valuesLeft = categories.map(c => this.kpiLevel(dataLeft[c]));
+    const errorsLeft = categories.map(c => this.kpiConfidence(dataLeft[c]));
 
-    const valuesRight = categories.map(c => +(dataRight[c]?.level ?? 0));
-    const errorsRight = categories.map(c => +(dataRight[c]?.confidence ?? 0));
+    const valuesRight = categories.map(c => this.kpiLevel(dataRight[c]));
+    const errorsRight = categories.map(c => this.kpiConfidence(dataRight[c]));
 
     const displayLeft = valuesLeft.map(v => +v.toFixed(1));
     const displayRight = valuesRight.map(v => +v.toFixed(1));
@@ -100,7 +106,8 @@ export class SharedHistogramComponent implements AfterViewInit, OnChanges {
 
     const uncertaintyLegend: any = {
       x: [null], y: [null], type: 'bar', marker: { color: '#e7b66e' },
-      name: 'Incertezza', showlegend: true, hoverinfo: 'skip'
+      name: this.translate.instant('plot.labels.uncertainty'),
+      showlegend: true, hoverinfo: 'skip'
     };
 
     const layout: Partial<Plotly.Layout> = {
@@ -119,5 +126,22 @@ export class SharedHistogramComponent implements AfterViewInit, OnChanges {
     ];
 
     Plotly.newPlot(this.chartEl.nativeElement, traces, layout, { responsive: true });
+  }
+
+  private kpiLevel(value: unknown): number {
+    if (typeof value === 'number') return value;
+    if (value !== null && typeof value === 'object') {
+      const level = (value as Record<string, unknown>)['level'];
+      if (typeof level === 'number') return level;
+    }
+    return 0;
+  }
+
+  private kpiConfidence(value: unknown): number {
+    if (value !== null && typeof value === 'object') {
+      const confidence = (value as Record<string, unknown>)['confidence'];
+      if (typeof confidence === 'number') return confidence;
+    }
+    return 0;
   }
 }

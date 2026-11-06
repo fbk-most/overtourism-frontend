@@ -122,6 +122,7 @@
       "day": "Day",
       "usage": "Usage",
       "riskLevel": "Risk level",
+      "uncertainty": "Uncertainty",
       "resourceUsage": "Usage level of {{resource}}",
       "crowdingThreshold": "Overcrowding threshold",
       "carryingCapacity": "Carrying capacity",
