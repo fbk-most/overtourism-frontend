@@ -1,3 +1,25 @@
 main {
-    transition: opacity 0.2s ease-in-out;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.territory-context-reference {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.25rem 0 1rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #cce5ff;
+  border-radius: 999px;
+  background-color: #f0f7ff;
+  color: #495057;
+  font-size: 0.875rem;
+
+  .material-icons {
+    color: #0066cc;
+    font-size: 1.1rem;
   }
+
+  strong {
+    color: #212529;
+  }
+}

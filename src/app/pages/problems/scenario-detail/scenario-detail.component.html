@@ -1,6 +1,7 @@
-<div class="row my-2 align-items-center">
+<div class="row my-2 align-items-start">
   <div class="col">
-    <h4>{{ scenario?.name || 'Loading...' }}</h4>
+    <h4 class="mb-1">{{ scenario?.name || 'Loading...' }}</h4>
+    <p *ngIf="scenario?.description" class="mb-0 text-muted">{{ scenario?.description }}</p>
   </div>
   <div class="col-auto">
     <app-report-export [context]="{ scenarios: [scenarioId] }"></app-report-export>
