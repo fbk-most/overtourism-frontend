@@ -19,7 +19,12 @@
           [payload]="plotPayload">
         </app-shared-plot>
       </ng-container>
-
+      <ng-container *ngIf="action.type === 'SHOW_WIDGET' && (action.payload['widgetName'] === 'loadPlot' || action.payload['widgetName'] === 'capacityPlot')">
+        <app-shared-plot
+          *ngIf="action.payload['data']?.payload as plotPayload"
+          [payload]="plotPayload">
+        </app-shared-plot>
+      </ng-container>
     </div>
   </ng-container>
 
