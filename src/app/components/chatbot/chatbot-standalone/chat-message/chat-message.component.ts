@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { ChatFeedbackBarComponent } from '../chat-feedback-bar/chat-feedback-bar.component';
 import { AgentType, ChatFeedback, ChatMessage } from '../../../../models/chat.model';
 import { MarkdownPipe } from '../../../../pipes/markdown.pipe';
-import { SharedPlotComponent } from '../../../shared/shared-plot/shared-plot.component';
 import { IconName, ItIconComponent } from 'design-angular-kit';
 
 export interface AgentTypeMeta {
@@ -38,7 +37,7 @@ export const AGENT_TYPE_MAP: Record<AgentType, AgentTypeMeta> = {
 @Component({
   selector: 'app-chat-message',
   standalone: true,
-  imports: [CommonModule, ChatFeedbackBarComponent, SharedPlotComponent, MarkdownPipe, ItIconComponent],
+  imports: [CommonModule, ChatFeedbackBarComponent, MarkdownPipe, ItIconComponent],
   templateUrl:'./chat-message.component.html',
   styleUrls: ['./chat-message.component.scss']
 

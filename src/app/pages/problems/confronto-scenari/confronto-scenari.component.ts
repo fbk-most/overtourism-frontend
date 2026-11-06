@@ -4,7 +4,6 @@ import { firstValueFrom, Subscription } from 'rxjs';
 import { KPIs, PlotInput } from '../../../models/plot.model';
 import { PlotService } from '../../../services/plot.service';
 import { ScenarioService, Widget } from '../../../services/scenario.service';
-import { PdfService } from '../../../services/pdf.service';
 import { TranslateService } from '@ngx-translate/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfrontoScenariContext } from '../../../models/confronto-scenari-context.model';
@@ -46,7 +45,6 @@ export class ConfrontoScenariComponent implements OnInit, OnDestroy {
   @ViewChild('chartLeft', { static: true }) chartLeft!: ElementRef<HTMLElement>;
   @ViewChild('chartRight', { static: true }) chartRight!: ElementRef<HTMLElement>;
   showControls: boolean = false;
-  isDownloading = false;
   isLoading = false;
   isRenderingCharts = false;
   histogramPayload: any = null; 
@@ -61,12 +59,16 @@ export class ConfrontoScenariComponent implements OnInit, OnDestroy {
   private aiSummarySub?: Subscription;
   plotMapper: PlotMapper = {};
 
+  get reportScenarioIds(): string[] {
+    return [this.selectedScenario1Id, this.selectedScenario2Id]
+      .filter(id => !!id && id !== 'default');
+  }
+
   constructor(
     private scenarioService: ScenarioService,
     private plotService: PlotService,
     private route: ActivatedRoute,
     private router: Router,
-    private pdfService: PdfService,
     private translate: TranslateService,
     private dialog: MatDialog,
     private agentService: AgentService
@@ -487,21 +489,6 @@ export class ConfrontoScenariComponent implements OnInit, OnDestroy {
 
   formatNumber(value: number): string {
     return value.toFixed(2);
-  }
-
-  async downloadPdf(): Promise<void> {
-    if (this.isDownloading) return;
-    this.isDownloading = true;
-    setTimeout(async () => {
-      try {
-        await this.pdfService.downloadPdfFromElement(
-          'pdfContent',
-          `${this.getScenarioName(this.selectedScenario1Id)} vs ${this.getScenarioName(this.selectedScenario2Id) || 'confronto'}.pdf`
-        );
-      } finally {
-        this.isDownloading = false;
-      }
-    }, 0);
   }
 
   buildChatbotContext(): ConfrontoScenariContext {

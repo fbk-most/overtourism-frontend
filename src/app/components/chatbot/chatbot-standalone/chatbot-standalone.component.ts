@@ -7,16 +7,11 @@ import { AgentService, AgentSessionUnavailableError } from '../../../services/ag
 import { ChatbotActionTranslatorService } from '../../../services/chatbot/chatbot-action-translator.service';
 import { ChatMockService } from '../../../services/chatbot/chat-mock.service';
 import { AgentRole, AgentResponse, ChatFeedback,ChatMessage, UIAction } from '../../../models/chat.model';
-import { SharedHistogramComponent } from '../../shared/shared-histogram/shared-histogram.component';
-import { SharedKpisComponent } from '../../shared/shared-kpis/shared-kpis.component';
-import { SharedPlotComponent } from '../../shared/shared-plot/shared-plot.component';
-import { IndiciMapComponent } from '../../indici-map/indici-map.component';
 import { ChatbotService } from '../../../services/chatbot/chatbot.service';
-import { SharedLineChartComponent } from '../../shared/shared-line-chart/shared-line-chart.component';  
-import { SharedBarChartComponent } from '../../shared/shared-bar-chart/shared-bar-chart.component';    
 import { AuthenticationService } from '../../../services/authentication.service';
 import { AGENT_TYPE_MAP } from './chat-message/chat-message.component';
 import { IconName } from 'design-angular-kit';
+import { CHAT_WIDGET_REGISTRY } from '../chat-widget-registry';
 
 interface AgentModeOption {
   value: AgentRole;
@@ -28,22 +23,12 @@ interface AgentModeOption {
   selector: 'app-chatbot-standalone',
   standalone: true,
   imports: [CommonModule, FormsModule, ChatMessageComponent, DesignAngularKitModule,
-    // @ts-ignore-warnings
-    SharedHistogramComponent, SharedKpisComponent,SharedPlotComponent, SharedLineChartComponent, 
-    SharedBarChartComponent],
+  ],
     templateUrl: './chatbot-standalone.component.html',
   styleUrls: ['./chatbot-standalone.component.scss']
 })
 export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
-  readonly widgetRegistry: Record<string, any> = {
-    'histogramComparison': SharedHistogramComponent,
-    'indexComparison': SharedKpisComponent,
-    'plot': SharedPlotComponent, 
-    'map': IndiciMapComponent ,
-    'lineChart': SharedLineChartComponent, 
-    'barChart': SharedBarChartComponent 
-
-  };
+  readonly widgetRegistry = CHAT_WIDGET_REGISTRY;
   private translator = inject(ChatbotActionTranslatorService);
   private mockService = inject(ChatMockService);
   messages: ChatMessage[] = [];

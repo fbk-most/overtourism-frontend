@@ -4,7 +4,6 @@ import { ScenarioService } from '../../../services/scenario.service';
 import { ProblemScenario } from '../../../models/scenario.model';
 import { PlotComponent } from '../../../components/plot/plot.component';
 import { ItModalComponent } from 'design-angular-kit';
-import { PdfService } from '../../../services/pdf.service';
 import { ChatbotContextService } from '../../../services/chatbot/chatbotContext.service';
 import { AuthenticationService } from '../../../services/authentication.service';
 
@@ -23,13 +22,11 @@ export class ScenarioDetailComponent {
   problemId!: string;
   proposalId!: string;
   scenario?: ProblemScenario;
-  isDownloading = false;
 
   constructor(
     private route: ActivatedRoute,
     private scenarioService: ScenarioService,
     private router: Router,
-    private pdfService: PdfService,
     private chatbotCtx: ChatbotContextService,
     public authService: AuthenticationService
 
@@ -71,21 +68,6 @@ export class ScenarioDetailComponent {
 
   onCancelDelete(): void {
     this.deleteModal.hide();
-  }
-  downloadPdf(): void {
-    if (this.isDownloading) return; 
-    this.isDownloading = true;
-  
-    setTimeout(async () => {
-      try {
-        await this.pdfService.downloadPdfFromElement(
-          'pdfContent',
-          `${this.scenario?.name || 'scenario'}.pdf`
-        );
-      } finally {
-        this.isDownloading = false;
-      }
-    }, 0);
   }
   confirmDelete(): void {
     this.scenarioService.deleteScenario(this.scenarioId, this.problemId, this.proposalId).subscribe({

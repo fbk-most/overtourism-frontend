@@ -147,3 +147,49 @@ main.ng-leave {
 .alert-warning {
   background-image: none;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  app-report-export .report-print-root,
+  app-report-export .report-print-root * {
+    visibility: visible !important;
+  }
+
+  app-report-export .report-print-root {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    color: #212529 !important;
+    background: #fff !important;
+  }
+
+  .report-export-controls,
+  app-header,
+  app-footer,
+  app-chatbot-integrated,
+  app-toast,
+  app-breadcrumbs {
+    display: none !important;
+  }
+
+  .report-page-break {
+    break-before: page;
+  }
+
+  .report-node,
+  .report-plots,
+  .report-header {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

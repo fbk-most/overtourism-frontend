@@ -80,6 +80,9 @@ import { IndiciChartComponent } from './pages/indici/components/indici-charts/in
 import { SharedLineChartComponent } from './components/shared/shared-line-chart/shared-line-chart.component';
 import { SharedBarChartComponent } from './components/shared/shared-bar-chart/shared-bar-chart.component';
 import { UsersComponent } from './pages/users/users.component';
+import { ReportExportComponent } from './components/report-export/report-export.component';
+import { ReportNodeComponent } from './components/report-export/report-node.component';
+import { ReportPlotComponent } from './components/report-export/report-plot.component';
 
 export function multiTranslateLoaderFactory(httpBackend: HttpBackend) {
   return new MultiTranslateHttpLoader(httpBackend, [
@@ -103,7 +106,7 @@ export function initializeAuth(authService: AuthenticationService) {
     OvertourismMapComponent, ToastComponent, AutocompleteComponent, CapacityComponent, FlowsComponent, 
     RedistributionComponent, HiddenComponent, ProposalListPageComponent, EmptyFieldPipe, LoginComponent,IndiciComponent,
     IndiciMapComponent, AgentStatsComponent,IndiciFiltersComponent,IndiciChartComponent,
-    UsersComponent
+    UsersComponent, ReportExportComponent, ReportNodeComponent, ReportPlotComponent
   ],
   imports: [
     BrowserModule,

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 export interface Notification {
-  type: 'success' | 'danger';
+  type: 'success' | 'danger' | 'warning';
   message: string;
 }
 
@@ -19,6 +19,10 @@ export class NotificationService {
 
   showError(message: string, duration = 3000) {
     this.pushNotification({ type: 'danger', message }, duration);
+  }
+
+  showWarning(message: string, duration = 5000) {
+    this.pushNotification({ type: 'warning', message }, duration);
   }
 
   private pushNotification(notification: Notification, duration: number) {

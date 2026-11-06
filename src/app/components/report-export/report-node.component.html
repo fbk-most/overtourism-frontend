@@ -1,0 +1,32 @@
+<section class="report-node" [class.report-page-break]="depth === 1">
+  <h2 *ngIf="depth === 1">{{ headingKey | translate }}: {{ node.title }}</h2>
+  <h3 *ngIf="depth === 2">{{ headingKey | translate }}: {{ node.title }}</h3>
+  <h4 *ngIf="depth > 2">{{ headingKey | translate }}: {{ node.title }}</h4>
+
+  <p *ngIf="node.is_base_scenario"><em>{{ 'report.baseScenarioNote' | translate }}</em></p>
+  <div class="report-copy">
+    <p *ngFor="let paragraph of paragraphs(node.narrative)">{{ paragraph }}</p>
+  </div>
+
+  <div *ngIf="node.plots?.length" class="report-plots">
+    <ng-container *ngFor="let widget of node.plots">
+      <app-report-plot *ngIf="isPlotWidget(widget.widgetName); else dispatchedWidget" [widget]="widget"></app-report-plot>
+      <ng-template #dispatchedWidget>
+        <ng-container *ngIf="widgetComponent(widget.widgetName); else unsupportedWidget">
+          <ng-container
+            *ngComponentOutlet="widgetComponent(widget.widgetName); inputs: widgetInputs(widget)">
+          </ng-container>
+        </ng-container>
+      </ng-template>
+      <ng-template #unsupportedWidget>
+        <p class="text-muted">{{ 'report.unsupportedWidget' | translate }}: {{ widget.widgetName }}</p>
+      </ng-template>
+    </ng-container>
+  </div>
+
+  <app-report-node
+    *ngFor="let child of children"
+    [node]="child"
+    [depth]="depth + 1">
+  </app-report-node>
+</section>

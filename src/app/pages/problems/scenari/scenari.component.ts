@@ -27,6 +27,10 @@ export class ScenariComponent {
   widgets: Widget[] = []; 
   checkboxStates: { [id: string]: boolean } = {};
 
+  get reportScenarioIds(): string[] {
+    return this.scenari.map(scenario => scenario.id);
+  }
+
   constructor(
     private scenarioService: ScenarioService,
     private router: Router,
