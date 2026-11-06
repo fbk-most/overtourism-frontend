@@ -37,7 +37,15 @@
       </tr>
       <tr>
         <td class="fw-bold w-25">{{ 'problems.fields.objective' | translate }}</td>
-        <td>{{ problem?.extras?.objective| emptyField:'(vuoto)' }}</td>
+        <td>
+          <ng-container *ngIf="problem?.extras?.objective; else emptyObjective">
+            {{ problem?.extras?.objective }}
+          </ng-container>
+
+          <ng-template #emptyObjective>
+            <span class="text-muted fst-italic">(vuoto)</span>
+          </ng-template>
+        </td>
       </tr>
 
       <!-- <tr>

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { DomainEvent, UIAction } from '../../models/chat.model';
-import { PlotService } from '../plot.service'; 
+import { PlotService } from '../plot.service';
 import { firstValueFrom } from 'rxjs';
 import { ScenarioService } from '../scenario.service';
 import { stripSystemKpis } from '../../utils/kpi.utils';
@@ -9,7 +9,7 @@ import { stripSystemKpis } from '../../utils/kpi.utils';
 export class ChatbotActionTranslatorService {
   constructor(private plotService: PlotService,
     private scenarioService: ScenarioService
-  ) {}
+  ) { }
 
   /**
    * Traduce un DomainEvent in UIActions per il chatbot INTEGRATO.
@@ -20,7 +20,7 @@ export class ChatbotActionTranslatorService {
     switch (event.type) {
       case 'NAVIGATE': {
         const target = payload['target']; // es. "PROBLEMS", "PROPOSALS", "Index"
-        
+
         if (target === 'PROBLEMS') {
           return [{ type: 'NAVIGATE', payload: { path: ['/problems'] } }];
         }
@@ -41,9 +41,11 @@ export class ChatbotActionTranslatorService {
       }
 
       case 'COMPARE_SCENARIO':
-        return [{ type: 'NAVIGATE', payload: { 
-          path: ['/problems', payload['idProblem'], 'proposals', payload['idProposal'], 'scenari', 'confronta', payload['idScenario1'], payload['idScenario2']] 
-        } }];
+        return [{
+          type: 'NAVIGATE', payload: {
+            path: ['/problems', payload['idProblem'], 'proposals', payload['idProposal'], 'scenari', 'confronta', payload['idScenario1'], payload['idScenario2']]
+          }
+        }];
 
       case 'DELETED': {
         // Se elimini, torni alla lista padre
@@ -71,7 +73,7 @@ export class ChatbotActionTranslatorService {
   async translateForStandalone(event: DomainEvent): Promise<UIAction[]> {
     switch (event.type) {
 
-     
+
       case 'SHOW_WIDGET': {
         const widgetName = event.payload['widgetName'];
         let mappedData = event.payload['data'] || {};
@@ -92,11 +94,11 @@ export class ChatbotActionTranslatorService {
         }
         if (widgetName === 'histogramComparison') {
           const innerPayload = mappedData['payload'] ?? mappedData;
-          
+
           if (innerPayload.scenarioIds && Array.isArray(innerPayload.scenarioIds)) {
             const id1 = innerPayload.scenarioIds[0];
             const id2 = innerPayload.scenarioIds[1];
-            
+
             const rawData = innerPayload.data || {};
             const k1 = Object.keys(rawData).find(k => k.includes(id1));
             const k2 = Object.keys(rawData).find(k => k.includes(id2));
@@ -120,7 +122,7 @@ export class ChatbotActionTranslatorService {
         }
         if (widgetName === 'loadPlot') {
           const innerPayload = mappedData['payload'] ?? mappedData;
-          
+
           if (innerPayload.scenarioIds && Array.isArray(innerPayload.scenarioIds)) {
             const id1 = innerPayload.scenarioIds[0];
             const rawData = innerPayload.data || {};
@@ -133,8 +135,8 @@ export class ChatbotActionTranslatorService {
               // 🔴 RECUPERA config, colorMap e sottosistemi esattamente come PlotComponent
               const config = await firstValueFrom(this.scenarioService.getConfiguration());
               const meta = (config as any).metadata || config;
-              
-              
+
+
               let sottosistemi: any[] = [];
               if (meta.mapper && !Array.isArray(meta.mapper)) {
                 sottosistemi = Object.entries(meta.mapper).map(([key, label]) => ({
@@ -149,8 +151,8 @@ export class ChatbotActionTranslatorService {
               const plotMapper = meta.plot_mapper || {};
 
               const processedPlotInput = this.plotService.preparePlotInput(
-                plotRawData, 
-                colorMap, 
+                plotRawData,
+                colorMap,
                 sottosistemi,
                 plotMapper
               );
@@ -165,7 +167,58 @@ export class ChatbotActionTranslatorService {
             }
           }
         }
+        if (widgetName === 'loadPlot' || widgetName === 'capacityPlot') {
+          const innerPayload = mappedData['payload'] ?? mappedData;
 
+          if (innerPayload.scenarioIds && Array.isArray(innerPayload.scenarioIds)) {
+            const id1 = innerPayload.scenarioIds[0];
+            const rawData = innerPayload.data || {};
+            const k1 = Object.keys(rawData).find(k => k.includes(id1));
+
+            if (k1 && rawData[k1]) {
+              const scenarioData = rawData[k1];
+
+              const plotRawData = {
+                ...(scenarioData.plot_data || scenarioData),
+                kpis: scenarioData.data || scenarioData.kpis || scenarioData.plot_data?.kpis || {},
+                points: scenarioData.plot_data?.points || scenarioData.points || {}
+              };
+
+              // Recupera config, colorMap e sottosistemi
+              const config = await firstValueFrom(this.scenarioService.getConfiguration());
+              const meta = (config as any).metadata || config;
+
+              let sottosistemi: any[] = [];
+              if (meta.mapper && !Array.isArray(meta.mapper)) {
+                sottosistemi = Object.entries(meta.mapper).map(([key, label]) => ({
+                  value: key,
+                  label: label as string
+                }));
+              } else {
+                sottosistemi = meta.mapper || meta.map || [];
+              }
+
+              const colorMap = meta.color_map || [];
+              const plotMapper = meta.plot_mapper || {};
+
+              const processedPlotInput = this.plotService.preparePlotInput(
+                plotRawData,
+                colorMap,
+                sottosistemi,
+                plotMapper
+              );
+              const defaultType = widgetName === 'capacityPlot' ? 'mono' : 'bi';
+
+              mappedData = {
+                payload: {
+                  type: innerPayload.type || defaultType,
+                  subsystem: innerPayload.subsystem || 'default',
+                  data: processedPlotInput
+                }
+              };
+            }
+          }
+        }
         return [{
           type: 'SHOW_WIDGET',
           payload: {
@@ -174,7 +227,7 @@ export class ChatbotActionTranslatorService {
           }
         }];
       }
-      
+
       default:
         return [];
     }
