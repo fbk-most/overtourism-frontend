@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthenticationService } from './services/authentication.service';
 import { NavigationEnd, Router } from '@angular/router';
+import { isIntegratedChatbotPath } from './models/page-context.model';
+import { PageContextSyncService } from './services/chatbot/page-context-sync.service';
 
 @Component({
   selector: 'app-root',
@@ -15,8 +17,8 @@ export class AppComponent implements OnInit {
   showIntegratedChatbot = true;
 
   constructor(public authService: AuthenticationService,
-    private router: Router
-
+    private router: Router,
+    private pageContextSync: PageContextSyncService
   ) {
 
   }
@@ -31,6 +33,8 @@ export class AppComponent implements OnInit {
       this.isMobile = window.innerWidth < 768;
     });
     this.updateRouteVisibility(this.router.url);
+    // Keep the assistant's visual page context in step with route navigation.
+    this.pageContextSync.start();
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
         this.updateRouteVisibility(event.urlAfterRedirects);
@@ -41,8 +45,7 @@ export class AppComponent implements OnInit {
   private updateRouteVisibility(url: string): void {
     const path = url.split(/[?#]/, 1)[0];
     this.showTerritoryReference = path.startsWith('/problems/');
-    const section = path.split('/')[1];
-    this.showIntegratedChatbot = section !== 'agent' && section !== 'users';
+    this.showIntegratedChatbot = isIntegratedChatbotPath(path);
   }
 
   doLogin() {
