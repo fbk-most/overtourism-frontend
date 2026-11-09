@@ -3,7 +3,7 @@ import {
   AfterViewInit, ViewChild, ElementRef, SimpleChanges
 } from '@angular/core';
 import * as L from 'leaflet';
-import { ClusterLegendDefinition, ClusterValueLegend, FlowDataEnvelope } from '../../models/indici.model';
+import { ClusterLegendDefinition, ClusterValueLegend, FlowDataEnvelope, MapValueLegend } from '../../models/indici.model';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -16,7 +16,7 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() geojsonStr: string | null = null;
   @Input() minValue = 0;
   @Input() maxValue = 10;
-  @Input() legend?: ClusterValueLegend;
+  @Input() legend?: MapValueLegend;
   @Input() flows: FlowDataEnvelope | null = null;
   @Input() colorScaleMode: 'linear' | 'log' = 'linear';
   @Input() unitDescription: string = ''; 
@@ -100,7 +100,9 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
           ? null
           : clusterLegend
             ? this.clusterValueColor(feature, clusterLegend, clusterRanges, clusterDefinitions)
-            : this.viridisColor(indexValue);
+            : this.legend?.type === 'diverging'
+              ? this.divergingColor(indexValue)
+              : this.viridisColor(indexValue);
         const isNull = fillColor === null;
         return {
           fillColor:   fillColor ?? '#cccccc',
@@ -324,6 +326,36 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     return `rgb(${r},${g},${b})`;
   }
 
+  private readonly DIVERGING_STOPS: [number, [number, number, number]][] = [
+    [0, [140, 29, 24]],
+    [0.25, [214, 96, 77]],
+    [0.5, [247, 247, 247]],
+    [0.75, [67, 147, 195]],
+    [1, [8, 64, 129]],
+  ];
+
+  private divergingExtent(): number {
+    return Math.max(Math.abs(this.minValue), Math.abs(this.maxValue));
+  }
+
+  private divergingColor(value: number): string {
+    const extent = this.divergingExtent();
+    const t = extent === 0 ? 0.5 : Math.max(0, Math.min(1, 0.5 + value / (2 * extent)));
+    let lo = this.DIVERGING_STOPS[0], hi = this.DIVERGING_STOPS[this.DIVERGING_STOPS.length - 1];
+    for (let i = 0; i < this.DIVERGING_STOPS.length - 1; i++) {
+      if (t >= this.DIVERGING_STOPS[i][0] && t <= this.DIVERGING_STOPS[i + 1][0]) {
+        lo = this.DIVERGING_STOPS[i];
+        hi = this.DIVERGING_STOPS[i + 1];
+        break;
+      }
+    }
+    const fraction = (t - lo[0]) / (hi[0] - lo[0]);
+    const channels = [0, 1, 2].map(i =>
+      Math.round(lo[1][i] + fraction * (hi[1][i] - lo[1][i]))
+    );
+    return `rgb(${channels[0]},${channels[1]},${channels[2]})`;
+  }
+
   private getClusterRanges(
     geojson: any,
     clusterProperty: string
@@ -400,6 +432,10 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
       this.renderClusterLegend(this.legend, geojson);
       return;
     }
+    if (this.legend?.type === 'diverging') {
+      this.renderDivergingLegend();
+      return;
+    }
 
     const BAR_H = 200, BAR_W = 18;
     const self = this;
@@ -473,6 +509,66 @@ export class IndiciMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     });
 
     this.colorbarControl = new ColorbarControl({ position: 'topright' });
+    this.colorbarControl.addTo(this.map);
+  }
+
+  private renderDivergingLegend(): void {
+    if (!this.map) return;
+
+    const BAR_H = 200, BAR_W = 18;
+    const extent = this.divergingExtent();
+    const self = this;
+    const DivergingLegendControl = L.Control.extend({
+      onAdd(): HTMLElement {
+        const div = L.DomUtil.create('div');
+        div.style.cssText = `
+          background: white; border-radius: 4px; padding: 10px 14px 10px 10px;
+          box-shadow: 0 1px 5px rgba(0,0,0,0.3); font-family: Arial, sans-serif;
+          font-size: 12px; display: flex; flex-direction: column;
+          align-items: flex-start; gap: 4px;`;
+
+        const title = document.createElement('div');
+        title.textContent = 'Legenda';
+        title.style.cssText = 'font-weight: bold; margin-bottom: 4px; max-width: 200px; line-height: 1.2;';
+        div.appendChild(title);
+
+        if (self.unitDescription) {
+          const unit = document.createElement('div');
+          unit.textContent = self.unitDescription;
+          unit.style.cssText = 'font-size: 10px; color: #555; margin-bottom: 6px; max-width: 130px; line-height: 1.2;';
+          div.appendChild(unit);
+        }
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; flex-direction: row; align-items: stretch; gap: 6px;';
+        const canvas = document.createElement('canvas');
+        canvas.width = BAR_W;
+        canvas.height = BAR_H;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Unable to render the diverging map legend.');
+        for (let y = 0; y < BAR_H; y++) {
+          const value = extent * (1 - 2 * y / (BAR_H - 1));
+          ctx.fillStyle = self.divergingColor(value);
+          ctx.fillRect(0, y, BAR_W, 1);
+        }
+        row.appendChild(canvas);
+
+        const ticks = document.createElement('div');
+        ticks.style.cssText = `display: flex; flex-direction: column; justify-content: space-between; height: ${BAR_H}px;`;
+        for (const fraction of [0, 0.25, 0.5, 0.75, 1]) {
+          const value = extent * (1 - 2 * fraction);
+          const span = document.createElement('span');
+          span.textContent = value.toFixed(1);
+          span.style.cssText = 'line-height: 1; font-size: 11px; color: #333;';
+          ticks.appendChild(span);
+        }
+        row.appendChild(ticks);
+        div.appendChild(row);
+        return div;
+      }
+    });
+
+    this.colorbarControl = new DivergingLegendControl({ position: 'topright' });
     this.colorbarControl.addTo(this.map);
   }
 

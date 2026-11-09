@@ -31,13 +31,19 @@ export interface IndicatorMeta {
     data: string;        
     min_value: number;
     max_value: number;
-    legend?: ClusterValueLegend;
+    legend?: MapValueLegend;
   }
+
+  export type MapValueLegend = ClusterValueLegend | DivergingValueLegend;
 
   export interface ClusterValueLegend {
     type: 'cluster-value';
     cluster_property: string;
     clusters: ClusterLegendDefinition[];
+  }
+
+  export interface DivergingValueLegend {
+    type: 'diverging';
   }
 
   export interface ClusterLegendDefinition {
