@@ -14,7 +14,9 @@
       <div class="message-text" *ngIf="msg.role === 'user'">{{ msg.content }}</div>
 
       <div *ngIf="msg.role === 'assistant'">
-        <div class="message-text markdown-body" [innerHTML]="msg.html ?? msg.content"></div>
+        <div class="message-text markdown-body"
+             [innerHTML]="msg.html ?? msg.content"
+             (click)="handleAssistantLinkClick($event)"></div>
         
         <!-- Usa il componente condiviso e passa l'indice reale (i) e non msg.index se non necessario -->
         <app-chat-feedback-bar

@@ -10,11 +10,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { marked } from 'marked';
 import { firstValueFrom } from 'rxjs';
+import { Router } from '@angular/router';
 import { AgentChatContext, AgentService } from '../../../services/agent.service';
 import { ChatbotContextService } from '../../../services/chatbot/chatbotContext.service';
 import { ChatbotActionTranslatorService } from '../../../services/chatbot/chatbot-action-translator.service';
 import { ChatbotActionService } from '../../../services/chatbot/chatbotAction.service';
 import { ChatMockService } from '../../../services/chatbot/chat-mock.service';
+import {
+  containsInternalChatMarkdownLink,
+  navigateInternalChatLink
+} from '../../../services/chatbot/chatbot-link-navigation';
 import { AgentResponse, ChatFeedback, ChatMessage } from '../../../models/chat.model';
 import { ChatFeedbackBarComponent } from '../chatbot-standalone/chat-feedback-bar/chat-feedback-bar.component';
 
@@ -30,6 +35,7 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked {
   private actionService = inject(ChatbotActionService);
   private mockService = inject(ChatMockService);
   private contextService = inject(ChatbotContextService);
+  private router = inject(Router);
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
   isOpen = false;
@@ -123,12 +129,17 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked {
     }
   }
 
+  handleAssistantLinkClick(event: MouseEvent): void {
+    navigateInternalChatLink(event, this.router);
+  }
+
   private handleAgentResponse(data: AgentResponse): void {
     this.pushBot(data.response ?? 'Nessuna risposta.');
     if (data.assistant_action_data?.length) {
-      data.assistant_action_data
+      const actions = data.assistant_action_data
         .flatMap(event => this.translator.translateForIntegrated(event))
-        .forEach(action => this.actionService.execute(action));
+        .filter(action => !(action.type === 'NAVIGATE' && containsInternalChatMarkdownLink(data.response ?? '')));
+      actions.forEach(action => this.actionService.execute(action));
     }
   }
 
