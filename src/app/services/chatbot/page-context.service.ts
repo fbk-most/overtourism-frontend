@@ -6,6 +6,7 @@ import {
   PAGE_CONTEXT_SCHEMA_VERSION,
   PageContextPayload
 } from '../../models/page-context.model';
+import { AuthenticationService } from '../authentication.service';
 import { extractPage } from './page-context-extractor';
 
 /**
@@ -20,7 +21,8 @@ export class PageContextService {
   constructor(
     private router: Router,
     private zone: NgZone,
-    @Inject(DOCUMENT) private document: Document
+    @Inject(DOCUMENT) private document: Document,
+    private authService: AuthenticationService
   ) {}
 
   /** Router path without query string or fragment (those may carry tokens or personal data). */
@@ -40,7 +42,12 @@ export class PageContextService {
 
   /** Snapshot of the page as it is right now. */
   capture(): PageContextPayload {
-    const { pageTitle, elements, entities } = extractPage(this.roots());
+    const { pageTitle, elements, entities: extractedEntities } = extractPage(this.roots());
+    const territory = this.authService.activeTerritory;
+    const entities = {
+      ...(extractedEntities ?? {}),
+      ...(territory ? { territory } : {})
+    };
     const title = (pageTitle ?? this.document.title ?? '').replace(/\s+/g, ' ').trim();
     return {
       schema_version: PAGE_CONTEXT_SCHEMA_VERSION,
@@ -49,7 +56,7 @@ export class PageContextService {
       ...(title ? { page_title: title.slice(0, PAGE_CONTEXT_LIMITS.maxShortText) } : {}),
       revision: this.nextRevision(),
       elements,
-      ...(entities ? { entities } : {})
+      ...(Object.keys(entities).length ? { entities } : {})
     };
   }
 

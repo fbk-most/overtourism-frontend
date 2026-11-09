@@ -25,6 +25,7 @@ const CANDIDATE_SELECTOR =
   'h1, h2, h3, input, select, textarea, button, table, [role="tab"], [role="alert"], [data-assistant-param-name]';
 
 const ENTITY_ATTRIBUTES: Array<[keyof PageContextEntities, string]> = [
+  ['territory', 'data-assistant-territory'],
   ['scenario_id', 'data-assistant-scenario-id'],
   ['proposal_id', 'data-assistant-proposal-id'],
   ['problem_id', 'data-assistant-problem-id'],

@@ -83,7 +83,8 @@ describe('extractPage', () => {
 
   it('captures backend parameter keys and page entities without chart data', () => {
     const page = render(`
-      <section data-assistant-scenario-id="scenario-7" data-assistant-problem-id="problem-3"
+      <section data-assistant-territory="molveno"
+        data-assistant-scenario-id="scenario-7" data-assistant-problem-id="problem-3"
         data-assistant-index-id="tourism-index"
         data-assistant-start-date="2023-01-01"
         data-assistant-end-date="2023-12-31"
@@ -102,6 +103,7 @@ describe('extractPage', () => {
       </section>`);
 
     expect(page.entities).toEqual({
+      territory: 'molveno',
       scenario_id: 'scenario-7',
       problem_id: 'problem-3',
       active_tab: 'Parcheggi',
