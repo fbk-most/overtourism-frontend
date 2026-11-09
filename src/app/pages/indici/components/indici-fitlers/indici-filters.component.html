@@ -22,6 +22,8 @@
               <div class="indicator-picker-category">{{ group.category }}</div>
               <button type="button" class="indicator-picker-option" role="option"
                 *ngFor="let ind of group.indicators; trackBy: trackByValue" [attr.aria-selected]="ind.value === selectedIndicator"
+                [disabled]="isIndicatorDisabled(ind)"
+                [attr.title]="isIndicatorDisabled(ind) ? 'Grafico non disponibile per questo indicatore' : null"
                 (click)="selectIndicator(ind.value)">
                 {{ indicatorDisplayName(ind) }}
               </button>

@@ -131,6 +131,9 @@ export class IndiciFiltersComponent implements OnInit, OnDestroy {
   }
 
   selectIndicator(value: string): void {
+    const indicator = this.allIndicators.find(item => item.value === value);
+    if (!indicator || this.isIndicatorDisabled(indicator)) return;
+
     this.selectedIndicator = value;
     this.indicatorMenuOpen = false;
     this.indicatorSearch = '';
@@ -184,17 +187,27 @@ export class IndiciFiltersComponent implements OnInit, OnDestroy {
   }
 
   private updateVisibleIndicators(): void {
-    const isVariation = this.enableVariation || this.showOption === 'chart';
+    const isChart = this.showOption === 'chart';
+    const isVariation = this.enableVariation || isChart;
     const previousIndicator = this.selectedIndicator;
-    this.visibleIndicators = isVariation
+    this.visibleIndicators = isChart
+      ? this.allIndicators
+      : isVariation
       ? this.allIndicators.filter(i => i.availableForVariation !== false && !i.year_only)
       : this.allIndicators;
 
-    if (!this.visibleIndicators.find(i => i.value === this.selectedIndicator)) {
-      this.selectedIndicator = this.visibleIndicators[0]?.value ?? '';
+    const selectedIsAvailable = this.visibleIndicators.some(indicator =>
+      indicator.value === this.selectedIndicator && !this.isIndicatorDisabled(indicator)
+    );
+    if (!selectedIsAvailable) {
+      this.selectedIndicator = this.visibleIndicators.find(indicator => !this.isIndicatorDisabled(indicator))?.value ?? '';
       if (this.selectedIndicator !== previousIndicator) this.applyYearsRange();
     }
     this.refreshIndicatorGroups();
+  }
+
+  isIndicatorDisabled(indicator: IndicatorMeta): boolean {
+    return this.showOption === 'chart' && (indicator.availableForVariation === false || !!indicator.year_only);
   }
 
   indicatorCategory(indicator: IndicatorMeta): string {
