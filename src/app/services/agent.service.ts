@@ -12,6 +12,8 @@ import { AuthenticationService } from './authentication.service';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { CUSTOM_TIMEOUT, SKIP_ERROR_NOTIFICATION } from '../interceptors/http-error.interceptor';
 import { AgentResponse, AgentRole } from '../models/chat.model';
+import { isIntegratedChatbotPath, PageContextPayload } from '../models/page-context.model';
+import { PageContextService } from './chatbot/page-context.service';
 
 export type AgentChatMode = 'standalone' | 'integrated';
 
@@ -165,20 +167,30 @@ export class AgentService {
   constructor(
     private http: HttpClient,
     private authService: AuthenticationService,
-    @Inject(AGENT_STREAM_TRANSPORT) private streamTransport: AgentStreamTransport
+    @Inject(AGENT_STREAM_TRANSPORT) private streamTransport: AgentStreamTransport,
+    private pageContext: PageContextService
   ) {}
 
   init(options: AgentChatOptions = {}): Promise<AgentInitResponse> {
     const mode = this.mode(options);
     const context = this.contextRefs(options);
-    if (mode === 'integrated' && context.length === 0) {
-      throw new Error('Integrated chat requires a problem, proposal, or scenario context.');
+
+    // Visual page context: what the user is looking at. Separate from `context` (business ids).
+    // Integrated mode only; a failed capture must never prevent the chat from starting.
+    const snapshot = mode === 'integrated' ? this.capturePageContext() : null;
+
+    // Pages with no selected entity (e.g. the problems list) have no business context: the page
+    // snapshot is then the context. With neither there is nothing to integrate with.
+    if (mode === 'integrated' && context.length === 0 && !snapshot) {
+      throw new Error('Integrated chat requires a problem, proposal, scenario, or page context.');
     }
 
     const formData = new FormData();
     formData.append('user_lang', options.language ?? 'Italiano');
     formData.append('integrated_mode', mode === 'integrated' ? 'true' : 'false');
-    context.forEach(value => formData.append('context[]', value));
+    // The backend reads the repeated form field `context` (not `context[]`).
+    context.forEach(value => formData.append('context', value));
+    if (snapshot) formData.append('page_context', JSON.stringify(snapshot));
 
     return firstValueFrom(
       this.http.post<AgentInitResponse>(`${this.apiUrl}/init`, formData, this.requestOptions())
@@ -188,6 +200,10 @@ export class AgentService {
       }
       this.saveSessionId(mode, response.session_id);
       this.lastContextByMode[mode] = context;
+      // The user navigated while the session was being created: the stored snapshot is already stale.
+      if (snapshot && snapshot.route !== this.pageContext.currentRoute()) {
+        void this.updatePageContext();
+      }
       return response;
     });
   }
@@ -216,7 +232,7 @@ export class AgentService {
     formData.append('message', message);
     formData.append('session_id', sessionId);
     if (options.force_role) formData.append('force_role', options.force_role);
-    changedContext?.forEach(value => formData.append('context[]', value));
+    changedContext?.forEach(value => formData.append('context', value));
 
     let turnId: string;
     try {
@@ -240,6 +256,33 @@ export class AgentService {
     }
 
     return this.followTurn(turnId, onProgress);
+  }
+
+  /**
+   * Sends the current page snapshot to the active integrated session (called on route navigation).
+   * Best effort and silent: it creates no turn and a failure only means the assistant keeps the
+   * previous snapshot. It never creates a session and never touches the business context.
+   */
+  async updatePageContext(): Promise<void> {
+    const sessionId = this.loadSessionId('integrated');
+    if (!sessionId || !this.authService.isLoggedIn) return;
+    if (!isIntegratedChatbotPath(this.pageContext.currentRoute())) return;
+
+    const snapshot = this.capturePageContext();
+    if (!snapshot) return;
+
+    const formData = new FormData();
+    formData.append('session_id', sessionId);
+    formData.append('page_context', JSON.stringify(snapshot));
+    try {
+      await firstValueFrom(
+        this.http.post(`${this.apiUrl}/context`, formData, this.requestOptions())
+      );
+    } catch (error) {
+      // 404 (session gone) is handled by the next sendMessage, which re-creates the session and tells
+      // the user. Never log page content, only the outcome.
+      console.warn('Page context update failed', error instanceof HttpErrorResponse ? error.status : 'network');
+    }
   }
 
   async resumeIfRunning(
@@ -429,6 +472,15 @@ export class AgentService {
         throw new Error('The agent did not finish within six minutes.');
       }
       await this.delay(Math.min(this.pollIntervalMs, remaining));
+    }
+  }
+
+  private capturePageContext(): PageContextPayload | null {
+    try {
+      return this.pageContext.capture();
+    } catch (error) {
+      console.warn('Page context capture failed', error instanceof Error ? error.name : 'error');
+      return null;
     }
   }
 

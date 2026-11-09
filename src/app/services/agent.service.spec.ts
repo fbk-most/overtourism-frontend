@@ -14,6 +14,8 @@ import {
   AgentStreamTransport
 } from './agent.service';
 import { AgentResponse } from '../models/chat.model';
+import { PageContextPayload } from '../models/page-context.model';
+import { PageContextService } from './chatbot/page-context.service';
 import { environment } from '../../environments/environment';
 
 class MockAgentStreamTransport implements AgentStreamTransport {
@@ -55,7 +57,7 @@ describe('AgentService turn protocol', () => {
         AgentService,
         {
           provide: AuthenticationService,
-          useValue: { accessToken: 'test-token', activeTerritory: 'test-territory' }
+          useValue: { accessToken: 'test-token', activeTerritory: 'test-territory', isLoggedIn: true }
         },
         { provide: AGENT_STREAM_TRANSPORT, useValue: stream }
       ]
@@ -280,7 +282,7 @@ describe('AgentService turn protocol', () => {
     const formData = initRequest.request.body as FormData;
     expect(formData.get('user_lang')).toBe('Italian');
     expect(formData.get('integrated_mode')).toBe('true');
-    expect(formData.getAll('context[]')).toEqual([
+    expect(formData.getAll('context')).toEqual([
       'problem:p-1',
       'scenario:s-1',
       'scenario:s-2'
@@ -293,5 +295,206 @@ describe('AgentService turn protocol', () => {
     flushMicrotasks();
 
     expect(response).toBeTruthy();
+  }));
+});
+
+
+describe('AgentService page context', () => {
+  const snapshot = (route: string, revision = 1): PageContextPayload => ({
+    schema_version: '1.0',
+    captured_at: '2026-11-06T12:00:00.000Z',
+    route,
+    revision,
+    elements: [{ id: 'save-button', type: 'button', label: 'Save', enabled: false }]
+  });
+
+  let service: AgentService;
+  let http: HttpTestingController;
+  let route: string;
+  let loggedIn: boolean;
+  let captureFails: boolean;
+  let pageContext: { capture: jasmine.Spy | (() => PageContextPayload); currentRoute: () => string };
+
+  beforeEach(() => {
+    localStorage.clear();
+    route = '/proposals/edit/123';
+    loggedIn = true;
+    captureFails = false;
+    let revision = 0;
+    pageContext = {
+      capture: () => {
+        if (captureFails) throw new Error('boom');
+        return snapshot(route, ++revision);
+      },
+      currentRoute: () => route
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        AgentService,
+        {
+          provide: AuthenticationService,
+          useValue: {
+            accessToken: 'test-token',
+            activeTerritory: 'test-territory',
+            get isLoggedIn() { return loggedIn; }
+          }
+        },
+        { provide: AGENT_STREAM_TRANSPORT, useValue: new MockAgentStreamTransport() },
+        { provide: PageContextService, useValue: pageContext }
+      ]
+    });
+    service = TestBed.inject(AgentService);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  const initIntegrated = () => {
+    void service.init({ mode: 'integrated', context: { problem_id: 'p-1' } });
+    const request = http.expectOne(`${environment.agentApiUrl}/init`);
+    return request;
+  };
+
+  it('sends the page snapshot to integrated init, separate from the business context', fakeAsync(() => {
+    const request = initIntegrated();
+    const body = request.request.body as FormData;
+
+    expect(body.getAll('context')).toEqual(['problem:p-1']);
+    const sent = JSON.parse(body.get('page_context') as string) as PageContextPayload;
+    expect(sent.route).toBe('/proposals/edit/123');
+    expect(sent.schema_version).toBe('1.0');
+    expect(sent.elements[0].id).toBe('save-button');
+    expect(typeof sent.revision).toBe('number');
+    // the business context must not carry any page information
+    expect(body.getAll('context').join()).not.toContain('proposals/edit');
+
+    request.flush({ session_id: 'srv', session_mode: 'integrated', allowed_territories: [] });
+    flushMicrotasks();
+    expect(localStorage.getItem('integrated_chatbot_session_id')).toBe('srv');
+  }));
+
+  it('starts an integrated chat on a page with no selected entity (e.g. the problems list)', fakeAsync(() => {
+    route = '/problems';
+    let error: unknown;
+    void service.init({ mode: 'integrated', context: {} }).catch(e => (error = e));
+    const request = http.expectOne(`${environment.agentApiUrl}/init`);
+    const body = request.request.body as FormData;
+
+    expect(body.getAll('context')).toEqual([]);
+    expect(JSON.parse(body.get('page_context') as string).route).toBe('/problems');
+    request.flush({ session_id: 'srv', session_mode: 'integrated', allowed_territories: [] });
+    flushMicrotasks();
+    expect(error).toBeUndefined();
+    expect(localStorage.getItem('integrated_chatbot_session_id')).toBe('srv');
+  }));
+
+  it('refuses to start an integrated chat with neither an entity nor a page snapshot', () => {
+    captureFails = true;
+    spyOn(console, 'warn');
+
+    expect(() => service.init({ mode: 'integrated', context: {} })).toThrowError(/requires/);
+    http.expectNone(`${environment.agentApiUrl}/init`);
+  });
+
+  it('does not send a page snapshot from standalone mode', fakeAsync(() => {
+    void service.init({ mode: 'standalone' });
+    const request = http.expectOne(`${environment.agentApiUrl}/init`);
+
+    expect((request.request.body as FormData).has('page_context')).toBeFalse();
+    request.flush({ session_id: 's', session_mode: 'standalone', allowed_territories: [] });
+    flushMicrotasks();
+  }));
+
+  it('still starts the chat when the snapshot cannot be captured', fakeAsync(() => {
+    captureFails = true;
+    spyOn(console, 'warn');
+    const request = initIntegrated();
+
+    expect((request.request.body as FormData).has('page_context')).toBeFalse();
+    request.flush({ session_id: 'srv', session_mode: 'integrated', allowed_territories: [] });
+    flushMicrotasks();
+    expect(localStorage.getItem('integrated_chatbot_session_id')).toBe('srv');
+  }));
+
+  it('sends a fresh snapshot when the user navigated while the session was being created', fakeAsync(() => {
+    const request = initIntegrated();
+    route = '/scenarios';
+    request.flush({ session_id: 'srv', session_mode: 'integrated', allowed_territories: [] });
+    flushMicrotasks();
+
+    const update = http.expectOne(`${environment.agentApiUrl}/context`);
+    expect(JSON.parse((update.request.body as FormData).get('page_context') as string).route).toBe('/scenarios');
+    update.flush({ status: 'updated', applied: true });
+    flushMicrotasks();
+  }));
+
+  it('updatePageContext posts the snapshot to /context for the integrated session only', fakeAsync(() => {
+    localStorage.setItem('integrated_chatbot_session_id', 'srv');
+    void service.updatePageContext();
+    flushMicrotasks();
+
+    const request = http.expectOne(`${environment.agentApiUrl}/context`);
+    const body = request.request.body as FormData;
+    expect(request.request.method).toBe('POST');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer test-token');
+    expect(body.get('session_id')).toBe('srv');
+    expect(JSON.parse(body.get('page_context') as string).route).toBe('/proposals/edit/123');
+    expect(Array.from((body as any).keys()).sort()).toEqual(['page_context', 'session_id']);
+    request.flush({ status: 'updated', applied: true, revision: 1, version: 2, active_turn_id: null });
+    flushMicrotasks();
+  }));
+
+  it('updatePageContext sends nothing without an integrated session', fakeAsync(() => {
+    localStorage.setItem('chatbot_session_id', 'standalone-session'); // standalone key only
+    void service.updatePageContext();
+    flushMicrotasks();
+
+    http.expectNone(`${environment.agentApiUrl}/context`);
+  }));
+
+  it('updatePageContext sends nothing when logged out or on a page without the assistant', fakeAsync(() => {
+    localStorage.setItem('integrated_chatbot_session_id', 'srv');
+    loggedIn = false;
+    void service.updatePageContext();
+    flushMicrotasks();
+    http.expectNone(`${environment.agentApiUrl}/context`);
+
+    loggedIn = true;
+    route = '/users/42';
+    void service.updatePageContext();
+    flushMicrotasks();
+    http.expectNone(`${environment.agentApiUrl}/context`);
+  }));
+
+  it('updatePageContext swallows failures and keeps the session', fakeAsync(() => {
+    localStorage.setItem('integrated_chatbot_session_id', 'srv');
+    spyOn(console, 'warn');
+
+    let settled = false;
+    void service.updatePageContext().then(() => { settled = true; });
+    flushMicrotasks();
+    http.expectOne(`${environment.agentApiUrl}/context`).flush({ detail: 'Session not found' }, { status: 404, statusText: 'Not Found' });
+    flushMicrotasks();
+
+    expect(settled).toBeTrue();
+    expect(localStorage.getItem('integrated_chatbot_session_id')).toBe('srv'); // sendMessage handles 404
+    expect(console.warn).toHaveBeenCalledWith('Page context update failed', 404);
+  }));
+
+  it('does not put the snapshot on message requests (business context only)', fakeAsync(() => {
+    localStorage.setItem('integrated_chatbot_session_id', 'srv');
+    void service.sendMessage('hello', { mode: 'integrated', context: { problem_id: 'p-1' } });
+    flushMicrotasks();
+
+    const request = http.expectOne(environment.agentApiUrl);
+    expect((request.request.body as FormData).has('page_context')).toBeFalse();
+    request.flush({ session_id: 'srv', turn_id: 't1' });
+    flushMicrotasks();
+    http.expectOne(`${environment.agentApiUrl}/turns/t1`).flush({
+      turn_id: 't1', session_id: 'srv', status: 'done', last_event_id: 1, result: { response: 'ok' }
+    });
+    flushMicrotasks();
   }));
 });
