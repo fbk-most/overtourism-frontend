@@ -50,6 +50,34 @@ describe('PageContextService', () => {
     ]);
   });
 
+  it('captures route-backed scenario IDs, active tab, and parameter names', () => {
+    router.url = '/problems/problem-3/proposals/proposal-5/scenari/scenario-7';
+    main.innerHTML = `
+      <section data-assistant-problem-id="problem-3"
+        data-assistant-proposal-id="proposal-5"
+        data-assistant-scenario-id="scenario-7">
+        <div data-assistant-active-tab="Parcheggi">
+          <label for="p">Posti auto</label>
+          <input id="p" type="number" data-assistant-param-name="parking_capacity" value="2.5">
+        </div>
+      </section>`;
+
+    const snapshot = service.capture();
+
+    expect(snapshot.route).toBe('/problems/problem-3/proposals/proposal-5/scenari/scenario-7');
+    expect(snapshot.entities).toEqual({
+      problem_id: 'problem-3',
+      proposal_id: 'proposal-5',
+      scenario_id: 'scenario-7',
+      active_tab: 'Parcheggi'
+    });
+    expect(snapshot.elements).toContain(jasmine.objectContaining({
+      label: 'Posti auto',
+      param_name: 'parking_capacity',
+      value: 2.5
+    }));
+  });
+
   it('falls back to the document title when the page has no <h1>', () => {
     document.title = 'Territorial indexes';
     main.innerHTML = `<button>Go</button>`;

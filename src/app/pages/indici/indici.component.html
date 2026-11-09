@@ -1,4 +1,9 @@
-<div class="container-fluid my-2">
+<div class="container-fluid my-2"
+  [attr.data-assistant-index-id]="filterState?.indicator || null"
+  [attr.data-assistant-start-date]="filterState?.startDate || null"
+  [attr.data-assistant-end-date]="filterState?.endDate || null"
+  [attr.data-assistant-granularity]="filterState?.granularity || null"
+  [attr.data-assistant-selected-territories]="selectedTerritoriesJson">
 
   <!-- BARRA FILTRI ESTRATTA -->
   <app-indici-filters *ngIf="allIndicators.length"
@@ -19,6 +24,12 @@
       <it-tab-item label="Mappa" icon="map-marker" [active]="showOption === 'map'">
         <div class="p-2">
           <app-indici-map *ngIf="geoEnvelope; else mapHint" 
+            data-assistant-chart
+            [attr.data-assistant-chart-index-id]="filterState?.indicator || null"
+            [attr.data-assistant-chart-label]="currentMapTitle || null"
+            [attr.data-assistant-chart-start-date]="filterState?.startDate || null"
+            [attr.data-assistant-chart-end-date]="filterState?.endDate || null"
+            [attr.data-assistant-chart-granularity]="filterState?.granularity || null"
             [geojsonStr]="geoEnvelope.data"
             [minValue]="geoEnvelope.min_value" 
             [maxValue]="geoEnvelope.max_value" 
@@ -40,6 +51,12 @@
       <it-tab-item label="Grafici" icon="chart-line" [active]="showOption === 'chart'"
         [disabled]="isChartDisabled">
         <app-indici-chart
+          [attr.data-assistant-chart]="chartSeries.length ? '' : null"
+          [attr.data-assistant-chart-index-id]="filterState?.indicator || null"
+          [attr.data-assistant-chart-label]="currentMeta?.label || null"
+          [attr.data-assistant-chart-start-date]="filterState?.startDate || null"
+          [attr.data-assistant-chart-end-date]="filterState?.endDate || null"
+          [attr.data-assistant-chart-granularity]="filterState?.granularity || null"
           [chartLabels]="chartLabels"
           [chartSeries]="chartSeries"
           [allComuni]="allComuni"

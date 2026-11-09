@@ -1,10 +1,10 @@
 /**
  * Visual page context sent to the agent backend in integrated mode.
  *
- * This is a SNAPSHOT of the page the user is looking at. It is independent of the
- * business context (problem / proposal / scenario ids) that AgentService sends as
- * `context`. The contract is defined by the backend (`app/schemas.py`, PageContext):
- * keep both sides in sync, see docs/integrated-page-context.md in the agent repo.
+ * This is a SNAPSHOT of the page the user is looking at. `entities` may identify
+ * the current page; the backend uses its scenario_id only when `context` has no
+ * scenario selected. The contract is defined by app/schemas.py PageContext; keep
+ * both sides in sync with docs/integrated-page-context.md in the agent repo.
  */
 
 export const PAGE_CONTEXT_SCHEMA_VERSION = '1.0';
@@ -51,6 +51,8 @@ export interface PageElement {
   id: string;
   type: PageElementType;
   label?: string;
+  /** Backend configuration key for scenario parameter controls. */
+  param_name?: string;
   /** Text typed in, number, or checkbox/switch state. */
   value?: PageScalar;
   /** Selected option(s) of a dropdown / radio group / multiselect. */
@@ -70,6 +72,25 @@ export interface PageElement {
   rows?: PageScalar[][];
   /** Real total when `rows` is a sample. */
   row_count?: number;
+  /** type === 'chart': what is plotted; the data points are never captured. */
+  chart_type?: string;
+  chart_subsystem?: string;
+  index_id?: string;
+  start_date?: string;
+  end_date?: string;
+  granularity?: string;
+}
+
+export interface PageContextEntities {
+  scenario_id?: string;
+  proposal_id?: string;
+  problem_id?: string;
+  active_tab?: string;
+  index_id?: string;
+  start_date?: string;
+  end_date?: string;
+  granularity?: string;
+  selected_territories?: string[];
 }
 
 export interface PageContextPayload {
@@ -82,6 +103,7 @@ export interface PageContextPayload {
   /** Strictly increasing per browser: lets the server drop a snapshot that arrives out of order. */
   revision: number;
   elements: PageElement[];
+  entities?: PageContextEntities;
 }
 
 /**

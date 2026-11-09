@@ -26,7 +26,11 @@
         (sottosistemaSelezionatoChange)="sottosistemaSelezionato = $event"
         (funzioneChange)="onFunzioneChange()"></app-plot-controls>
 
-      <div style="max-width: 600px; height: 600px;">
+      <div style="max-width: 600px; height: 600px;"
+        [attr.data-assistant-chart]="inputData ? '' : null"
+        [attr.data-assistant-chart-type]="monoDimensionale ? 'tourist_load' : 'sustainability'"
+        [attr.data-assistant-chart-label]="monoDimensionale ? 'Diagramma di Carico Turistico' : 'Diagramma di Sostenibilità'"
+        [attr.data-assistant-chart-subsystem]="selectedSubsystemLabel">
         <app-shared-plot *ngIf="inputData" [payload]="{
           type: monoDimensionale ? 'mono' : 'bi',
           subsystem: sottosistemaSelezionato,

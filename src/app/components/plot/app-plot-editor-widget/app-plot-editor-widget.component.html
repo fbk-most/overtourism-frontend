@@ -1,7 +1,7 @@
 <div class="p-3 border rounded">
   <h6 class="mb-3">{{ "plot.widget.title" | translate }}</h6>
 
-  <div class="bd-example-tabs">
+  <div class="bd-example-tabs" [attr.data-assistant-active-tab]="activeTab || null">
     <div class="row">
       <!-- Tab List -->
       <div class="col-4 col-md-3">
@@ -45,7 +45,9 @@
                       <button 
                         class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center"
                         type="button"
-                        data-bs-toggle="dropdown"
+                      [attr.data-assistant-param-name]="widget.name"
+                      [attr.aria-label]="widget.label"
+                      data-bs-toggle="dropdown"
                         aria-expanded="false"
                         [disabled]="!isEditable(widget)">
                         <span>{{ widget.v ? getOptionLabel(widget, widget.v) : 'Seleziona...' }}</span>
@@ -86,6 +88,8 @@
                           'disabled-slider-wrapper': !isEditable(widget)
                         }" [itTooltip]="!isEditable(widget) ? 'Modifica non disponibile per questo indice' : undefined">
                           <ngx-slider
+                            [attr.data-assistant-param-name]="widget.name"
+                            [attr.aria-label]="widget.label"
                             [(value)]="widget.vMin!"
                             [(highValue)]="widget.vMax!"
                             [options]="{
@@ -109,6 +113,8 @@
                         <button class="btn btn-sm btn-outline-secondary" (click)="decrease(widget)" [disabled]="!isEditable(widget)">−</button>
                         <input type="number"
                                class="form-control form-control-sm text-center"
+                               [attr.data-assistant-param-name]="widget.name"
+                               [attr.aria-label]="widget.label"
                                style="width: 90px;"
                                [(ngModel)]="widget.v"
                                (ngModelChange)="onWidgetChange()"
