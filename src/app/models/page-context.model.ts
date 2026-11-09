@@ -82,6 +82,8 @@ export interface PageElement {
 }
 
 export interface PageContextEntities {
+  /** Selected territory context in the host application. */
+  territory?: string;
   scenario_id?: string;
   proposal_id?: string;
   problem_id?: string;

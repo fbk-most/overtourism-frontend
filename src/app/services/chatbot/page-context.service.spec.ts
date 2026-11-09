@@ -1,15 +1,24 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
+import { AuthenticationService } from '../authentication.service';
 import { PageContextService } from './page-context.service';
 
 describe('PageContextService', () => {
   let service: PageContextService;
   let router: { url: string };
+  let authService: { activeTerritory: string };
   let main: HTMLElement;
 
   beforeEach(() => {
     router = { url: '/proposals/edit/123' };
-    TestBed.configureTestingModule({ providers: [PageContextService, { provide: Router, useValue: router }] });
+    authService = { activeTerritory: 'fazzon' };
+    TestBed.configureTestingModule({
+      providers: [
+        PageContextService,
+        { provide: Router, useValue: router },
+        { provide: AuthenticationService, useValue: authService }
+      ]
+    });
     service = TestBed.inject(PageContextService);
     main = document.createElement('main');
     document.body.appendChild(main);
@@ -66,10 +75,18 @@ describe('PageContextService', () => {
 
     expect(snapshot.route).toBe('/problems/problem-3/proposals/proposal-5/scenari/scenario-7');
     expect(snapshot.entities).toEqual({
+      territory: 'fazzon',
       problem_id: 'problem-3',
       proposal_id: 'proposal-5',
       scenario_id: 'scenario-7',
       active_tab: 'Parcheggi'
+    });
+
+    it('captures active territory on routes without a territory-specific component attribute', () => {
+      router.url = '/problems/fazzon_base_problem';
+      main.innerHTML = '<h1>Problems</h1>';
+
+      expect(service.capture().entities?.territory).toBe('fazzon');
     });
     expect(snapshot.elements).toContain(jasmine.objectContaining({
       label: 'Posti auto',
