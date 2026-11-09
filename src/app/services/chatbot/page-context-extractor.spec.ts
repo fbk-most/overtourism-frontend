@@ -81,6 +81,70 @@ describe('extractPage', () => {
     expect(byId(page, 'd')).toEqual(jasmine.objectContaining({ type: 'date', value: '2026-11-06' }));
   });
 
+  it('captures backend parameter keys and page entities without chart data', () => {
+    const page = render(`
+      <section data-assistant-scenario-id="scenario-7" data-assistant-problem-id="problem-3"
+        data-assistant-index-id="tourism-index"
+        data-assistant-start-date="2023-01-01"
+        data-assistant-end-date="2023-12-31"
+        data-assistant-granularity="annuale"
+        data-assistant-selected-territories='["Molveno"]'>
+        <div data-assistant-active-tab="Parcheggi">
+          <label for="parking">Posti auto</label>
+          <input id="parking" type="number" data-assistant-param-name="parking_capacity" value="2.5">
+        </div>
+        <div data-assistant-chart
+          data-assistant-chart-index-id="tourism-index"
+          data-assistant-chart-label="Indice turistico"
+          data-assistant-chart-start-date="2023-01-01"
+          data-assistant-chart-end-date="2023-12-31"
+          data-assistant-chart-granularity="annuale"></div>
+      </section>`);
+
+    expect(page.entities).toEqual({
+      scenario_id: 'scenario-7',
+      problem_id: 'problem-3',
+      active_tab: 'Parcheggi',
+      index_id: 'tourism-index',
+      start_date: '2023-01-01',
+      end_date: '2023-12-31',
+      granularity: 'annuale',
+      selected_territories: ['Molveno']
+    });
+    expect(byId(page, 'parking')).toEqual(jasmine.objectContaining({
+      label: 'Posti auto',
+      param_name: 'parking_capacity',
+      value: 2.5
+    }));
+    const chart = page.elements.find(element => element.type === 'chart');
+    expect(chart).toEqual(jasmine.objectContaining({
+      index_id: 'tourism-index',
+      label: 'Indice turistico',
+      start_date: '2023-01-01',
+      end_date: '2023-12-31',
+      granularity: 'annuale'
+    }));
+    expect(chart).not.toEqual(jasmine.objectContaining({ value: jasmine.anything() }));
+  });
+
+  it('captures scenario plot mode without requiring territorial-index identifiers or plot data', () => {
+    const page = render(`
+      <div data-assistant-chart
+        data-assistant-chart-type="sustainability"
+        data-assistant-chart-label="Diagramma di Sostenibilità"
+        data-assistant-chart-subsystem="Parcheggi"></div>`);
+
+    expect(page.elements.find(element => element.type === 'chart')).toEqual(
+      jasmine.objectContaining({
+        chart_type: 'sustainability',
+        chart_subsystem: 'Parcheggi',
+        label: 'Diagramma di Sostenibilità'
+      })
+    );
+    expect(page.elements.find(element => element.type === 'chart'))
+      .not.toEqual(jasmine.objectContaining({ value: jasmine.anything(), rows: jasmine.anything() }));
+  });
+
   it('reads a textarea', () => {
     const page = render(`<label for="t">Description</label><textarea id="t">Line1\nLine2</textarea>`);
 

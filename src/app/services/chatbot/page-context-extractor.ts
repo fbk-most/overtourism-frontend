@@ -1,6 +1,7 @@
 import {
   PAGE_CONTEXT_LIMITS as LIMITS,
   PageElement,
+  PageContextEntities,
   PageElementType,
   PageScalar
 } from '../../models/page-context.model';
@@ -21,7 +22,21 @@ import {
 const IGNORE_SELECTOR = 'app-chatbot-integrated, app-chatbot-standalone, [data-assistant-ignore]';
 
 const CANDIDATE_SELECTOR =
-  'h1, h2, h3, input, select, textarea, button, table, [role="tab"], [role="alert"]';
+  'h1, h2, h3, input, select, textarea, button, table, [role="tab"], [role="alert"], [data-assistant-param-name]';
+
+const ENTITY_ATTRIBUTES: Array<[keyof PageContextEntities, string]> = [
+  ['scenario_id', 'data-assistant-scenario-id'],
+  ['proposal_id', 'data-assistant-proposal-id'],
+  ['problem_id', 'data-assistant-problem-id'],
+  ['active_tab', 'data-assistant-active-tab'],
+  ['index_id', 'data-assistant-index-id'],
+  ['start_date', 'data-assistant-start-date'],
+  ['end_date', 'data-assistant-end-date'],
+  ['granularity', 'data-assistant-granularity'],
+  ['selected_territories', 'data-assistant-selected-territories']
+];
+
+const ENTITY_SOURCE_SELECTOR = ENTITY_ATTRIBUTES.map(([, attribute]) => `[${attribute}]`).join(',');
 
 /** Never walk more than this many candidates (pages with huge lists). */
 const MAX_CANDIDATES = 1500;
@@ -41,6 +56,7 @@ export interface ExtractedPage {
   /** First visible <h1>, if any. */
   pageTitle?: string;
   elements: PageElement[];
+  entities?: PageContextEntities;
 }
 
 // ─── text helpers ───────────────────────────────────────────────────────────
@@ -164,10 +180,44 @@ function groupFor(el: Element): string | undefined {
   return text ? short(text) : undefined;
 }
 
+function collectEntities(roots: Element[]): PageContextEntities | undefined {
+  const entities: PageContextEntities = {};
+  const sources = roots.flatMap(root => [
+    root,
+    ...Array.from(root.querySelectorAll(ENTITY_SOURCE_SELECTOR))
+  ]);
+
+  for (const source of sources) {
+    for (const [key, attribute] of ENTITY_ATTRIBUTES) {
+      if (entities[key] !== undefined) continue;
+      const raw = source.getAttribute(attribute);
+      if (!raw) continue;
+
+      if (key === 'selected_territories') {
+        const parsed: unknown = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.every(item => typeof item === 'string')) {
+          entities.selected_territories = parsed.map(item => short(item)).slice(0, 20);
+        }
+      } else {
+        const value = short(raw);
+        if (value) entities[key] = value;
+      }
+    }
+  }
+
+  return Object.keys(entities).length ? entities : undefined;
+}
+
 function isSensitive(el: Element): boolean {
   const autocomplete = el.getAttribute('autocomplete') ?? '';
   if (SENSITIVE_AUTOCOMPLETE.test(autocomplete)) return true;
   return SENSITIVE_NAME.test(el.getAttribute('name') ?? '') || SENSITIVE_NAME.test(el.id ?? '');
+}
+
+function paramNameFor(el: Element): string | undefined {
+  const source = el.closest('[data-assistant-param-name]') ?? el;
+  const name = short(source.getAttribute('data-assistant-param-name'));
+  return name || undefined;
 }
 
 function errorFor(el: Element): string | undefined {
@@ -274,7 +324,12 @@ function collectInput(input: HTMLInputElement, out: Collector): void {
   if (type === 'radio') return out.radio(input, 0);
 
   const label = labelFor(input);
-  const base = { label: label || undefined, ...out.common(input) };
+  const paramName = paramNameFor(input);
+  const base = {
+    label: label || undefined,
+    ...(paramName ? { param_name: paramName } : {}),
+    ...out.common(input)
+  };
 
   if (type === 'checkbox') {
     const isSwitch = input.getAttribute('role') === 'switch' || !!input.closest('.form-switch');
@@ -327,16 +382,27 @@ function collectButton(button: HTMLButtonElement, out: Collector): void {
 
   const text = ownText(button);
   const popup = button.getAttribute('aria-haspopup') || button.getAttribute('data-bs-toggle') === 'dropdown';
+  const paramName = paramNameFor(button);
   // A popup button that is labelled by a separate <label> behaves like a dropdown form control.
-  if (popup && button.getAttribute('aria-labelledby') && text) {
+  if (popup && text && (button.getAttribute('aria-labelledby') || paramName)) {
     const label = labelFor(button);
     const options = customDropdownOptions(button);
-    out.add('dropdown', button, { label: label || undefined, selected: short(text), ...(options.length ? { options } : {}), ...out.common(button) }, 0);
+    out.add('dropdown', button, {
+      label: label || undefined,
+      ...(paramName ? { param_name: paramName } : {}),
+      selected: short(text),
+      ...(options.length ? { options } : {}),
+      ...out.common(button)
+    }, 0);
     return;
   }
 
   const label = short(button.getAttribute('aria-label') || text || button.getAttribute('title'));
-  if (label) out.add('button', button, { label, ...out.common(button) }, 2);
+  if (label) out.add('button', button, {
+    label,
+    ...(paramNameFor(button) ? { param_name: paramNameFor(button) } : {}),
+    ...out.common(button)
+  }, 2);
 }
 
 function collectTable(table: HTMLTableElement, out: Collector): void {
@@ -409,6 +475,7 @@ function fitToLimits(candidates: Candidate[], envelopeBytes: number): PageElemen
 export function extractPage(roots: Element[], envelopeBytes = 1024): ExtractedPage {
   const out = new Collector();
   const uniqueRoots = roots.filter(root => !roots.some(other => other !== root && other.contains(root)));
+  const entities = collectEntities(uniqueRoots);
 
   let seen = 0;
   for (const root of uniqueRoots) {
@@ -454,10 +521,49 @@ export function extractPage(roots: Element[], envelopeBytes = 1024): ExtractedPa
           } else if (node.getAttribute('role') === 'alert') {
             const text = short(ownText(node));
             if (text) out.add('text', node, { label: 'Alert', value: text }, 1);
+          } else if (paramNameFor(node)) {
+            const label = labelFor(node);
+            out.add(
+              'other',
+              node,
+              { ...(label ? { label } : {}), param_name: paramNameFor(node) },
+              0
+            );
           }
       }
     }
+
+    for (const node of Array.from(root.querySelectorAll('[data-assistant-chart]'))) {
+      if (node.closest(IGNORE_SELECTOR) || !isVisible(node)) continue;
+      const indexId = short(node.getAttribute('data-assistant-chart-index-id'));
+      const label = short(node.getAttribute('data-assistant-chart-label'));
+      const chartType = short(node.getAttribute('data-assistant-chart-type'));
+      const chartSubsystem = short(node.getAttribute('data-assistant-chart-subsystem'));
+      const startDate = short(node.getAttribute('data-assistant-chart-start-date'));
+      const endDate = short(node.getAttribute('data-assistant-chart-end-date'));
+      const granularity = short(node.getAttribute('data-assistant-chart-granularity'));
+      if (!indexId && !label && !chartType && !chartSubsystem) continue;
+      out.add(
+        'chart',
+        node,
+        {
+          ...(label ? { label } : {}),
+          ...(chartType ? { chart_type: chartType } : {}),
+          ...(chartSubsystem ? { chart_subsystem: chartSubsystem } : {}),
+          ...(indexId ? { index_id: indexId } : {}),
+          ...(startDate ? { start_date: startDate } : {}),
+          ...(endDate ? { end_date: endDate } : {}),
+          ...(granularity ? { granularity } : {})
+        },
+        0
+      );
+    }
   }
 
-  return { pageTitle: out.pageTitle, elements: fitToLimits(out.candidates, envelopeBytes) };
+  const entitiesBytes = entities ? utf8Length(JSON.stringify(entities)) : 0;
+  return {
+    pageTitle: out.pageTitle,
+    elements: fitToLimits(out.candidates, envelopeBytes + entitiesBytes),
+    ...(entities ? { entities } : {})
+  };
 }

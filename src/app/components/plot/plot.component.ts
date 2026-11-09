@@ -71,6 +71,12 @@ export class PlotComponent implements AfterViewInit {
   currentSummary: string | null = null;
   plotMapper: any;
 
+  get selectedSubsystemLabel(): string | null {
+    return this.sottosistemi.find(
+      subsystem => subsystem.value === this.sottosistemaSelezionato
+    )?.label ?? null;
+  }
+
   constructor(private plotService: PlotService,
     private scenarioService: ScenarioService,
     private problemService: ProblemService,

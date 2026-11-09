@@ -91,6 +91,21 @@ export class IndiciComponent implements OnInit {
     return this.currentMeta?.label || '';
   }
 
+  get selectedTerritories(): string[] {
+    if (this.filterState?.showOption !== 'chart') return [];
+    const codes = this.filterState.spatialGranularity === 'comune'
+      ? this.selectedComuni
+      : this.selectedAreas;
+    return codes
+      .map(code => this.codeToName.get(code))
+      .filter((name): name is string => !!name);
+  }
+
+  get selectedTerritoriesJson(): string | null {
+    const territories = this.selectedTerritories;
+    return territories.length ? JSON.stringify(territories) : null;
+  }
+
   get unitDescription(): string {
     if (!this.filterState) return '';
     if (this.filterState.enableVariation) {

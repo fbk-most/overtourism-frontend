@@ -10,8 +10,8 @@ import { extractPage } from './page-context-extractor';
 
 /**
  * Builds the visual page context: a snapshot of the page the user is currently looking at.
- * It never talks to the backend (AgentService does) and is separate from ChatbotContextService,
- * which carries the business ids (problem / proposal / scenario).
+ * It never talks to the backend (AgentService does). ChatbotContextService still supplies the
+ * business context; this snapshot separately captures page identifiers for tool lookup.
  */
 @Injectable({ providedIn: 'root' })
 export class PageContextService {
@@ -40,7 +40,7 @@ export class PageContextService {
 
   /** Snapshot of the page as it is right now. */
   capture(): PageContextPayload {
-    const { pageTitle, elements } = extractPage(this.roots());
+    const { pageTitle, elements, entities } = extractPage(this.roots());
     const title = (pageTitle ?? this.document.title ?? '').replace(/\s+/g, ' ').trim();
     return {
       schema_version: PAGE_CONTEXT_SCHEMA_VERSION,
@@ -48,7 +48,8 @@ export class PageContextService {
       route: this.currentRoute(),
       ...(title ? { page_title: title.slice(0, PAGE_CONTEXT_LIMITS.maxShortText) } : {}),
       revision: this.nextRevision(),
-      elements
+      elements,
+      ...(entities ? { entities } : {})
     };
   }
 
