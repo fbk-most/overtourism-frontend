@@ -1,5 +1,7 @@
 <div class="ac-wrapper position-relative">
-  <label *ngIf="label" class="form-label small text-muted">{{ label }}</label>
+  @if (label) {
+    <label class="form-label small text-muted">{{ label }}</label>
+  }
 
   <input
     #inputEl
@@ -14,7 +16,7 @@
     aria-autocomplete="list"
     [attr.aria-expanded]="panelOpen"
     role="combobox"
-  />
+    />
 
   <!-- Template del pannello -->
   <ng-template #panelTemplate>
@@ -22,20 +24,23 @@
       #panelRef
       class="autocomplete-panel dropdown-menu show"
       style="max-height: 240px; overflow-y: auto;"
-    >
+      >
       <ul class="list-group list-group-flush">
-        <li
-          *ngFor="let item of filtered; let i = index"
-          class="list-group-item ac-item"
-          [class.active]="i === highlighted"
-          (mouseenter)="highlighted = i"
-          (click)="select(item)"
-        >
-          {{ item }}
-        </li>
-        <li *ngIf="!filtered.length" class="list-group-item text-muted small">
-          Nessun risultato
-        </li>
+        @for (item of filtered; track item; let i = $index) {
+          <li
+            class="list-group-item ac-item"
+            [class.active]="i === highlighted"
+            (mouseenter)="highlighted = i"
+            (click)="select(item)"
+            >
+            {{ item }}
+          </li>
+        }
+        @if (!filtered.length) {
+          <li class="list-group-item text-muted small">
+            Nessun risultato
+          </li>
+        }
       </ul>
     </div>
   </ng-template>

@@ -1,12 +1,12 @@
 import { Component, ElementRef, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewChild, AfterViewInit } from '@angular/core';
 import { PlotInput, SharedChartPayload } from '../../../models/plot.model';
 import { PlotService } from '../../../services/plot.service';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-shared-plot',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './shared-plot.component.html',
 })
 export class SharedPlotComponent implements OnChanges, AfterViewInit {

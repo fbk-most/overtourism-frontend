@@ -4,30 +4,30 @@
   [showSearch]="false"
   [sticky]="true"
   [expand]="true"
->
-<ng-container slimRightZone>
-  <div class="d-flex align-items-center mt-1 gap-3">
-    
-    <div class="d-none d-md-flex align-items-center gap-1" aria-label="Utente autenticato">
-      <it-icon name="user" class="icon-white bg-white" aria-hidden="true"></it-icon>
-      <span class="text-white small">
-        <strong>{{ authService.userName }}</strong>
-      </span>
+  >
+  <ng-container slimRightZone>
+    <div class="d-flex align-items-center mt-1 gap-3">
+
+      <div class="d-none d-md-flex align-items-center gap-1" aria-label="Utente autenticato">
+        <it-icon name="user" class="icon-white bg-white" aria-hidden="true"></it-icon>
+        <span class="text-white small">
+          <strong>{{ authService.userName }}</strong>
+        </span>
+      </div>
+
+      <button
+        type="button"
+        class="d-none d-md-flex btn btn-outline-light btn-sm px-2 align-items-center gap-1"
+        style="font-size: 0.75rem;"
+        (click)="doLogout()"
+        title="Disconnetti utente"
+        aria-label="Esci dalla piattaforma">
+        <it-icon name="logout" class="icon-white bg-white p-1" style="transform: scale(0.7);" aria-hidden="true"></it-icon>
+        <span>Esci</span>
+      </button>
+
     </div>
-    
-    <button 
-      type="button"
-      class="d-none d-md-flex btn btn-outline-light btn-sm px-2 align-items-center gap-1" 
-      style="font-size: 0.75rem;" 
-      (click)="doLogout()"
-      title="Disconnetti utente"
-      aria-label="Esci dalla piattaforma">
-      <it-icon name="logout" class="icon-white bg-white p-1" style="transform: scale(0.7);" aria-hidden="true"></it-icon>
-      <span>Esci</span>
-    </button>
-    
-  </div>
-</ng-container>
+  </ng-container>
   <ng-container brand>
     <a href="#" class="d-flex align-items-center" aria-label="Homepage - Analisi dell'affollamento turistico">
       <!-- alt="" perché il testo è già presente subito a fianco -->
@@ -42,24 +42,26 @@
   </ng-container>
 
   <ng-container navItems>
-     <it-navbar-item *ngFor="let link of links; trackBy: trackByRoute">
-      <a class="nav-link" [ngClass]="{ active: isActive(link)}" [routerLink]="link.route">
-        {{ link.label }}
-      </a>
-    </it-navbar-item>
+    @for (link of links; track trackByRoute($index, link)) {
+      <it-navbar-item>
+        <a class="nav-link" [ngClass]="{ active: isActive(link)}" [routerLink]="link.route">
+          {{ link.label }}
+        </a>
+      </it-navbar-item>
+    }
 
-     <li class="nav-item d-lg-none mt-2 mb-2" role="separator" aria-hidden="true">
-       <hr style="border-top: 1px solid #1c2024; opacity: 0.15; margin: 0 1rem;">
+    <li class="nav-item d-lg-none mt-2 mb-2" role="separator" aria-hidden="true">
+      <hr style="border-top: 1px solid #1c2024; opacity: 0.15; margin: 0 1rem;">
     </li>
 
-     <it-navbar-item class="d-lg-none">
+    <it-navbar-item class="d-lg-none">
       <a class="nav-link" style="pointer-events: none; opacity: 1 !important;">
         <it-icon name="user" size="sm" class="me-2 icon-primary" aria-hidden="true"></it-icon>
         <span class="text-primary fw-bold">{{ authService.userName }}</span>
       </a>
     </it-navbar-item>
 
-     <it-navbar-item class="d-lg-none">
+    <it-navbar-item class="d-lg-none">
       <a class="nav-link text-danger" (click)="doLogout()" style="cursor: pointer;" title="Disconnetti" aria-label="Esci dalla piattaforma">
         <it-icon name="logout" size="sm" class="me-2 icon-danger" aria-hidden="true"></it-icon>
         <span class="fw-bold">Esci</span>

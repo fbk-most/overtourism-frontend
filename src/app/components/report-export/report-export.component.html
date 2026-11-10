@@ -5,77 +5,95 @@
   [disabled]="isGenerating"
   (click)="generateReport()"
   [attr.aria-label]="(isGenerating ? 'report.generating' : 'report.button') | translate">
-  <ng-container *ngIf="!isGenerating; else generating">
+  @if (!isGenerating) {
     {{ 'report.button' | translate }}
-  </ng-container>
-  <ng-template #generating>
+  } @else {
     <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
     {{ 'report.generating' | translate }}
-  </ng-template>
+  }
 </button>
 
-<article class="report-print-root" *ngIf="report">
-  <header class="report-header">
-    <h1>{{ report.title }}</h1>
-    <p>{{ report.territory_label }} · {{ report.generated_at | date:'medium' }}</p>
-  </header>
-
-  <section *ngIf="report.introduction" class="report-copy">
-    <p *ngFor="let paragraph of paragraphs(report.introduction)">{{ paragraph }}</p>
-  </section>
-
-  <section *ngIf="report.base_scenario" class="report-base-scenario report-page-break">
-    <h2>{{ 'report.baseScenario' | translate }}</h2>
-    <app-report-node [node]="report.base_scenario" [depth]="1"></app-report-node>
-  </section>
-
-  <ng-container *ngFor="let node of report.sections">
-    <app-report-node [node]="node" [depth]="1"></app-report-node>
-  </ng-container>
-
-  <section *ngIf="report.unassigned_scenarios?.length" class="report-page-break">
-    <h2>{{ 'report.unassignedScenarios' | translate }}</h2>
-    <app-report-node
-      *ngFor="let scenario of report.unassigned_scenarios"
-      [node]="scenario"
-      [depth]="2">
-    </app-report-node>
-  </section>
-
-  <section *ngIf="report.comparison_summary || report.comparisons?.length" class="report-page-break">
-    <h2>{{ 'report.comparisons' | translate }}</h2>
-    <div
-      *ngIf="report.comparison_summary"
-      class="report-copy"
-      [innerHTML]="sanitizedComparisonSummary()">
-    </div>
-    <ng-container *ngFor="let widget of report.comparisons">
-      <app-report-plot *ngIf="isPlotWidget(widget.widgetName); else dispatchedComparisonWidget" [widget]="widget"></app-report-plot>
-      <ng-template #dispatchedComparisonWidget>
-        <ng-container *ngIf="widgetComponent(widget.widgetName); else unsupportedComparisonWidget">
-          <ng-container *ngComponentOutlet="widgetComponent(widget.widgetName); inputs: widgetInputs(widget)">
-          </ng-container>
-        </ng-container>
-        <ng-template #unsupportedComparisonWidget>
-          <p class="text-muted">{{ 'report.unsupportedWidget' | translate }}: {{ widget.widgetName }}</p>
-        </ng-template>
-      </ng-template>
-    </ng-container>
-  </section>
-
-  <section *ngIf="report.plots_unavailable?.length">
-    <h2>{{ 'report.plotsUnavailable' | translate }}</h2>
-    <ul>
-      <li *ngFor="let plot of report.plots_unavailable">
-        {{ plot.plot }}
-        <span *ngIf="plot.scenario_id"> ({{ plot.scenario_id }})</span>
-        <span *ngIf="plot.scenario_ids?.length"> ({{ plot.scenario_ids?.join(', ') }})</span>
-      </li>
-    </ul>
-  </section>
-
-  <section *ngIf="report.conclusion" class="report-copy report-page-break">
-    <h2>{{ 'report.conclusion' | translate }}</h2>
-    <p *ngFor="let paragraph of paragraphs(report.conclusion)">{{ paragraph }}</p>
-  </section>
-</article>
+@if (report) {
+  <article class="report-print-root">
+    <header class="report-header">
+      <h1>{{ report.title }}</h1>
+      <p>{{ report.territory_label }} · {{ report.generated_at | date:'medium' }}</p>
+    </header>
+    @if (report.introduction) {
+      <section class="report-copy">
+        @for (paragraph of paragraphs(report.introduction); track paragraph) {
+          <p>{{ paragraph }}</p>
+        }
+      </section>
+    }
+    @if (report.base_scenario) {
+      <section class="report-base-scenario report-page-break">
+        <h2>{{ 'report.baseScenario' | translate }}</h2>
+        <app-report-node [node]="report.base_scenario" [depth]="1"></app-report-node>
+      </section>
+    }
+    @for (node of report.sections; track node) {
+      <app-report-node [node]="node" [depth]="1"></app-report-node>
+    }
+    @if (report.unassigned_scenarios?.length) {
+      <section class="report-page-break">
+        <h2>{{ 'report.unassignedScenarios' | translate }}</h2>
+        @for (scenario of report.unassigned_scenarios; track scenario) {
+          <app-report-node
+            [node]="scenario"
+            [depth]="2">
+          </app-report-node>
+        }
+      </section>
+    }
+    @if (report.comparison_summary || report.comparisons?.length) {
+      <section class="report-page-break">
+        <h2>{{ 'report.comparisons' | translate }}</h2>
+        @if (report.comparison_summary) {
+          <div
+            class="report-copy"
+            [innerHTML]="sanitizedComparisonSummary()">
+          </div>
+        }
+        @for (widget of report.comparisons; track widget) {
+          @if (isPlotWidget(widget.widgetName)) {
+            <app-report-plot [widget]="widget"></app-report-plot>
+          } @else {
+            @if (widgetComponent(widget.widgetName)) {
+              <ng-container *ngComponentOutlet="widgetComponent(widget.widgetName); inputs: widgetInputs(widget)">
+              </ng-container>
+            } @else {
+              <p class="text-muted">{{ 'report.unsupportedWidget' | translate }}: {{ widget.widgetName }}</p>
+            }
+          }
+        }
+      </section>
+    }
+    @if (report.plots_unavailable?.length) {
+      <section>
+        <h2>{{ 'report.plotsUnavailable' | translate }}</h2>
+        <ul>
+          @for (plot of report.plots_unavailable; track plot) {
+            <li>
+              {{ plot.plot }}
+              @if (plot.scenario_id) {
+                <span> ({{ plot.scenario_id }})</span>
+              }
+              @if (plot.scenario_ids?.length) {
+                <span> ({{ plot.scenario_ids?.join(', ') }})</span>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+    @if (report.conclusion) {
+      <section class="report-copy report-page-break">
+        <h2>{{ 'report.conclusion' | translate }}</h2>
+        @for (paragraph of paragraphs(report.conclusion); track paragraph) {
+          <p>{{ paragraph }}</p>
+        }
+      </section>
+    }
+  </article>
+}

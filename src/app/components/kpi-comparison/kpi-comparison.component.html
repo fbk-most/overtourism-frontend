@@ -1,56 +1,61 @@
-<div *ngIf="kpisLeft && kpisRight" class="card-wrapper index-comparison">
-  <it-card background="true">
-    <h3 class="mb-3 p-3 h3">Comparazione indici</h3>
-
-    <div class="p-3">
-      <div class="row">
-        <!-- Colonna sinistra -->
-        <div class="col-6 border-end pe-3">
-          <div *ngFor="let key of kpiKeys" class="mb-4 pb-3">
-            <h6 class="text-primary mb-2 kpi-label">
-              {{ key | translate }}
-            </h6>
-            <div class="d-flex justify-content-end align-items-baseline text-secondary">
-              <p class="h3 text-secondary d-flex align-items-baseline gap-2 me-5">
-                <span class="fw-bold">{{ formatNumber(kpisLeft[key]) }}</span>
-                <span
-                  *ngIf="getConfidence(kpisLeft[key]) !== undefined"
-                  class="text-muted ms-1"
-                  title="Intervallo di confidenza"
-                >
-                  ± {{ getConfidence(kpisLeft[key]) | number:'1.0-1' }}%
-                </span>
-              </p>
-            </div>
+@if (kpisLeft && kpisRight) {
+  <div class="card-wrapper index-comparison">
+    <it-card background="true">
+      <h3 class="mb-3 p-3 h3">Comparazione indici</h3>
+      <div class="p-3">
+        <div class="row">
+          <!-- Colonna sinistra -->
+          <div class="col-6 border-end pe-3">
+            @for (key of kpiKeys; track key) {
+              <div class="mb-4 pb-3">
+                <h6 class="text-primary mb-2 kpi-label">
+                  {{ key | translate }}
+                </h6>
+                <div class="d-flex justify-content-end align-items-baseline text-secondary">
+                  <p class="h3 text-secondary d-flex align-items-baseline gap-2 me-5">
+                    <span class="fw-bold">{{ formatNumber(kpisLeft[key]) }}</span>
+                    @if (getConfidence(kpisLeft[key]) !== undefined) {
+                      <span
+                        class="text-muted ms-1"
+                        title="Intervallo di confidenza"
+                        >
+                        ± {{ getConfidence(kpisLeft[key]) | number:'1.0-1' }}%
+                      </span>
+                    }
+                  </p>
+                </div>
+              </div>
+            }
+          </div>
+          <!-- Colonna destra -->
+          <div class="col-6 ps-3">
+            @for (key of kpiKeys; track key) {
+              <div class="mb-4 pb-3">
+                <h6 class="text-primary mb-2 kpi-label">&nbsp;</h6>
+                <div class="d-flex justify-content-between align-items-baseline text-secondary">
+                  <p class="h3 text-secondary d-flex align-items-baseline gap-2 ms-5">
+                    <span class="fw-bold">{{ formatNumber(kpisRight[key]) }}</span>
+                    @if (getConfidence(kpisRight[key]) !== undefined) {
+                      <span
+                        class="text-muted ms-1"
+                        title="Intervallo di confidenza"
+                        >
+                        ± {{ getConfidence(kpisRight[key]) | number:'1.0-1' }}%
+                      </span>
+                    }
+                  </p>
+                  <span
+                    class="btn ms-2"
+                    [ngClass]="getDeltaClass(kpisLeft[key], kpisRight[key])"
+                    >
+                    {{ getDeltaPerc(kpisLeft[key], kpisRight[key]) }}
+                  </span>
+                </div>
+              </div>
+            }
           </div>
         </div>
-
-        <!-- Colonna destra -->
-        <div class="col-6 ps-3">
-          <div *ngFor="let key of kpiKeys" class="mb-4 pb-3">
-            <h6 class="text-primary mb-2 kpi-label">&nbsp;</h6>
-            <div class="d-flex justify-content-between align-items-baseline text-secondary">
-              <p class="h3 text-secondary d-flex align-items-baseline gap-2 ms-5">
-                <span class="fw-bold">{{ formatNumber(kpisRight[key]) }}</span>
-                <span
-                  *ngIf="getConfidence(kpisRight[key]) !== undefined"
-                  class="text-muted ms-1"
-                  title="Intervallo di confidenza"
-                >
-                  ± {{ getConfidence(kpisRight[key]) | number:'1.0-1' }}%
-                </span>
-              </p>
-              
-              <span
-                class="btn ms-2"
-                [ngClass]="getDeltaClass(kpisLeft[key], kpisRight[key])"
-              >
-                {{ getDeltaPerc(kpisLeft[key], kpisRight[key]) }}
-              </span>
-            </div>
-          </div>
-        </div>
-    </div>
-    </div>
-  </it-card>
-</div>
+      </div>
+    </it-card>
+  </div>
+}

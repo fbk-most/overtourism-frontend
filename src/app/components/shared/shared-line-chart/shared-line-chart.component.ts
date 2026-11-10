@@ -1,5 +1,5 @@
 import { Component, ElementRef, Input, OnChanges, OnDestroy, SimpleChanges, ViewChild, AfterViewInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import Plotly from 'plotly.js-dist-min';
 import { SharedTimeSeriesPayload } from '../../../models/shared-chart.model';
 import { IndiciChartService } from '../../../pages/indici/components/services/indici-chart.service';
@@ -7,7 +7,7 @@ import { IndiciChartService } from '../../../pages/indici/components/services/in
 @Component({
   selector: 'app-shared-line-chart',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './shared-line-chart.component.html',
   styleUrls: ['./shared-line-chart.component.scss']
 })

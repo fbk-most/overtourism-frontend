@@ -1,74 +1,74 @@
 <div class="col-auto border ">
-    <div class="callout callout-highlight note pt-3 pb-3">
-      <div class="row">
-        <div class="col d-flex align-items-center gap-2">
-          <span class="material-icons text-primary ">
-            info
-            </span>
-          <h5 class="text-primary mb-0">Impostazioni di visualizzazione</h5>
-        </div>
-
+  <div class="callout callout-highlight note pt-3 pb-3">
+    <div class="row">
+      <div class="col d-flex align-items-center gap-2">
+        <span class="material-icons text-primary ">
+          info
+        </span>
+        <h5 class="text-primary mb-0">Impostazioni di visualizzazione</h5>
       </div>
 
-<div class="row  pt-3 pb-3">
-  <div class="col-md-3">
-    <fieldset>
-      <legend class="fw-bold mb-2">Livello di rischio</legend>
-      <!-- <it-checkbox
-        [(ngModel)]="heatmapAttiva"
-        label="Mostra livello di rischio"
-        toggle="true"
-        (ngModelChange)="heatmapAttivaChange.emit($event); heatmapToggle.emit()">
-      </it-checkbox> -->
-      <div class="gradient-legend mt-3">
-        <div class="gradient-bar" [style.background]="gradientStyle"></div>
-        <div class="gradient-labels d-flex justify-content-between">
-          <small>0%</small>
-          <small>50%</small>
-          <small>100%</small>
-        </div>
-        <div class="risk-levels mt-2">
-          <div class="risk-item">
-            <span class="risk-dot" [style.background-color]="getColorAt(0)"></span> 
-            <span class="risk-text">0%: nessun rischio superamento capacità di carico</span>
-          </div>
-          <div class="risk-item">
-            <span class="risk-dot" [style.background-color]="getColorAt(0.5)"></span>
-            <span class="risk-text">50%: rischio medio superamento capacità di carico</span>
-          </div>
-          <div class="risk-item">
-            <span class="risk-dot" [style.background-color]="getColorAt(1)"></span>
-            <span class="risk-text">100%: certezza superamento capacità di carico</span>
-          </div>
-        </div>
-      </div>
-    </fieldset>
-  </div>
-  <div class="col-md-5">
+    </div>
 
-<fieldset>
-  <legend class="fw-bold mb-2">Tipo di Diagramma</legend>
-  <it-radio-button
-    name="tipoDiagramma"
-    value="true"
-    label="Diagramma di Sostenibilità"
-    [checked]="monoDimensionale === false"
-    (click)="setMonoDimensionale(false)">
-  </it-radio-button>
-  <it-radio-button
-    name="tipoDiagramma"
-    value="false"
-    label="Diagramma di Carico Turistico"
-    [checked]="monoDimensionale === true"
-    (click)="setMonoDimensionale(true)">
-  </it-radio-button>
-</fieldset>
-</div>
-  <!-- Colonna 3: Resto delle opzioni -->
-  <div class="col-md-4">
-    <fieldset>
-      <!-- <legend class="fw-bold mb-2">Opzioni visualizzazione</legend> -->
-      <!-- <div class="d-flex flex-column gap-2">
+    <div class="row  pt-3 pb-3">
+      <div class="col-md-3">
+        <fieldset>
+          <legend class="fw-bold mb-2">Livello di rischio</legend>
+          <!-- <it-checkbox
+          [(ngModel)]="heatmapAttiva"
+          label="Mostra livello di rischio"
+          toggle="true"
+          (ngModelChange)="heatmapAttivaChange.emit($event); heatmapToggle.emit()">
+        </it-checkbox> -->
+        <div class="gradient-legend mt-3">
+          <div class="gradient-bar" [style.background]="gradientStyle"></div>
+          <div class="gradient-labels d-flex justify-content-between">
+            <small>0%</small>
+            <small>50%</small>
+            <small>100%</small>
+          </div>
+          <div class="risk-levels mt-2">
+            <div class="risk-item">
+              <span class="risk-dot" [style.background-color]="getColorAt(0)"></span>
+              <span class="risk-text">0%: nessun rischio superamento capacità di carico</span>
+            </div>
+            <div class="risk-item">
+              <span class="risk-dot" [style.background-color]="getColorAt(0.5)"></span>
+              <span class="risk-text">50%: rischio medio superamento capacità di carico</span>
+            </div>
+            <div class="risk-item">
+              <span class="risk-dot" [style.background-color]="getColorAt(1)"></span>
+              <span class="risk-text">100%: certezza superamento capacità di carico</span>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+    </div>
+    <div class="col-md-5">
+
+      <fieldset>
+        <legend class="fw-bold mb-2">Tipo di Diagramma</legend>
+        <it-radio-button
+          name="tipoDiagramma"
+          value="true"
+          label="Diagramma di Sostenibilità"
+          [checked]="monoDimensionale === false"
+          (click)="setMonoDimensionale(false)">
+        </it-radio-button>
+        <it-radio-button
+          name="tipoDiagramma"
+          value="false"
+          label="Diagramma di Carico Turistico"
+          [checked]="monoDimensionale === true"
+          (click)="setMonoDimensionale(true)">
+        </it-radio-button>
+      </fieldset>
+    </div>
+    <!-- Colonna 3: Resto delle opzioni -->
+    <div class="col-md-4">
+      <fieldset>
+        <!-- <legend class="fw-bold mb-2">Opzioni visualizzazione</legend> -->
+        <!-- <div class="d-flex flex-column gap-2">
         <it-checkbox
           [(ngModel)]="showAllSubsystems"
           label="Mostra tutti i sottosistemi"
@@ -81,19 +81,20 @@
       <div  class="mt-3">
         <fieldset>
           <legend class="me-2 fw-bold mb-0">Sottosistema:</legend>
-          <it-radio-button
-            *ngFor="let ss of sottosistemi"
-            name="sottosistema"
-            [value]="ss.value"
-            [label]="ss.label"
-            [(ngModel)]="sottosistemaSelezionato"
-            (ngModelChange)="sottosistemaSelezionatoChange.emit($event); funzioneChange.emit()">
-          </it-radio-button>
+          @for (ss of sottosistemi; track ss) {
+            <it-radio-button
+              name="sottosistema"
+              [value]="ss.value"
+              [label]="ss.label"
+              [(ngModel)]="sottosistemaSelezionato"
+              (ngModelChange)="sottosistemaSelezionatoChange.emit($event); funzioneChange.emit()">
+            </it-radio-button>
+          }
         </fieldset>
       </div>
     </fieldset>
   </div>
 </div>
-    </div>
+</div>
 <!-- </it-callout> -->
 </div>

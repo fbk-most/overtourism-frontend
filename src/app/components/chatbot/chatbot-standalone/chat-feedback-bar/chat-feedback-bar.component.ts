@@ -1,12 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { ChatFeedback } from '../../../../models/chat.model';
 
 @Component({
   selector: 'app-chat-feedback-bar',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './chat-feedback-bar.component.html',
   styleUrls: ['./chat-feedback-bar.component.scss']
 })

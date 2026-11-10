@@ -1,17 +1,20 @@
-<div class="message user" *ngIf="msg.role === 'user'" style="white-space: pre-wrap;">{{ msg.content }}</div>
+@if (msg.role === 'user') {
+  <div class="message user" style="white-space: pre-wrap;">{{ msg.content }}</div>
+}
 
-<div class="message assistant" *ngIf="msg.role === 'assistant'" [ngClass]="agentMeta?.cssClass">
-  
-  <!-- Header agent type -->
-  <div *ngIf="agentMeta" class="agent-type-header d-flex align-items-center gap-1 mb-2">
-    <it-icon [name]="agentMeta.icon" size="xs"></it-icon>
-    <span class="agent-label">{{ agentMeta.label }}</span>
+@if (msg.role === 'assistant') {
+  <div class="message assistant" [ngClass]="agentMeta?.cssClass">
+    <!-- Header agent type -->
+    @if (agentMeta) {
+      <div class="agent-type-header d-flex align-items-center gap-1 mb-2">
+        <it-icon [name]="agentMeta.icon" size="xs"></it-icon>
+        <span class="agent-label">{{ agentMeta.label }}</span>
+      </div>
+    }
+    <div class="message-content" [innerHTML]="msg.content | markdown"></div>
+    <app-chat-feedback-bar [feedback]="feedback"
+      (voteChange)="voteChange.emit($event)"
+      (commentChange)="commentChange.emit($event)">
+    </app-chat-feedback-bar>
   </div>
-
-  <div class="message-content" [innerHTML]="msg.content | markdown"></div>
-
-  <app-chat-feedback-bar [feedback]="feedback"
-    (voteChange)="voteChange.emit($event)"
-    (commentChange)="commentChange.emit($event)">
-  </app-chat-feedback-bar>
-</div>
+}

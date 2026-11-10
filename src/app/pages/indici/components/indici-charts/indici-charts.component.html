@@ -2,16 +2,15 @@
   <div class="chart-wrapper">
     <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-2">
       <div style="min-width: 250px; max-width: 350px;">
-        <ng-container *ngIf="spatialGranularity === 'comune'; else macroAreaTemplate">
+        @if (spatialGranularity === 'comune') {
           <app-autocomplete [source]="availableComuniNames" [minLength]="0" label="Comune"
             placeholder="Seleziona Comune" (selected)="onComuneSelected($event)">
           </app-autocomplete>
-        </ng-container>
-        <ng-template #macroAreaTemplate>
+        } @else {
           <app-autocomplete [source]="availableAreaNames" [minLength]="0" label="Area"
             placeholder="Seleziona Area" (selected)="onAreaSelected($event)">
           </app-autocomplete>
-        </ng-template>
+        }
       </div>
 
       <div class="d-flex align-items-end gap-3 mt-auto flex-wrap">
@@ -37,55 +36,65 @@
             </div>
           </div>
         </div>
-        <div *ngIf="chartSeries.length">
-          <label id="lbl-chart-type" class="form-label fw-bold mb-1" style="font-size:13px;">Tipologia grafico</label>
-          <div class="d-flex gap-2" role="group" aria-labelledby="lbl-chart-type">
-            <button type="button" class="btn"
-              [ngClass]="{'btn-primary': chartType === 'scatter', 'btn-outline-primary': chartType !== 'scatter'}"
-              [attr.aria-pressed]="chartType === 'scatter'" (click)="chartType = 'scatter'">
-              Linee
-            </button>
-            <button type="button" class="btn"
-              [ngClass]="{'btn-primary': chartType === 'bar', 'btn-outline-primary': chartType !== 'bar'}"
-              [attr.aria-pressed]="chartType === 'bar'" (click)="chartType = 'bar'">
-              Barre
-            </button>
+        @if (chartSeries.length) {
+          <div>
+            <label id="lbl-chart-type" class="form-label fw-bold mb-1" style="font-size:13px;">Tipologia grafico</label>
+            <div class="d-flex gap-2" role="group" aria-labelledby="lbl-chart-type">
+              <button type="button" class="btn"
+                [ngClass]="{'btn-primary': chartType === 'scatter', 'btn-outline-primary': chartType !== 'scatter'}"
+                [attr.aria-pressed]="chartType === 'scatter'" (click)="chartType = 'scatter'">
+                Linee
+              </button>
+              <button type="button" class="btn"
+                [ngClass]="{'btn-primary': chartType === 'bar', 'btn-outline-primary': chartType !== 'bar'}"
+                [attr.aria-pressed]="chartType === 'bar'" (click)="chartType = 'bar'">
+                Barre
+              </button>
+            </div>
           </div>
-        </div>
+        }
       </div>
     </div>
 
     <!-- Badge Comuni / Aree -->
-    <div class="mt-2 d-flex flex-wrap gap-2" *ngIf="currentSelection.length > 0">
-      <span *ngFor="let code of currentSelection" class="badge bg-primary d-inline-flex align-items-center">
-        {{ codeToName.get(code) || code }}
-        <button type="button" class="btn-close btn-close-white ms-1" aria-label="Rimuovi"
-          (click)="removeSelection(code)">
-        </button>
-      </span>
-    </div>
+    @if (currentSelection.length > 0) {
+      <div class="mt-2 d-flex flex-wrap gap-2">
+        @for (code of currentSelection; track code) {
+          <span class="badge bg-primary d-inline-flex align-items-center">
+            {{ codeToName.get(code) || code }}
+            <button type="button" class="btn-close btn-close-white ms-1" aria-label="Rimuovi"
+              (click)="removeSelection(code)">
+            </button>
+          </span>
+        }
+      </div>
+    }
   </div>
 
-  <div class="text-center text-muted mt-5 p-5" *ngIf="!loading">
-    <ng-container *ngIf="!chartSeries.length">
-      Seleziona i parametri e clicca <strong>Applica filtri</strong> per generare il grafico.
-    </ng-container>
-    <ng-container *ngIf="chartSeries.length && !hasSelection">
-      Seleziona uno o più <strong>comuni</strong> dal filtro qui sopra per visualizzare il grafico.
-    </ng-container>
-  </div>
+  @if (!loading) {
+    <div class="text-center text-muted mt-5 p-5">
+      @if (!chartSeries.length) {
+        Seleziona i parametri e clicca <strong>Applica filtri</strong> per generare il grafico.
+      }
+      @if (chartSeries.length && !hasSelection) {
+        Seleziona uno o più <strong>comuni</strong> dal filtro qui sopra per visualizzare il grafico.
+      }
+    </div>
+  }
 
   <div [hidden]="!chartSeries.length || !hasSelection">
-    <app-shared-line-chart
-      *ngIf="chartType === 'scatter'"
-      [payload]="chartPayload"
-      [loading]="loading">
-    </app-shared-line-chart>
+    @if (chartType === 'scatter') {
+      <app-shared-line-chart
+        [payload]="chartPayload"
+        [loading]="loading">
+      </app-shared-line-chart>
+    }
 
-    <app-shared-bar-chart
-      *ngIf="chartType === 'bar'"
-      [payload]="chartPayload"
-      [loading]="loading">
-    </app-shared-bar-chart>
+    @if (chartType === 'bar') {
+      <app-shared-bar-chart
+        [payload]="chartPayload"
+        [loading]="loading">
+      </app-shared-bar-chart>
+    }
   </div>
 </div>

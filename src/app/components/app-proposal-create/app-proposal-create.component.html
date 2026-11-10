@@ -1,5 +1,5 @@
 <it-card background="true" class="p-4">
-  
+
   <form (ngSubmit)="onSubmit()" #form="ngForm" (submit)="onSubmitForm($event)">
 
     <div class="table-responsive mb-4">
@@ -12,7 +12,7 @@
             </td>
             <td>
               <it-input id="proposal-title" [(ngModel)]="model.title" name="title"
-                        placeholder="{{ 'problems.proposals.fields.titlePlaceholder' | translate }}" required>
+                placeholder="{{ 'problems.proposals.fields.titlePlaceholder' | translate }}" required>
               </it-input>
             </td>
           </tr>
@@ -24,7 +24,7 @@
             </td>
             <td>
               <it-textarea id="proposal-description" [(ngModel)]="model.description" name="proposal_description" [rows]="4"
-                           placeholder="{{ 'problems.proposals.fields.descriptionPlaceholder' | translate }}"></it-textarea>
+              placeholder="{{ 'problems.proposals.fields.descriptionPlaceholder' | translate }}"></it-textarea>
             </td>
           </tr>
 
@@ -36,30 +36,36 @@
             <td>
               <div class="d-flex align-items-center mb-3">
                 <it-input id="proposal-newResource" [(ngModel)]="newResource" name="newResource"
-                          (keydown.enter)="addResource($event)"
-                          placeholder="{{ 'problems.proposals.fields.resourcePlaceholder' | translate }}"
-                          style="flex: 1; min-width: 0;"></it-input>
+                  (keydown.enter)="addResource($event)"
+                  placeholder="{{ 'problems.proposals.fields.resourcePlaceholder' | translate }}"
+                style="flex: 1; min-width: 0;"></it-input>
                 <button type="button" class="btn btn-outline-primary ms-2 rounded-circle p-0"
-                        style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;"
-                        [disabled]="!newResource.trim()"
-                        (click)="addResource()"
-                        title="Aggiungi risorsa"
-                        aria-label="Aggiungi risorsa alla proposta">
+                  style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;"
+                  [disabled]="!newResource.trim()"
+                  (click)="addResource()"
+                  title="Aggiungi risorsa"
+                  aria-label="Aggiungi risorsa alla proposta">
                   <span class="material-icons" style="font-size:22px;" aria-hidden="true">add</span>
                 </button>
               </div>
 
               <div class="d-flex flex-column gap-2">
-                <div *ngFor="let res of model.resources; let i = index"
-                     class="border rounded p-2 d-flex justify-content-between align-items-start"
-                     style="background-color: #f8f9fa;">
-                  <div style="word-break: break-word; flex: 1;">
-                    <a *ngIf="isUrl(res)" [href]="res" target="_blank" class="text-decoration-none">{{ res }}</a>
-                    <span *ngIf="!isUrl(res)">{{ res }}</span>
+                @for (res of model.resources; track res; let i = $index) {
+                  <div
+                    class="border rounded p-2 d-flex justify-content-between align-items-start"
+                    style="background-color: #f8f9fa;">
+                    <div style="word-break: break-word; flex: 1;">
+                      @if (isUrl(res)) {
+                        <a [href]="res" target="_blank" class="text-decoration-none">{{ res }}</a>
+                      }
+                      @if (!isUrl(res)) {
+                        <span>{{ res }}</span>
+                      }
+                    </div>
+                    <button type="button" class="btn-close btn-close-sm ms-2 mt-1"
+                    aria-label="Rimuovi risorsa" (click)="removeResource(i)"></button>
                   </div>
-                  <button type="button" class="btn-close btn-close-sm ms-2 mt-1"
-                          aria-label="Rimuovi risorsa" (click)="removeResource(i)"></button>
-                </div>
+                }
               </div>
             </td>
           </tr>
@@ -71,7 +77,7 @@
             </td>
             <td>
               <it-textarea id="proposal-context" [(ngModel)]="model.context" name="context" [rows]="3"
-                           placeholder="{{ 'problems.proposals.fields.contextConditionsPlaceholder' | translate }}"></it-textarea>
+              placeholder="{{ 'problems.proposals.fields.contextConditionsPlaceholder' | translate }}"></it-textarea>
             </td>
           </tr>
 
@@ -82,7 +88,7 @@
             </td>
             <td>
               <it-textarea id="proposal-impact" [(ngModel)]="model.impact" name="potentialImpact" [rows]="3"
-                           placeholder="{{ 'problems.proposals.fields.potentialImpactPlaceholder' | translate }}"></it-textarea>
+              placeholder="{{ 'problems.proposals.fields.potentialImpactPlaceholder' | translate }}"></it-textarea>
             </td>
           </tr>
 
@@ -101,21 +107,21 @@
                 (selected)="addScenario($event)">
               </app-autocomplete>
               <div class="chips d-flex flex-wrap gap-2 mt-2">
-                <div 
-                  *ngFor="let scenario of model.related_scenarios" 
-                  class="chip d-inline-flex align-items-center px-2 py-1 rounded-pill">
-              
-                  <span class="me-1">{{ scenario.scenario_name }}</span>
-              
-                  <button 
-                    *ngIf="scenario.scenario_id !== 'model_0'"
-                    type="button"
-                    class="btn p-0 ms-1 text-white"
-                    aria-label="Rimuovi scenario associato"
-                    (click)="removeScenario(scenario, $event)">
-                    <span class="material-icons" style="font-size:16px; line-height:1;" aria-hidden="true">close</span>
-                  </button>
-                </div>
+                @for (scenario of model.related_scenarios; track scenario) {
+                  <div
+                    class="chip d-inline-flex align-items-center px-2 py-1 rounded-pill">
+                    <span class="me-1">{{ scenario.scenario_name }}</span>
+                    @if (scenario.scenario_id !== 'model_0') {
+                      <button
+                        type="button"
+                        class="btn p-0 ms-1 text-white"
+                        aria-label="Rimuovi scenario associato"
+                        (click)="removeScenario(scenario, $event)">
+                        <span class="material-icons" style="font-size:16px; line-height:1;" aria-hidden="true">close</span>
+                      </button>
+                    }
+                  </div>
+                }
               </div>
             </td>
           </tr>
@@ -126,16 +132,15 @@
 
     <div class="border-top pt-3 mt-4 d-flex justify-content-end">
       <button itButton="primary" type="submit" [disabled]="form.invalid || isSaving">
-        <ng-container *ngIf="!isSaving; else savingTemplate">
+        @if (!isSaving) {
           {{ 'common.save' | translate }}
-        </ng-container>
+        } @else {
+          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          {{ 'common.saving' | translate }}
+        }
       </button>
     </div>
-    
-    <ng-template #savingTemplate>
-      <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-      {{ 'common.saving' | translate }}
-    </ng-template>
-    
+
+
   </form>
 </it-card>

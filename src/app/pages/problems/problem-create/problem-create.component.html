@@ -4,14 +4,14 @@
     <div class="table-responsive mb-4">
       <table class="table table-borderless">
         <tbody>
-           <!-- Titolo -->
-           <tr>
+          <!-- Titolo -->
+          <tr>
             <td class="fw-bold w-25">
               <label for="problem-title">{{ 'problems.fields.title' | translate }} <span class="text-danger">*</span></label>
             </td>
             <td>
-                <it-input id="problem-title" name="name" [(ngModel)]="model.name" required
-                          placeholder="{{ 'problems.fields.titlePlaceholder' | translate }}"></it-input>
+              <it-input id="problem-title" name="name" [(ngModel)]="model.name" required
+              placeholder="{{ 'problems.fields.titlePlaceholder' | translate }}"></it-input>
             </td>
           </tr>
 
@@ -21,8 +21,8 @@
               <label for="problem-objective">{{ 'problems.fields.objective' | translate }}</label>
             </td>
             <td>
-                <it-textarea id="problem-objective" name="objective" [(ngModel)]="model.objective" [rows]="4" 
-                             placeholder="{{ 'problems.fields.objectivePlaceholder' | translate }}"></it-textarea>
+              <it-textarea id="problem-objective" name="objective" [(ngModel)]="model.objective" [rows]="4"
+              placeholder="{{ 'problems.fields.objectivePlaceholder' | translate }}"></it-textarea>
             </td>
           </tr>
 
@@ -32,9 +32,9 @@
               <label for="problem-description">{{ 'problems.fields.descriptionProblem' | translate }}</label>
             </td>
             <td>
-                <it-textarea id="problem-description" name="descriptionProblem" [(ngModel)]="model.descriptionProblem" 
-                             [rows]="4"
-                             placeholder="{{ 'problems.fields.descriptionProblemPlaceholder' | translate }}"></it-textarea>
+              <it-textarea id="problem-description" name="descriptionProblem" [(ngModel)]="model.descriptionProblem"
+                [rows]="4"
+              placeholder="{{ 'problems.fields.descriptionProblemPlaceholder' | translate }}"></it-textarea>
             </td>
           </tr>
 
@@ -44,35 +44,41 @@
               <label for="problem-newResource">{{ 'problems.fields.resources' | translate }}</label>
             </td>
             <td>
-                <!-- Aggiungi nuova risorsa -->
-                <div class="d-flex align-items-center mb-3">
-                  <it-input id="problem-newResource" [(ngModel)]="newResource" name="newResource"
-                             (keydown.enter)="addResource($event)"
-                            placeholder="{{ 'problems.fields.resourcePlaceholder' | translate }}"
-                            style="flex: 1; min-width: 0;">
-                  </it-input>
-                  <button type="button" class="btn btn-outline-primary ms-2 rounded-circle p-0"
-                          style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;"
-                          [disabled]="!newResource.trim()"
-                          (click)="addResource()"
-                          title="Aggiungi risorsa"
-                          aria-label="Aggiungi risorsa al problema">
-                    <span class="material-icons" style="font-size:22px;" aria-hidden="true">add</span>
-                  </button>
-                </div>
+              <!-- Aggiungi nuova risorsa -->
+              <div class="d-flex align-items-center mb-3">
+                <it-input id="problem-newResource" [(ngModel)]="newResource" name="newResource"
+                  (keydown.enter)="addResource($event)"
+                  placeholder="{{ 'problems.fields.resourcePlaceholder' | translate }}"
+                  style="flex: 1; min-width: 0;">
+                </it-input>
+                <button type="button" class="btn btn-outline-primary ms-2 rounded-circle p-0"
+                  style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;"
+                  [disabled]="!newResource.trim()"
+                  (click)="addResource()"
+                  title="Aggiungi risorsa"
+                  aria-label="Aggiungi risorsa al problema">
+                  <span class="material-icons" style="font-size:22px;" aria-hidden="true">add</span>
+                </button>
+              </div>
 
               <!-- Lista risorse -->
               <div class="d-flex flex-column gap-2">
-                <div *ngFor="let res of model.resources; let i = index"
-                     class="border rounded p-2 d-flex justify-content-between align-items-start"
-                     style="background-color: #f8f9fa;">
-                  <div style="word-break: break-word; flex: 1;">
-                    <a *ngIf="isUrl(res)" [href]="res" target="_blank" class="text-decoration-none">{{ res }}</a>
-                    <span *ngIf="!isUrl(res)">{{ res }}</span>
+                @for (res of model.resources; track res; let i = $index) {
+                  <div
+                    class="border rounded p-2 d-flex justify-content-between align-items-start"
+                    style="background-color: #f8f9fa;">
+                    <div style="word-break: break-word; flex: 1;">
+                      @if (isUrl(res)) {
+                        <a [href]="res" target="_blank" class="text-decoration-none">{{ res }}</a>
+                      }
+                      @if (!isUrl(res)) {
+                        <span>{{ res }}</span>
+                      }
+                    </div>
+                    <button type="button" class="btn-close btn-close-sm ms-2 mt-1"
+                    aria-label="Rimuovi risorsa" (click)="removeResource(i)"></button>
                   </div>
-                  <button type="button" class="btn-close btn-close-sm ms-2 mt-1"
-                          aria-label="Rimuovi risorsa" (click)="removeResource(i)"></button>
-                </div>
+                }
               </div>
             </td>
           </tr>
@@ -83,15 +89,14 @@
     <!-- footer con pulsante salva -->
     <div class="border-top pt-3 mt-4 d-flex justify-content-end">
       <button itButton="primary" type="submit" [disabled]="form.invalid || isSaving">
-        <ng-container *ngIf="!isSaving; else savingTemplate">
+        @if (!isSaving) {
           {{ 'problems.common.save' | translate }}
-        </ng-container>
+        } @else {
+          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          {{ 'common.saving' | translate }}
+        }
       </button>
-      
-      <ng-template #savingTemplate>
-        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-        {{ 'common.saving' | translate }}
-      </ng-template>
+
     </div>
   </form>
 </it-card>

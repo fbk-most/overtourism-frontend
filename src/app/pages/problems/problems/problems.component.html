@@ -1,112 +1,119 @@
-<div *ngIf="loading">{{ 'loading' | translate }}</div>
+@if (loading) {
+  <div>{{ 'loading' | translate }}</div>
+}
 
-<div *ngIf="!loading" class="bd-example">
-
-  <!-- SELETTORE CONTESTO CENTRALE -->
-  <div *ngIf="territories.length > 0" class="d-flex justify-content-center align-items-center mb-4">
-    <div class="territory-selector-wrapper d-inline-flex align-items-center p-2 rounded-pill shadow-sm bg-white border">
-      <span class="text-muted fw-semibold me-2 ms-3 small text-uppercase">Contesto Territoriale:</span>
-      <div class="dropdown">
+@if (!loading) {
+  <div class="bd-example">
+    <!-- SELETTORE CONTESTO CENTRALE -->
+    @if (territories.length > 0) {
+      <div class="d-flex justify-content-center align-items-center mb-4">
+        <div class="territory-selector-wrapper d-inline-flex align-items-center p-2 rounded-pill shadow-sm bg-white border">
+          <span class="text-muted fw-semibold me-2 ms-3 small text-uppercase">Contesto Territoriale:</span>
+          <div class="dropdown">
+            <button
+              class="btn btn-primary d-flex align-items-center gap-2 rounded-pill px-3 py-2 fw-semibold"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false">
+              <span class="text-uppercase">{{ currentTerritory || 'Seleziona Territorio' }}</span>
+              <span class="material-icons" style="font-size: 18px;">expand_more</span>
+            </button>
+            <div class="dropdown-menu shadow">
+              <div class="link-list-wrapper">
+                <ul class="link-list">
+                  @for (t of territories; track t) {
+                    <li>
+                      <a class="list-item" style="cursor: pointer;" (click)="onTerritoryChange(t)">
+                        <span class="text-uppercase" [ngClass]="{'fw-bold text-primary': currentTerritory === t}">{{ t }}</span>
+                      </a>
+                    </li>
+                  }
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+    <!-- BANNER SCENARIO BASE A TUTTA RIGA -->
+    @if (baseProblemRoute) {
+      <div class="base-scenario-banner mb-4 p-3 p-md-4 rounded shadow-sm d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="banner-icon-wrapper rounded-circle d-flex align-items-center justify-content-center">
+            <it-icon name="chart-line" color="primary" size="sm"></it-icon>
+          </div>
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <span class="badge bg-primary text-white text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Riferimento Territoriale</span>
+              <span class="text-muted small">Contesto: <strong>{{ authService.activeTerritory | titlecase }}</strong></span>
+            </div>
+            <h4 class="mb-1 text-dark fw-bold" style="font-size: 1.15rem;">Scenario Base di {{ authService.activeTerritory | titlecase }}</h4>
+            <p class="mb-0 text-muted small">
+              Accedi direttamente all'analisi di riferimento e allo scenario "as-is" con le simulazioni e i parametri del modello.
+            </p>
+          </div>
+        </div>
+        <div class="flex-shrink-0">
+          <button
+            itButton="outline-primary"
+            type="button"
+            (click)="goToBaseScenario()"
+            class="d-flex align-items-center gap-2 px-3 py-2">
+            <span>Esplora Scenario Base</span>
+            <it-icon name="arrow-right" color="primary" size="xs"></it-icon>
+          </button>
+        </div>
+      </div>
+    }
+    <!--  INTESTAZIONE: TITOLO A SINISTRA E AGGIUNGI AMBITO A DESTRA -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h3 class="mb-0">{{ 'problems.title' | translate }}</h3>
+      <!-- Mostrato solo a chi ha permessi di scrittura -->
+      @if (authService.canEdit()) {
         <button
-          class="btn btn-primary d-flex align-items-center gap-2 rounded-pill px-3 py-2 fw-semibold"
-          type="button"
-          data-bs-toggle="dropdown"
-          aria-expanded="false">
-          <span class="text-uppercase">{{ currentTerritory || 'Seleziona Territorio' }}</span>
-          <span class="material-icons" style="font-size: 18px;">expand_more</span>
+          itButton="primary"
+          (click)="openCreateProblemModal()"
+          class="d-flex align-items-center gap-2">
+          <span class="material-icons" style="font-size: 20px;">add_circle_outline</span>
+          <span>{{ 'problems.create' | translate }}</span>
         </button>
-        <div class="dropdown-menu shadow">
-          <div class="link-list-wrapper">
-            <ul class="link-list">
-              <li *ngFor="let t of territories">
-                <a class="list-item" style="cursor: pointer;" (click)="onTerritoryChange(t)">
-                  <span class="text-uppercase" [ngClass]="{'fw-bold text-primary': currentTerritory === t}">{{ t }}</span>
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
+      }
     </div>
-  </div>
-
-  <!-- BANNER SCENARIO BASE A TUTTA RIGA -->
-  <div *ngIf="baseProblemRoute" class="base-scenario-banner mb-4 p-3 p-md-4 rounded shadow-sm d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-    <div class="d-flex align-items-center gap-3">
-      <div class="banner-icon-wrapper rounded-circle d-flex align-items-center justify-content-center">
-        <it-icon name="chart-line" color="primary" size="sm"></it-icon>
-      </div>
-      <div>
-        <div class="d-flex align-items-center gap-2 mb-1">
-          <span class="badge bg-primary text-white text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Riferimento Territoriale</span>
-          <span class="text-muted small">Contesto: <strong>{{ authService.activeTerritory | titlecase }}</strong></span>
-        </div>
-        <h4 class="mb-1 text-dark fw-bold" style="font-size: 1.15rem;">Scenario Base di {{ authService.activeTerritory | titlecase }}</h4>
-        <p class="mb-0 text-muted small">
-          Accedi direttamente all'analisi di riferimento e allo scenario "as-is" con le simulazioni e i parametri del modello.
-        </p>
-      </div>
-    </div>
-    <div class="flex-shrink-0">
-      <button
-        itButton="outline-primary"
-        type="button"
-        (click)="goToBaseScenario()"
-        class="d-flex align-items-center gap-2 px-3 py-2">
-        <span>Esplora Scenario Base</span>
-        <it-icon name="arrow-right" color="primary" size="xs"></it-icon>
-      </button>
-    </div>
-  </div>
-
-  <!--  INTESTAZIONE: TITOLO A SINISTRA E AGGIUNGI AMBITO A DESTRA -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="mb-0">{{ 'problems.title' | translate }}</h3>
-
-    <!-- Mostrato solo a chi ha permessi di scrittura -->
-    <button
-      itButton="primary"
-      *ngIf="authService.canEdit()"
-      (click)="openCreateProblemModal()"
-      class="d-flex align-items-center gap-2">
-      <span class="material-icons" style="font-size: 20px;">add_circle_outline</span>
-      <span>{{ 'problems.create' | translate }}</span>
-    </button>
-  </div>
-
-  <it-modal #problemModal size="xl" *ngIf="authService.canEdit()">
-    <ng-container modalTitle>
-      {{ 'problems.createTitle' | translate }}
-    </ng-container>
-    <it-callout [appearance]="'highlight'" class="mb-4">
-      <p class="mb-0 small text-muted">
-        {{ 'problems.createSubtitle' | translate }}
-      </p>
-    </it-callout>
-    <app-problem-create
-      (problemSaved)="onProblemSaved($event)"
-      (problemCancel)="onProblemCancel()">
-    </app-problem-create>
-  </it-modal>
-
-  <!-- 4. LISTA AMBITI DI ANALISI (cards) -->
-  <div class="row">
-    <div class="col-12 col-lg-4 mb-4" *ngFor="let problem of problems">
-      <div class="card-wrapper" [routerLink]="['/problems', problem.problem_id]">
-        <it-card background="true">
-          <div class="categoryicon-top">
-            <it-icon name="file"></it-icon>
-          </div>
-
-          <a>
-            <h3 class="card-title h5">{{ problem.name }}</h3>
-          </a>
-
-          <p class="card-text font-serif">
-            {{ problem.description }}
+    @if (authService.canEdit()) {
+      <it-modal #problemModal size="xl">
+        <ng-container modalTitle>
+          {{ 'problems.createTitle' | translate }}
+        </ng-container>
+        <it-callout [appearance]="'highlight'" class="mb-4">
+          <p class="mb-0 small text-muted">
+            {{ 'problems.createSubtitle' | translate }}
           </p>
-        </it-card>
-      </div>
+        </it-callout>
+        <app-problem-create
+          (problemSaved)="onProblemSaved($event)"
+          (problemCancel)="onProblemCancel()">
+        </app-problem-create>
+      </it-modal>
+    }
+    <!-- 4. LISTA AMBITI DI ANALISI (cards) -->
+    <div class="row">
+      @for (problem of problems; track problem) {
+        <div class="col-12 col-lg-4 mb-4">
+          <div class="card-wrapper" [routerLink]="['/problems', problem.problem_id]">
+            <it-card background="true">
+              <div class="categoryicon-top">
+                <it-icon name="file"></it-icon>
+              </div>
+              <a>
+                <h3 class="card-title h5">{{ problem.name }}</h3>
+              </a>
+              <p class="card-text font-serif">
+                {{ problem.description }}
+              </p>
+            </it-card>
+          </div>
+        </div>
+      }
     </div>
   </div>
-</div>
+}

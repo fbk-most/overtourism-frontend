@@ -1,13 +1,25 @@
 <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
-  <div class="flex-grow-1" *ngIf="(breadcrumbs$ | async) as crumbs">
-    <nav class="breadcrumb-container" aria-label="Percorso di navigazione" *ngIf="crumbs.length > 0">
-      <ol class="breadcrumb mb-0">
-        <li *ngFor="let crumb of crumbs; let last = last" class="breadcrumb-item" [class.active]="last">
-          <a *ngIf="!last" [routerLink]="crumb.url">{{ crumb.label }}</a>
-          <span *ngIf="last" aria-current="page">{{ crumb.label }}</span>
-          <span *ngIf="!last" class="separator mx-2 text-muted">/</span>
-        </li>
-      </ol>
-    </nav>
-  </div>
+  @if ((breadcrumbs$ | async); as crumbs) {
+    <div class="flex-grow-1">
+      @if (crumbs.length > 0) {
+        <nav class="breadcrumb-container" aria-label="Percorso di navigazione">
+          <ol class="breadcrumb mb-0">
+            @for (crumb of crumbs; track crumb; let last = $last) {
+              <li class="breadcrumb-item" [class.active]="last">
+                @if (!last) {
+                  <a [routerLink]="crumb.url">{{ crumb.label }}</a>
+                }
+                @if (last) {
+                  <span aria-current="page">{{ crumb.label }}</span>
+                }
+                @if (!last) {
+                  <span class="separator mx-2 text-muted">/</span>
+                }
+              </li>
+            }
+          </ol>
+        </nav>
+      }
+    </div>
+  }
 </div>

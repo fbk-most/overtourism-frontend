@@ -1,33 +1,39 @@
 <div class="col-12">
 
-  <div class="card-wrapper" *ngIf="kpisData">
-    <it-card background="true">
-      <h3 class="mb1 p-3 h3 ">{{ 'kpi.title' | translate }}</h3>
-      <ng-container *ngFor="let key of kpiKeys" [ngSwitch]="key !== 'critical_constraint'">
-        <ng-container *ngSwitchCase="true">
-          <div class="mb-3 p-3">
-            <h6 class="mb-1 text-primary d-flex align-items-center gap-2">
-              {{ kpiLabels[key] | translate }}
-              <span *ngIf="key === criticalConstraintKey" class="badge bg-danger text-white" style="font-size: 0.75rem;"
-                title="Critical constraint">
-                ⚠️ Critico
-              </span>
-            </h6>
-            <p class="h3 text-secondary d-flex align-items-baseline gap-1">
-              <span class="fw-bold">{{ getKpiLevel(key) | number:'1.1-1' }}%</span>
-              <span
-                *ngIf="getKpiConfidence(key) !== null"
-                class="text-muted small ms-1"
-                title="Intervallo di confidenza"
-                style="cursor: help;"
-              >
-                ± {{ getKpiConfidence(key) | number:'1.1-1' }}%
-              </span>
-            </p>
-          </div>
-        </ng-container>
-      </ng-container>
-
-    </it-card>
-  </div>
+  @if (kpisData) {
+    <div class="card-wrapper">
+      <it-card background="true">
+        <h3 class="mb1 p-3 h3 ">{{ 'kpi.title' | translate }}</h3>
+        @for (key of kpiKeys; track key) {
+          @switch (key !== 'critical_constraint') {
+            @case (true) {
+              <div class="mb-3 p-3">
+                <h6 class="mb-1 text-primary d-flex align-items-center gap-2">
+                  {{ kpiLabels[key] | translate }}
+                  @if (key === criticalConstraintKey) {
+                    <span class="badge bg-danger text-white" style="font-size: 0.75rem;"
+                      title="Critical constraint">
+                      ⚠️ Critico
+                    </span>
+                  }
+                </h6>
+                <p class="h3 text-secondary d-flex align-items-baseline gap-1">
+                  <span class="fw-bold">{{ getKpiLevel(key) | number:'1.1-1' }}%</span>
+                  @if (getKpiConfidence(key) !== null) {
+                    <span
+                      class="text-muted small ms-1"
+                      title="Intervallo di confidenza"
+                      style="cursor: help;"
+                      >
+                      ± {{ getKpiConfidence(key) | number:'1.1-1' }}%
+                    </span>
+                  }
+                </p>
+              </div>
+            }
+          }
+        }
+      </it-card>
+    </div>
+  }
 </div>

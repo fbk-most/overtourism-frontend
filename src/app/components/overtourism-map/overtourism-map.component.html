@@ -1,30 +1,33 @@
-<div *ngIf="data?.length; else noData">
-  <div class="dropdown w-50 mb-3">
-    <button class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center" 
-            type="button" data-bs-toggle="dropdown" aria-expanded="false">
-      <span>{{ selectedAnno || 'Seleziona Anno' }}</span>
-      <span class="material-icons ms-2">expand_more</span>
-    </button>
-    <div class="dropdown-menu w-100">
-      <div class="link-list-wrapper">
-        <ul class="link-list">
-          <li *ngFor="let anno of anniDisponibili">
-            <a class="list-item" (click)="selectedAnno = anno; drawMap()">
-              <span>{{ anno }}</span>
-            </a>
-          </li>
-        </ul>
+@if (data?.length) {
+  <div>
+    <div class="dropdown w-50 mb-3">
+      <button class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center"
+        type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <span>{{ selectedAnno || 'Seleziona Anno' }}</span>
+        <span class="material-icons ms-2">expand_more</span>
+      </button>
+      <div class="dropdown-menu w-100">
+        <div class="link-list-wrapper">
+          <ul class="link-list">
+            @for (anno of anniDisponibili; track anno) {
+              <li>
+                <a class="list-item" (click)="selectedAnno = anno; drawMap()">
+                  <span>{{ anno }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
       </div>
     </div>
+    @if (!selectedKpi) {
+      <div class="text-center text-muted mt-2">
+        Seleziona un <strong>indicatore</strong> per visualizzare la mappa.
+      </div>
+    }
+    <div #mapChart style="width:100%; height:500px;"></div>
   </div>
-  <div *ngIf="!selectedKpi" class="text-center text-muted mt-2">
-    Seleziona un <strong>indicatore</strong> per visualizzare la mappa.
-  </div>
-  <div #mapChart style="width:100%; height:500px;"></div>
-
-
-</div>
-
-<ng-template #noData>
+} @else {
   <div class="text-center text-muted">Non ci sono dati disponibili.</div>
-</ng-template>
+}
+

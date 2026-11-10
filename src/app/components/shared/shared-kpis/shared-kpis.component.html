@@ -1,65 +1,76 @@
-<div class="card-wrapper" *ngIf="kpisMain">
-  <it-card background="true">
-    <h3 class="mb-3 h3">{{ isComparison ? 'Comparazione indici' : ('kpi.title' | translate) }}</h3>
-
-    <!-- MODALITÀ SINGOLA -->
-    <ng-container *ngIf="!isComparison">
-      <div class="mb-3 p-3" *ngFor="let key of kpiKeys">
-        <h6 class="mb-1 text-primary d-flex align-items-center gap-2">
-          {{ getKpiLabel(key) }}
-          <span *ngIf="key === criticalConstraintKey" class="badge bg-danger text-white" style="font-size: 0.75rem;">
-            ⚠️ Critico
-          </span>
-        </h6>
-        <p class="h3 text-secondary d-flex align-items-baseline gap-1">
-          <!-- Valore formattato: per dropout sarà "{value} ({share}%)", per gli altri "{value}%" -->
-          <span class="fw-bold fs-3">{{ getDisplayValue(key, kpisMain[key]) }}</span>
-
-          <!-- Intervallo di confidenza (solo se presente e non dropout) -->
-          <span *ngIf="!isDropout(key) && getConfidence(kpisMain[key]) !== null" class="text-muted ms-2 fs-5">
-            ± {{ getConfidence(kpisMain[key]) | number:'1.1-1' }}{{ getUnit(key) }}
-          </span>
-        </p>
-      </div>
-    </ng-container>
-
-    <!-- MODALITÀ COMPARAZIONE -->
-    <ng-container *ngIf="isComparison">
-      <div class="row w-100 m-0">
-        <!-- Colonna Sinistra -->
-        <div class="col-6 border-end pe-3">
-          <div *ngFor="let key of kpiKeys" class="mb-4 pb-3">
-            <h6 class="text-primary mb-2">{{ getKpiLabel(key) }}</h6>
-            <div class="d-flex justify-content-end align-items-baseline text-secondary">
-              <p class="h3 text-secondary d-flex align-items-baseline gap-2 me-5">
-                <span class="fw-bold fs-3">{{ getDisplayValue(key, kpisMain[key]) }}</span>
-                <span *ngIf="!isDropout(key) && getConfidence(kpisMain[key]) !== null" class="text-muted ms-2 fs-5">
+@if (kpisMain) {
+  <div class="card-wrapper">
+    <it-card background="true">
+      <h3 class="mb-3 h3">{{ isComparison ? 'Comparazione indici' : ('kpi.title' | translate) }}</h3>
+      <!-- MODALITÀ SINGOLA -->
+      @if (!isComparison) {
+        @for (key of kpiKeys; track key) {
+          <div class="mb-3 p-3">
+            <h6 class="mb-1 text-primary d-flex align-items-center gap-2">
+              {{ getKpiLabel(key) }}
+              @if (key === criticalConstraintKey) {
+                <span class="badge bg-danger text-white" style="font-size: 0.75rem;">
+                  ⚠️ Critico
+                </span>
+              }
+            </h6>
+            <p class="h3 text-secondary d-flex align-items-baseline gap-1">
+              <!-- Valore formattato: per dropout sarà "{value} ({share}%)", per gli altri "{value}%" -->
+              <span class="fw-bold fs-3">{{ getDisplayValue(key, kpisMain[key]) }}</span>
+              <!-- Intervallo di confidenza (solo se presente e non dropout) -->
+              @if (!isDropout(key) && getConfidence(kpisMain[key]) !== null) {
+                <span class="text-muted ms-2 fs-5">
                   ± {{ getConfidence(kpisMain[key]) | number:'1.1-1' }}{{ getUnit(key) }}
                 </span>
-              </p>
-            </div>
+              }
+            </p>
+          </div>
+        }
+      }
+      <!-- MODALITÀ COMPARAZIONE -->
+      @if (isComparison) {
+        <div class="row w-100 m-0">
+          <!-- Colonna Sinistra -->
+          <div class="col-6 border-end pe-3">
+            @for (key of kpiKeys; track key) {
+              <div class="mb-4 pb-3">
+                <h6 class="text-primary mb-2">{{ getKpiLabel(key) }}</h6>
+                <div class="d-flex justify-content-end align-items-baseline text-secondary">
+                  <p class="h3 text-secondary d-flex align-items-baseline gap-2 me-5">
+                    <span class="fw-bold fs-3">{{ getDisplayValue(key, kpisMain[key]) }}</span>
+                    @if (!isDropout(key) && getConfidence(kpisMain[key]) !== null) {
+                      <span class="text-muted ms-2 fs-5">
+                        ± {{ getConfidence(kpisMain[key]) | number:'1.1-1' }}{{ getUnit(key) }}
+                      </span>
+                    }
+                  </p>
+                </div>
+              </div>
+            }
+          </div>
+          <!-- Colonna Destra + Badge Delta -->
+          <div class="col-6 ps-3">
+            @for (key of kpiKeys; track key) {
+              <div class="mb-4 pb-3">
+                <h6 class="text-primary mb-2">&nbsp;</h6>
+                <div class="d-flex justify-content-between align-items-baseline text-secondary">
+                  <p class="h3 text-secondary d-flex align-items-baseline gap-2 ms-5">
+                    <span class="fw-bold fs-3">{{ getDisplayValue(key, kpisCompare[key]) }}</span>
+                    @if (!isDropout(key) && getConfidence(kpisCompare[key]) !== null) {
+                      <span class="text-muted ms-2 fs-5">
+                        ± {{ getConfidence(kpisCompare[key]) | number:'1.1-1' }}{{ getUnit(key) }}
+                      </span>
+                    }
+                  </p>
+                  <span class="btn ms-2 border" [ngClass]="getDeltaClass(key, kpisMain[key], kpisCompare[key])">
+                    {{ getDeltaPerc(key, kpisMain[key], kpisCompare[key]) }}
+                  </span>
+                </div>
+              </div>
+            }
           </div>
         </div>
-
-        <!-- Colonna Destra + Badge Delta -->
-        <div class="col-6 ps-3">
-          <div *ngFor="let key of kpiKeys" class="mb-4 pb-3">
-            <h6 class="text-primary mb-2">&nbsp;</h6>
-            <div class="d-flex justify-content-between align-items-baseline text-secondary">
-              <p class="h3 text-secondary d-flex align-items-baseline gap-2 ms-5">
-                <span class="fw-bold fs-3">{{ getDisplayValue(key, kpisCompare[key]) }}</span>
-                <span *ngIf="!isDropout(key) && getConfidence(kpisCompare[key]) !== null" class="text-muted ms-2 fs-5">
-                  ± {{ getConfidence(kpisCompare[key]) | number:'1.1-1' }}{{ getUnit(key) }}
-                </span>
-              </p>
-              
-              <span class="btn ms-2 border" [ngClass]="getDeltaClass(key, kpisMain[key], kpisCompare[key])">
-                {{ getDeltaPerc(key, kpisMain[key], kpisCompare[key]) }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </ng-container>
-  </it-card>
-</div>
+      }
+    </it-card>
+  </div>
+}

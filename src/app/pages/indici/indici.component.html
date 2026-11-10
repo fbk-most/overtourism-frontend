@@ -6,15 +6,17 @@
   [attr.data-assistant-selected-territories]="selectedTerritoriesJson">
 
   <!-- BARRA FILTRI ESTRATTA -->
-  <app-indici-filters *ngIf="allIndicators.length"
-    [allIndicators]="allIndicators"
-    [additionalLabels]="additionalLabels"
-    [showOption]="showOption"
-    [loading]="loading"
-    [hasData]="!!geoEnvelope || chartSeries.length > 0"
-    (stateChange)="onFilterStateChange($event)"
-    (apply)="onApplyFilters($event)">
-  </app-indici-filters>
+  @if (allIndicators.length) {
+    <app-indici-filters
+      [allIndicators]="allIndicators"
+      [additionalLabels]="additionalLabels"
+      [showOption]="showOption"
+      [loading]="loading"
+      [hasData]="!!geoEnvelope || chartSeries.length > 0"
+      (stateChange)="onFilterStateChange($event)"
+      (apply)="onApplyFilters($event)">
+    </app-indici-filters>
+  }
 
   <!-- CONTENUTO TABS -->
   <div class="indici-content position-relative">
@@ -23,27 +25,30 @@
       <!-- TAB 1: MAPPA -->
       <it-tab-item label="Mappa" icon="map-marker" [active]="showOption === 'map'">
         <div class="p-2">
-          <app-indici-map *ngIf="geoEnvelope; else mapHint" 
-            data-assistant-chart
-            [attr.data-assistant-chart-index-id]="filterState?.indicator || null"
-            [attr.data-assistant-chart-label]="currentMapTitle || null"
-            [attr.data-assistant-chart-start-date]="filterState?.startDate || null"
-            [attr.data-assistant-chart-end-date]="filterState?.endDate || null"
-            [attr.data-assistant-chart-granularity]="filterState?.granularity || null"
-            [geojsonStr]="geoEnvelope.data"
-            [minValue]="geoEnvelope.min_value" 
-            [maxValue]="geoEnvelope.max_value" 
-            [legend]="geoEnvelope.legend"
-            [flows]="flowData"
-            [colorScaleMode]="colorScaleMode"
-            [unitDescription]="unitDescription" 
-            [mapTitle]="currentMapTitle">
-          </app-indici-map>
-          <ng-template #mapHint>
-            <div class="empty-hint p-5 text-center text-muted mt-5" *ngIf="!loading">
-              Seleziona i parametri e clicca <strong>Applica filtri</strong> per caricare la mappa.
-            </div>
-          </ng-template>
+          @if (geoEnvelope) {
+            <app-indici-map
+              data-assistant-chart
+              [attr.data-assistant-chart-index-id]="filterState?.indicator || null"
+              [attr.data-assistant-chart-label]="currentMapTitle || null"
+              [attr.data-assistant-chart-start-date]="filterState?.startDate || null"
+              [attr.data-assistant-chart-end-date]="filterState?.endDate || null"
+              [attr.data-assistant-chart-granularity]="filterState?.granularity || null"
+              [geojsonStr]="geoEnvelope.data"
+              [minValue]="geoEnvelope.min_value"
+              [maxValue]="geoEnvelope.max_value"
+              [legend]="geoEnvelope.legend"
+              [flows]="flowData"
+              [colorScaleMode]="colorScaleMode"
+              [unitDescription]="unitDescription"
+              [mapTitle]="currentMapTitle">
+            </app-indici-map>
+          } @else {
+            @if (!loading) {
+              <div class="empty-hint p-5 text-center text-muted mt-5">
+                Seleziona i parametri e clicca <strong>Applica filtri</strong> per caricare la mappa.
+              </div>
+            }
+          }
         </div>
       </it-tab-item>
 
@@ -75,9 +80,11 @@
     </it-tab-container>
 
     <!-- Overlay caricamento -->
-    <div class="d-flex justify-content-center align-items-center w-100 h-100 position-absolute top-0 start-0 bg-white"
-      *ngIf="loading" style="z-index: 10; opacity: 0.8;">
-      <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
-    </div>
+    @if (loading) {
+      <div class="d-flex justify-content-center align-items-center w-100 h-100 position-absolute top-0 start-0 bg-white"
+        style="z-index: 10; opacity: 0.8;">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+      </div>
+    }
   </div>
 </div>

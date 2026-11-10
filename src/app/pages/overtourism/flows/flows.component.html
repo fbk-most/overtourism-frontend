@@ -15,14 +15,15 @@
         <div class="col-md-4">
           <fieldset>
             <legend class="fw-bold mb-2">Indicatore</legend>
-            <it-radio-button
-              *ngFor="let i of ['tutti','escursionisti','rapporto']"
-              name="indicatore"
-              [value]="i"
-              [label]="i | titlecase"
-              [(ngModel)]="indicatore"
-              (ngModelChange)="applyFilters()">
-            </it-radio-button>
+            @for (i of ['tutti','escursionisti','rapporto']; track i) {
+              <it-radio-button
+                name="indicatore"
+                [value]="i"
+                [label]="i | titlecase"
+                [(ngModel)]="indicatore"
+                (ngModelChange)="applyFilters()">
+              </it-radio-button>
+            }
           </fieldset>
         </div>
 
@@ -30,14 +31,15 @@
         <div class="col-md-4">
           <fieldset>
             <legend class="fw-bold mb-2">Direzione</legend>
-            <it-radio-button
-              *ngFor="let d of ['in','out']"
-              name="direzione"
-              [value]="d"
-              [label]="d === 'in' ? 'Ingresso' : 'Uscita'"
-              [(ngModel)]="direzione"
-              (ngModelChange)="applyFilters()">
-            </it-radio-button>
+            @for (d of ['in','out']; track d) {
+              <it-radio-button
+                name="direzione"
+                [value]="d"
+                [label]="d === 'in' ? 'Ingresso' : 'Uscita'"
+                [(ngModel)]="direzione"
+                (ngModelChange)="applyFilters()">
+              </it-radio-button>
+            }
           </fieldset>
         </div>
 
@@ -45,14 +47,15 @@
         <div class="col-md-4">
           <fieldset>
             <legend class="fw-bold mb-2">Giorni</legend>
-            <it-radio-button
-              *ngFor="let g of ['feriali','prefestivi','festivi','sempre']"
-              name="giorni"
-              [value]="g"
-              [label]="g | titlecase"
-              [(ngModel)]="giorni"
-              (ngModelChange)="applyFilters()">
-            </it-radio-button>
+            @for (g of ['feriali','prefestivi','festivi','sempre']; track g) {
+              <it-radio-button
+                name="giorni"
+                [value]="g"
+                [label]="g | titlecase"
+                [(ngModel)]="giorni"
+                (ngModelChange)="applyFilters()">
+              </it-radio-button>
+            }
           </fieldset>
         </div>
       </div>
@@ -60,45 +63,49 @@
   </div>
 
   <!-- Accordion Help -->
-  <div class="accordion my-3" *ngIf="selectedHelp">
-    <div class="accordion-item">
-      <h2 class="accordion-header">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHelp" aria-expanded="true">
-          Descrizione
-        </button>
-      </h2>
-      <div id="collapseHelp" class="accordion-collapse collapse show">
-        <div class="accordion-body">
-          {{ selectedHelp }}
+  @if (selectedHelp) {
+    <div class="accordion my-3">
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHelp" aria-expanded="true">
+            Descrizione
+          </button>
+        </h2>
+        <div id="collapseHelp" class="accordion-collapse collapse show">
+          <div class="accordion-body">
+            {{ selectedHelp }}
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  }
 
   <!-- Tabs -->
   <it-tab-container (tabSelected)="onTabSelected($event)">
     <it-tab-item label="Mappa" icon="map-marker" [active]="activeTab === 'mappa'">
-      <app-overtourism-map
-        *ngIf="activeTab === 'mappa'"
-        [data]="rawData"
-        [geojson]="geojson"
-        [selectedKpi]="selectedKpi"
-        [featureIdKey]="featureIdKey"
-        [hoverTemplateBuilder]="hoverTemplateBuilder"
-        [kpiAlias]="selectedKpiAlias"
-        [kpiTicks]="selectedKpiTicks"
-        [locationsCol]="locationsCol">
-      </app-overtourism-map>
+      @if (activeTab === 'mappa') {
+        <app-overtourism-map
+          [data]="rawData"
+          [geojson]="geojson"
+          [selectedKpi]="selectedKpi"
+          [featureIdKey]="featureIdKey"
+          [hoverTemplateBuilder]="hoverTemplateBuilder"
+          [kpiAlias]="selectedKpiAlias"
+          [kpiTicks]="selectedKpiTicks"
+          [locationsCol]="locationsCol">
+        </app-overtourism-map>
+      }
     </it-tab-item>
 
     <it-tab-item label="Grafici" icon="chart-line" [active]="activeTab === 'grafici'">
-      <app-overtourism-charts
-        *ngIf="activeTab === 'grafici'"
-        [data]="rawData"
-        [selectedKpi]="selectedKpi"
-        [hoverTemplateBuilder]="hoverTemplateBuilder"
-        [kpis]="kpis">
-      </app-overtourism-charts>
+      @if (activeTab === 'grafici') {
+        <app-overtourism-charts
+          [data]="rawData"
+          [selectedKpi]="selectedKpi"
+          [hoverTemplateBuilder]="hoverTemplateBuilder"
+          [kpis]="kpis">
+        </app-overtourism-charts>
+      }
     </it-tab-item>
   </it-tab-container>
 </div>

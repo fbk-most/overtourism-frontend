@@ -9,13 +9,16 @@ import { ScenarioService } from '../../services/scenario.service';
 @Component({
   selector: 'app-report-plot',
   template: `
-    <app-shared-plot
-      *ngIf="payload"
-      [payload]="payload"
-      (renderComplete)="finishRendering()">
-    </app-shared-plot>
-    <p *ngIf="error" class="text-danger">{{ error }}</p>
-  `,
+    @if (payload) {
+      <app-shared-plot
+        [payload]="payload"
+        (renderComplete)="finishRendering()">
+      </app-shared-plot>
+    }
+    @if (error) {
+      <p class="text-danger">{{ error }}</p>
+    }
+    `,
   styles: [`
     :host {
       display: block;

@@ -1,50 +1,57 @@
 <!-- Floating button -->
 <div class="chatbot-button" (click)="toggle()">💬</div>
 
-<div class="chatbot-window" *ngIf="isOpen" (focusin)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
-  <div class="chatbot-header">
-    Chatbot
-    <span class="close" (click)="toggle()">✕</span>
-  </div>
-
-  <div class="chatbot-messages" #scrollContainer>
-    <div *ngFor="let msg of messages; let i = index"
-         [ngClass]="{ 'user': msg.role === 'user', 'bot': msg.role === 'assistant' }">
- 
-      <div class="message-text" *ngIf="msg.role === 'user'">{{ msg.content }}</div>
-
-      <div *ngIf="msg.role === 'assistant'">
-        <div class="message-text markdown-body"
-             [innerHTML]="msg.html ?? msg.content"
-             (click)="handleAssistantLinkClick($event)"></div>
-        
-        <!-- Usa il componente condiviso e passa l'indice reale (i) e non msg.index se non necessario -->
-        <app-chat-feedback-bar
-          *ngIf="i > 0"
-          [feedback]="getFeedback(i)"
-          (voteChange)="handleVote(i, $any($event))"
-          (commentChange)="handleComment(i, $event)">
-        </app-chat-feedback-bar>
-      </div>
+@if (isOpen) {
+  <div class="chatbot-window" (focusin)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
+    <div class="chatbot-header">
+      Chatbot
+      <span class="close" (click)="toggle()">✕</span>
     </div>
-
-    <!-- Typing indicator -->
-    <div *ngIf="isTyping" class="bot typing">
-      <div class="message-text">
-        <span></span><span></span><span></span>
-      </div>
-      <div class="status-text" *ngIf="statusMessage">{{ statusMessage }}</div>
+    <div class="chatbot-messages" #scrollContainer>
+      @for (msg of messages; track msg; let i = $index) {
+        <div
+          [ngClass]="{ 'user': msg.role === 'user', 'bot': msg.role === 'assistant' }">
+          @if (msg.role === 'user') {
+            <div class="message-text">{{ msg.content }}</div>
+          }
+          @if (msg.role === 'assistant') {
+            <div>
+              <div class="message-text markdown-body"
+                [innerHTML]="msg.html ?? msg.content"
+              (click)="handleAssistantLinkClick($event)"></div>
+              <!-- Usa il componente condiviso e passa l'indice reale (i) e non msg.index se non necessario -->
+              @if (i > 0) {
+                <app-chat-feedback-bar
+                  [feedback]="getFeedback(i)"
+                  (voteChange)="handleVote(i, $any($event))"
+                  (commentChange)="handleComment(i, $event)">
+                </app-chat-feedback-bar>
+              }
+            </div>
+          }
+        </div>
+      }
+      <!-- Typing indicator -->
+      @if (isTyping) {
+        <div class="bot typing">
+          <div class="message-text">
+            <span></span><span></span><span></span>
+          </div>
+          @if (statusMessage) {
+            <div class="status-text">{{ statusMessage }}</div>
+          }
+        </div>
+      }
+    </div>
+    <div class="chatbot-input">
+      <textarea
+        [(ngModel)]="inputText"
+        (keydown)="handleKeyDown($event)"
+        spellcheck="false"
+        placeholder="Scrivi qui il tuo messaggio..."
+        rows="1"
+      ></textarea>
+      <button (click)="send()" [disabled]="isTyping">Invia</button>
     </div>
   </div>
-
-  <div class="chatbot-input">
-    <textarea
-      [(ngModel)]="inputText"
-      (keydown)="handleKeyDown($event)"
-      spellcheck="false"
-      placeholder="Scrivi qui il tuo messaggio..."
-      rows="1"
-    ></textarea>
-    <button (click)="send()" [disabled]="isTyping">Invia</button>
-  </div>
-</div>
+}

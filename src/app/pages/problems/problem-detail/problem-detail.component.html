@@ -1,26 +1,26 @@
 <it-card background="true" class="p-4 position-relative">
   <!-- Pulsanti in alto a destra -->
-  <div class="position-absolute top-0 end-0 m-3 d-flex gap-2" *ngIf="authService.canEdit()">
-    <it-modal #editProblemModal size="lg">
-      <ng-container modalTitle>
-        {{ 'problems.editTitle' | translate }}
-      </ng-container>
-    
-      <app-problem-create 
-        [editProblemId]="problem?.problem_id"
-        (problemSaved)="onProblemEdited($event)"
-        (problemCancel)="onProblemCancel()"
-        >
-      </app-problem-create>
-    </it-modal>
-    
-    <button itButton="primary" (click)="editProblemModal.show()">
-      <span class="material-icons align-middle">edit</span> Modifica
-    </button>
-    <button itButton="danger" size="sm" (click)="openDeleteModal($event)">
-      <span class="material-icons align-middle">delete</span> Elimina
-    </button>
-  </div>
+  @if (authService.canEdit()) {
+    <div class="position-absolute top-0 end-0 m-3 d-flex gap-2">
+      <it-modal #editProblemModal size="lg">
+        <ng-container modalTitle>
+          {{ 'problems.editTitle' | translate }}
+        </ng-container>
+        <app-problem-create
+          [editProblemId]="problem?.problem_id"
+          (problemSaved)="onProblemEdited($event)"
+          (problemCancel)="onProblemCancel()"
+          >
+        </app-problem-create>
+      </it-modal>
+      <button itButton="primary" (click)="editProblemModal.show()">
+        <span class="material-icons align-middle">edit</span> Modifica
+      </button>
+      <button itButton="danger" size="sm" (click)="openDeleteModal($event)">
+        <span class="material-icons align-middle">delete</span> Elimina
+      </button>
+    </div>
+  }
 
   <h3 class="mb-4">{{ problem?.name }}</h3>
 
@@ -38,58 +38,62 @@
       <tr>
         <td class="fw-bold w-25">{{ 'problems.fields.objective' | translate }}</td>
         <td>
-          <ng-container *ngIf="problem?.extras?.objective; else emptyObjective">
+          @if (problem?.extras?.objective) {
             {{ problem?.extras?.objective }}
-          </ng-container>
-
-          <ng-template #emptyObjective>
+          } @else {
             <span class="text-muted fst-italic">(vuoto)</span>
-          </ng-template>
+          }
+
         </td>
       </tr>
 
       <!-- <tr>
-        <td class="fw-bold w-25">{{ 'problems.fields.category' | translate }}</td>
-        <td>
-          <ng-container *ngIf="problem?.extras?.groups?.length; else noGroups">
-            <span *ngFor="let cat of problem?.extras?.groups; let last = last">
-              {{ cat | translate }}<span *ngIf="!last">, </span>
-            </span>
-          </ng-container>
-          <ng-template #noGroups>
-            <span class="text-muted fst-italic">(vuoto)</span>
-          </ng-template>
-        </td>
-      </tr> -->
-      <tr>
-        <td class="fw-bold w-25">{{ 'problems.fields.resources' | translate }}</td>
-        <td>
-          <ng-container *ngIf="problem?.extras?.links?.length; else noLinks">
-            <ul>
-              <li *ngFor="let link of problem?.extras?.links">
+      <td class="fw-bold w-25">{{ 'problems.fields.category' | translate }}</td>
+      <td>
+        <ng-container *ngIf="problem?.extras?.groups?.length; else noGroups">
+          <span *ngFor="let cat of problem?.extras?.groups; let last = last">
+            {{ cat | translate }}<span *ngIf="!last">, </span>
+          </span>
+        </ng-container>
+        <ng-template #noGroups>
+          <span class="text-muted fst-italic">(vuoto)</span>
+        </ng-template>
+      </td>
+    </tr> -->
+    <tr>
+      <td class="fw-bold w-25">{{ 'problems.fields.resources' | translate }}</td>
+      <td>
+        @if (problem?.extras?.links?.length) {
+          <ul>
+            @for (link of problem?.extras?.links; track link) {
+              <li>
                 <a [href]="link" target="_blank">{{ link }}</a>
               </li>
-            </ul>
-          </ng-container>
-          <ng-template #noLinks>
-            <span class="text-muted fst-italic">(vuoto)</span>
-          </ng-template>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <div class="mb-4">
-    <app-report-export [context]="{ problems: [problemId] }"></app-report-export>
+            }
+          </ul>
+        } @else {
+          <span class="text-muted fst-italic">(vuoto)</span>
+        }
+      </td>
+    </tr>
+  </tbody>
+</table>
+<div class="mb-4">
+  <app-report-export [context]="{ problems: [problemId] }"></app-report-export>
+</div>
+@if (authService.canEdit()) {
+  <div class="mb-3">
+    @if (!showProposalForm) {
+      <button itButton="primary" (click)="openProposalModal()">
+        {{ 'problems.fields.addProposal' | translate }}
+      </button>
+    }
   </div>
-  <div class="mb-3" *ngIf="authService.canEdit()">
-    <button itButton="primary" (click)="openProposalModal()" *ngIf="!showProposalForm">
-      {{ 'problems.fields.addProposal' | translate }}
-    </button>
-  </div>
+}
 
-  <div class="mt-4" *ngIf="proposals?.length">
+@if (proposals?.length) {
+  <div class="mt-4">
     <h4 class="mb-3">{{ 'problems.proposals.currentProposals' | translate }}</h4>
-  
     <it-table>
       <ng-container thead>
         <tr>
@@ -99,56 +103,58 @@
           <th class="text-end align-middle text-nowrap col-actions">{{ 'problems.proposals.tableHeader.actions' | translate }}</th>
         </tr>
       </ng-container>
-  
       <ng-container tbody>
-        <tr *ngFor="let proposal of proposals; let i = index"
+        @for (proposal of proposals; track proposal; let i = $index) {
+          <tr
             [ngClass]="{'bg-custom-light': i % 2 === 0, 'bg-white': i % 2 !== 0}">
-          <td class="text-start align-middle col-fit">{{ i + 1 }}</td>
-          <td class="text-start align-middle text-nowrap fw-semibold col-title">{{ proposal?.name }}</td>
-          <td class="text-start align-middle col-desc">
-            <div class="table-desc-clamp" [title]="proposal?.description || ''">
-              {{ proposal?.description || '—' }}
-            </div>
-          </td>
-          <td class="text-end align-middle col-actions">
-            <div class="d-inline-flex justify-content-end gap-2 text-nowrap">
-              <!-- 👁️ Pulsante di dettaglio -->
-              <button
-                class="btn btn-sm btn-icon text-primary"
-                title="Visualizza"
-                (click)="viewProposalDetail(proposal.proposal_id)">
-                <span class="material-icons align-middle">visibility</span>
-              </button>
-  
-              <!-- ✏️ Modifica -->
-              <button
-                *ngIf="authService.canEdit()"
-                class="btn btn-sm btn-icon text-primary"
-                title="Modifica"
-                (click)="editProposal(proposal.proposal_id)">
-                <span class="material-icons align-middle">edit</span>
-              </button>
-  
-              <!-- 🗑️ Elimina -->
-              <button
-                *ngIf="authService.canEdit()"
-                class="btn btn-sm btn-icon text-primary"
-                (click)="openDeleteProposalModal(proposal); $event.stopPropagation()"
-                title="Elimina"
-                aria-label="Elimina proposta">
-                <span class="material-icons align-middle">delete</span>
-              </button>
-            </div>
-          </td>
-        </tr>
+            <td class="text-start align-middle col-fit">{{ i + 1 }}</td>
+            <td class="text-start align-middle text-nowrap fw-semibold col-title">{{ proposal?.name }}</td>
+            <td class="text-start align-middle col-desc">
+              <div class="table-desc-clamp" [title]="proposal?.description || ''">
+                {{ proposal?.description || '—' }}
+              </div>
+            </td>
+            <td class="text-end align-middle col-actions">
+              <div class="d-inline-flex justify-content-end gap-2 text-nowrap">
+                <!-- 👁️ Pulsante di dettaglio -->
+                <button
+                  class="btn btn-sm btn-icon text-primary"
+                  title="Visualizza"
+                  (click)="viewProposalDetail(proposal.proposal_id)">
+                  <span class="material-icons align-middle">visibility</span>
+                </button>
+                <!-- ✏️ Modifica -->
+                @if (authService.canEdit()) {
+                  <button
+                    class="btn btn-sm btn-icon text-primary"
+                    title="Modifica"
+                    (click)="editProposal(proposal.proposal_id)">
+                    <span class="material-icons align-middle">edit</span>
+                  </button>
+                }
+                <!-- 🗑️ Elimina -->
+                @if (authService.canEdit()) {
+                  <button
+                    class="btn btn-sm btn-icon text-primary"
+                    (click)="openDeleteProposalModal(proposal); $event.stopPropagation()"
+                    title="Elimina"
+                    aria-label="Elimina proposta">
+                    <span class="material-icons align-middle">delete</span>
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
       </ng-container>
     </it-table>
   </div>
-  
-  
-  
+}
 
-  <app-back-button (click)="back()"></app-back-button>
+
+
+
+<app-back-button (click)="back()"></app-back-button>
 </it-card>
 <it-modal #deleteProblemModal>
   <ng-container modalTitle>
@@ -175,7 +181,7 @@
   <app-proposal-create
     [problemId]="problemId"
     [proposalToEdit]="proposalToEdit"
-    
+
     (proposalCreated)="onProposalCreatedModal()">
   </app-proposal-create>
 

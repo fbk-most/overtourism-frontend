@@ -1,37 +1,43 @@
-<div class="mb-3" *ngIf="scenarioIds.length > 0">
-
-  <!-- Pulsante di Generazione -->
-  <div *ngIf="!aiSummary && !aiSummaryLoading" class="my-3">
-    <button 
-      type="button"
-      class="btn btn-outline-primary d-flex align-items-center gap-2" 
-      (click)="generateAiSummary()"
-      title="Genera sommario con AI"
-      aria-label="Genera sommario descrittivo con intelligenza artificiale">
-      <span class="material-icons" aria-hidden="true">auto_awesome</span>
-      <span>Genera sommario</span>
-    </button>
+@if (scenarioIds.length > 0) {
+  <div class="mb-3">
+    <!-- Pulsante di Generazione -->
+    @if (!aiSummary && !aiSummaryLoading) {
+      <div class="my-3">
+        <button
+          type="button"
+          class="btn btn-outline-primary d-flex align-items-center gap-2"
+          (click)="generateAiSummary()"
+          title="Genera sommario con AI"
+          aria-label="Genera sommario descrittivo con intelligenza artificiale">
+          <span class="material-icons" aria-hidden="true">auto_awesome</span>
+          <span>Genera sommario</span>
+        </button>
+      </div>
+    }
+    <!-- Loading -->
+    @if (aiSummaryLoading) {
+      <div class="d-flex align-items-center gap-2 text-muted small py-2" role="status" aria-live="polite">
+        <div class="spinner-border spinner-border-sm" aria-hidden="true"></div>
+        <span>Generazione sommario in corso...</span>
+      </div>
+    }
+    <!-- Errore con pulsante Riprova -->
+    @if (aiSummaryError) {
+      <div class="alert alert-warning py-2 small d-flex justify-content-between align-items-center" role="alert">
+        <div>
+          <span class="material-icons align-middle me-1" style="font-size:16px;" aria-hidden="true">warning</span>
+          <span>Al momento è impossibile generare il sommario automatico.</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="generateAiSummary()" aria-label="Riprova generazione sommario">
+          Riprova
+        </button>
+      </div>
+    }
+    <!-- Risultato Sommario -->
+    @if (aiSummary && !aiSummaryLoading) {
+      <div class="mb-4" aria-label="Sommario generato">
+        <div class="small text-dark ai-summary-content" [innerHTML]="aiSummary"></div>
+      </div>
+    }
   </div>
-
-  <!-- Loading -->
-  <div class="d-flex align-items-center gap-2 text-muted small py-2" *ngIf="aiSummaryLoading" role="status" aria-live="polite">
-    <div class="spinner-border spinner-border-sm" aria-hidden="true"></div>
-    <span>Generazione sommario in corso...</span>
-  </div>
-
-  <!-- Errore con pulsante Riprova -->
-  <div class="alert alert-warning py-2 small d-flex justify-content-between align-items-center" *ngIf="aiSummaryError" role="alert">
-    <div>
-      <span class="material-icons align-middle me-1" style="font-size:16px;" aria-hidden="true">warning</span>
-      <span>Al momento è impossibile generare il sommario automatico.</span>
-    </div>
-    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="generateAiSummary()" aria-label="Riprova generazione sommario">
-      Riprova
-    </button>
-  </div>
-
-  <!-- Risultato Sommario -->
-  <div *ngIf="aiSummary && !aiSummaryLoading" class="mb-4" aria-label="Sommario generato">
-    <div class="small text-dark ai-summary-content" [innerHTML]="aiSummary"></div>
-  </div>
-</div>
+}

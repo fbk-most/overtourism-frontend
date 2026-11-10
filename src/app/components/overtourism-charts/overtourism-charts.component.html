@@ -12,39 +12,45 @@
 
   <!-- Badge comuni selezionati -->
   <div class="mt-2 d-flex flex-wrap gap-2">
-    <span *ngFor="let c of selectedComuni" class="badge bg-primary">
-      {{ c }}
-      <button type="button"
-              class="btn-close btn-close-white ms-1"
-              aria-label="Rimuovi"
-              (click)="removeComune(c)">
-      </button>
-    </span>
+    @for (c of selectedComuni; track c) {
+      <span class="badge bg-primary">
+        {{ c }}
+        <button type="button"
+          class="btn-close btn-close-white ms-1"
+          aria-label="Rimuovi"
+          (click)="removeComune(c)">
+        </button>
+      </span>
+    }
   </div>
-<!-- Toggle chart type -->
-<div class="d-flex justify-content-end my-2">
-  <button class="btn btn-sm me-2"
-          [ngClass]="{'btn-primary': chartType === 'scatter', 'btn-outline-primary': chartType !== 'scatter'}"
-          (click)="chartType = 'scatter'; drawChart()">
-    Linee
-  </button>
-  <button class="btn btn-sm"
-          [ngClass]="{'btn-primary': chartType === 'bar', 'btn-outline-primary': chartType !== 'bar'}"
-          (click)="chartType = 'bar'; drawChart()">
-    Barre
-  </button>
-</div>
+  <!-- Toggle chart type -->
+  <div class="d-flex justify-content-end my-2">
+    <button class="btn btn-sm me-2"
+      [ngClass]="{'btn-primary': chartType === 'scatter', 'btn-outline-primary': chartType !== 'scatter'}"
+      (click)="chartType = 'scatter'; drawChart()">
+      Linee
+    </button>
+    <button class="btn btn-sm"
+      [ngClass]="{'btn-primary': chartType === 'bar', 'btn-outline-primary': chartType !== 'bar'}"
+      (click)="chartType = 'bar'; drawChart()">
+      Barre
+    </button>
+  </div>
 
   <!-- Messaggi -->
-  <div *ngIf="!data?.length" class="text-center text-muted mt-3">
-    Non ci sono dati disponibili.
-  </div>
+  @if (!data?.length) {
+    <div class="text-center text-muted mt-3">
+      Non ci sono dati disponibili.
+    </div>
+  }
 
-  <div *ngIf="data?.length && (!selectedKpi || !selectedComuni?.length)"
-       class="text-center text-muted mt-3">
-    Seleziona uno o più <strong>comuni</strong> e un <strong>indicatore</strong>
-    per visualizzare il grafico.
-  </div>
+  @if (data?.length && (!selectedKpi || !selectedComuni?.length)) {
+    <div
+      class="text-center text-muted mt-3">
+      Seleziona uno o più <strong>comuni</strong> e un <strong>indicatore</strong>
+      per visualizzare il grafico.
+    </div>
+  }
 
   <!-- Grafico sempre presente, ma vuoto se mancano requisiti -->
   <div #histogramChart class="plotly-chart w-100" style="height: 400px; width: 100%;"></div>

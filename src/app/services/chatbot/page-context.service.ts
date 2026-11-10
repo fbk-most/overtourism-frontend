@@ -1,5 +1,5 @@
-import { DOCUMENT } from '@angular/common';
-import { Inject, Injectable, NgZone } from '@angular/core';
+
+import { Inject, Injectable, NgZone, DOCUMENT } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   PAGE_CONTEXT_LIMITS,

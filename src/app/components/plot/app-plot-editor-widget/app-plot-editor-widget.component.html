@@ -7,135 +7,140 @@
       <div class="col-4 col-md-3">
         <div class="nav nav-tabs nav-tabs-vertical nav-tabs-vertical-background" role="tablist"
           aria-orientation="vertical">
-          <a *ngFor="let group of objectKeys(widgets)" class="nav-link" [class.active]="activeTab === group"
-            (click)="activeTab = group" href="javascript:void(0)" role="tab">
-            {{ group }}
-          </a>
+          @for (group of objectKeys(widgets); track group) {
+            <a class="nav-link" [class.active]="activeTab === group"
+              (click)="activeTab = group" href="javascript:void(0)" role="tab">
+              {{ group }}
+            </a>
+          }
         </div>
       </div>
 
       <!-- Tab Content -->
       <div class="col-8 col-md-9">
         <div class="tab-content">
-          <div *ngFor="let group of objectKeys(widgets)" class="tab-pane p-3 fade" [class.show]="activeTab === group"
-            [class.active]="activeTab === group" [class.fade]="true">
-            <div class="row">
-              <div *ngFor="let widget of widgets[group]" class="col-12 col-md-6 mb-4">
-                <div>
-                  <div class="p-2  rounded h-100">
-                      <div class="d-flex justify-content-start align-items-center gap-1 mb-1">
-                        <label class="form-label fw-bold mb-0 text-truncate" [title]="widget.label">
-                          {{ widget.label }}
-                        </label>
-                    
-                        <span *ngIf="widget.description"
+          @for (group of objectKeys(widgets); track group) {
+            <div class="tab-pane p-3 fade" [class.show]="activeTab === group"
+              [class.active]="activeTab === group" [class.fade]="true">
+              <div class="row">
+                @for (widget of widgets[group]; track widget) {
+                  <div class="col-12 col-md-6 mb-4">
+                    <div>
+                      <div class="p-2  rounded h-100">
+                        <div class="d-flex justify-content-start align-items-center gap-1 mb-1">
+                          <label class="form-label fw-bold mb-0 text-truncate" [title]="widget.label">
+                            {{ widget.label }}
+                          </label>
+                          @if (widget.description) {
+                            <span
                               class="material-icons text-muted align-middle ms-1"
                               style="font-size: 18px; cursor: pointer;"
                               [itTooltip]="widget.description"
                               [tooltipPlacement]="'top'"
                               role="img"
                               [attr.aria-label]="widget.description">
-                          info_outline
-                        </span>
-                      </div>
-                   <!-- CATEGORIALE -->
-                   <ng-container *ngIf="widget.kind === 'categorical'; else distributionBlock">
-                    <div class="dropdown mt-2 position-relative" 
-                         [ngClass]="{ 'disabled-slider-wrapper': !isEditable(widget) }">
-                      <button 
-                        class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center"
-                        type="button"
-                      [attr.data-assistant-param-name]="widget.name"
-                      [attr.aria-label]="widget.label"
-                      data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                        [disabled]="!isEditable(widget)">
-                        <span>{{ widget.v ? getOptionLabel(widget, widget.v) : 'Seleziona...' }}</span>
-                        <span class="material-icons ms-2">expand_more</span>
-                      </button>
-
-                      <div class="dropdown-menu w-100 shadow" 
-                           style="max-height: 200px; overflow-y: auto;">
-                        <div class="link-list-wrapper">
-                          <ul class="link-list">
-                            <li>
-                              <a class="list-item text-muted"
-                                 [class.active]="!widget.v"
-                                 (click)="selectCategorical(widget, null)"
-                                 style="cursor: pointer;">
-                                <span><em>Nessuna selezione</em></span>
-                              </a>
-                            </li>
-                            <li *ngFor="let opt of widget.support">
-                              <a class="list-item"
-                                 [class.active]="widget.v === opt"
-                                 (click)="selectCategorical(widget, opt)"
-                                 style="cursor: pointer;">
-                                <span>{{ getOptionLabel(widget, opt) }}</span>
-                              </a>
-                            </li>
-                          </ul>
+                              info_outline
+                            </span>
+                          }
                         </div>
-                      </div>
-                    </div>
-                  </ng-container>
-
-                    <!-- DISTRIBUTION (range doppio) -->
-                    <ng-template #distributionBlock>
-                      <ng-container *ngIf="widget.kind === 'distribution'; else scalarBlock">
+                        <!-- CATEGORIALE -->
+                        @if (widget.kind === 'categorical') {
+                          <div class="dropdown mt-2 position-relative"
+                            [ngClass]="{ 'disabled-slider-wrapper': !isEditable(widget) }">
+                            <button
+                              class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center"
+                              type="button"
+                              [attr.data-assistant-param-name]="widget.name"
+                              [attr.aria-label]="widget.label"
+                              data-bs-toggle="dropdown"
+                              aria-expanded="false"
+                              [disabled]="!isEditable(widget)">
+                              <span>{{ widget.v ? getOptionLabel(widget, widget.v) : 'Seleziona...' }}</span>
+                              <span class="material-icons ms-2">expand_more</span>
+                            </button>
+                            <div class="dropdown-menu w-100 shadow"
+                              style="max-height: 200px; overflow-y: auto;">
+                              <div class="link-list-wrapper">
+                                <ul class="link-list">
+                                  <li>
+                                    <a class="list-item text-muted"
+                                      [class.active]="!widget.v"
+                                      (click)="selectCategorical(widget, null)"
+                                      style="cursor: pointer;">
+                                      <span><em>Nessuna selezione</em></span>
+                                    </a>
+                                  </li>
+                                  @for (opt of widget.support; track opt) {
+                                    <li>
+                                      <a class="list-item"
+                                        [class.active]="widget.v === opt"
+                                        (click)="selectCategorical(widget, opt)"
+                                        style="cursor: pointer;">
+                                        <span>{{ getOptionLabel(widget, opt) }}</span>
+                                      </a>
+                                    </li>
+                                  }
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+                        } @else {
+                          @if (widget.kind === 'distribution') {
                         <div class="custom-slider" [ngClass]="{
                           'disabled-slider': !isEditable(widget),
                           'disabled-slider-wrapper': !isEditable(widget)
                         }" [itTooltip]="!isEditable(widget) ? 'Modifica non disponibile per questo indice' : undefined">
-                          <ngx-slider
-                            [attr.data-assistant-param-name]="widget.name"
-                            [attr.aria-label]="widget.label"
-                            [(value)]="widget.vMin!"
-                            [(highValue)]="widget.vMax!"
+                              <ngx-slider
+                                [attr.data-assistant-param-name]="widget.name"
+                                [attr.aria-label]="widget.label"
+                                [(value)]="widget.vMin!"
+                                [(highValue)]="widget.vMax!"
                             [options]="{
                               floor: widget.min_value ?? 0,
                               ceil: widget.max_value ?? 1000,
                               step: widget.step ?? 1
                             }"
-                            (userChangeEnd)="onWidgetChange()">
-                          </ngx-slider>
-                        </div>
-                        <div class="small text-end text-muted">
-                          [{{ widget.vMin }}, {{ widget.vMax }}]
-                          <span *ngIf="widget.unit"> {{ widget.unit }}</span>
-                        </div>
-                      </ng-container>
-                    </ng-template>
-
-                    <!-- SCALAR (valore singolo) -->
-                    <ng-template #scalarBlock>
-                      <div class="d-flex align-items-center gap-2 mt-2" [ngClass]="{ 'disabled-slider-wrapper': !isEditable(widget) }">
-                        <button class="btn btn-sm btn-outline-secondary" (click)="decrease(widget)" [disabled]="!isEditable(widget)">−</button>
-                        <input type="number"
-                               class="form-control form-control-sm text-center"
-                               [attr.data-assistant-param-name]="widget.name"
-                               [attr.aria-label]="widget.label"
-                               style="width: 90px;"
-                               [(ngModel)]="widget.v"
-                               (ngModelChange)="onWidgetChange()"
-                               [min]="widget.min_value ?? 0"
-                               [max]="widget.max_value ?? 9999"
-                               [step]="widget.step ?? 1"
-                               [disabled]="!isEditable(widget)"/>
-                        <button class="btn btn-sm btn-outline-secondary" (click)="increase(widget)" [disabled]="!isEditable(widget)">+</button>
-                        <span *ngIf="widget.unit" class="text-muted small">{{ widget.unit }}</span>
+                                (userChangeEnd)="onWidgetChange()">
+                              </ngx-slider>
+                            </div>
+                            <div class="small text-end text-muted">
+                              [{{ widget.vMin }}, {{ widget.vMax }}]
+                              @if (widget.unit) {
+                                <span> {{ widget.unit }}</span>
+                              }
+                            </div>
+                          } @else {
+                            <div class="d-flex align-items-center gap-2 mt-2" [ngClass]="{ 'disabled-slider-wrapper': !isEditable(widget) }">
+                              <button class="btn btn-sm btn-outline-secondary" (click)="decrease(widget)" [disabled]="!isEditable(widget)">−</button>
+                              <input type="number"
+                                class="form-control form-control-sm text-center"
+                                [attr.data-assistant-param-name]="widget.name"
+                                [attr.aria-label]="widget.label"
+                                style="width: 90px;"
+                                [(ngModel)]="widget.v"
+                                (ngModelChange)="onWidgetChange()"
+                                [min]="widget.min_value ?? 0"
+                                [max]="widget.max_value ?? 9999"
+                                [step]="widget.step ?? 1"
+                                [disabled]="!isEditable(widget)"/>
+                              <button class="btn btn-sm btn-outline-secondary" (click)="increase(widget)" [disabled]="!isEditable(widget)">+</button>
+                              @if (widget.unit) {
+                                <span class="text-muted small">{{ widget.unit }}</span>
+                              }
+                            </div>
+                          }
+                        }
+                        <!-- DISTRIBUTION (range doppio) -->
+                        <!-- SCALAR (valore singolo) -->
                       </div>
-                    </ng-template>
-
-
+                    </div>
                   </div>
-                </div>
+                }
               </div>
-
             </div>
-          </div>
+          }
         </div>
       </div>
     </div>
   </div>
-  <!-- </div> -->
+<!-- </div> -->

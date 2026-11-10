@@ -1,5 +1,5 @@
 import { Component, ElementRef, Input, OnChanges, SimpleChanges, ViewChild, AfterViewInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import Plotly from 'plotly.js-dist-min';
 import { TranslateService } from '@ngx-translate/core';
 import { SharedHistogramPayload } from '../../../models/plot.model';
@@ -8,7 +8,7 @@ import { getComparisonChartKpis, getKpiLabel } from '../../../utils/kpi.utils';
 @Component({
   selector: 'app-shared-histogram',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './shared-histogram.component.html'
 })
 export class SharedHistogramComponent implements AfterViewInit, OnChanges {

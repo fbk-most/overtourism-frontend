@@ -3,67 +3,74 @@
 + (proposal.status || '—') 
 + ' · ' 
 + (proposal.updated | date:'short')">
-    <div class="p-3">
-  
-      <!-- Pulsanti di azione -->
-      <div class="d-flex justify-content-end gap-2 mb-3">
-        <button *ngIf="authService.canEdit()" itButton="primary" size="sm" (click)="editProposal.emit(proposal.proposal_id)">
+  <div class="p-3">
+
+    <!-- Pulsanti di azione -->
+    <div class="d-flex justify-content-end gap-2 mb-3">
+      @if (authService.canEdit()) {
+        <button itButton="primary" size="sm" (click)="editProposal.emit(proposal.proposal_id)">
           <span class="material-icons align-middle">edit</span> Modifica
         </button>
-        <button *ngIf="authService.canEdit()" itButton="danger" size="sm" (click)="openDeleteModal(proposal.proposal_id)">
+      }
+      @if (authService.canEdit()) {
+        <button itButton="danger" size="sm" (click)="openDeleteModal(proposal.proposal_id)">
           <span class="material-icons align-middle">delete</span> Elimina
         </button>
+      }
+    </div>
+
+    <!-- Dettagli della proposta -->
+    <div class="border rounded p-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <p><strong>Titolo:</strong> {{ proposal.name || 'Senza titolo' }}</p>
+        <span class="badge" [ngClass]="statusClass(proposal.status)">
+          {{ proposal.status || '—' }}
+        </span>
       </div>
-  
-      <!-- Dettagli della proposta -->
-      <div class="border rounded p-3">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <p><strong>Titolo:</strong> {{ proposal.name || 'Senza titolo' }}</p>
-          <span class="badge" [ngClass]="statusClass(proposal.status)">
-            {{ proposal.status || '—' }}
-          </span>
-        </div>
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <p><strong>Descrizione:</strong> {{ proposal.description || 'Senza descrizione' }}</p>
- 
-         </div>
-   
-         <p><strong>Risorse:</strong> {{ proposal.extras?.resources?.length ? proposal.extras!.resources!.join(', ') : 'Nessuna' }}</p>
-         <p><strong>Contesto:</strong> {{ proposal.extras?.context || 'Nessuno' }}</p>
-         <p><strong>Impatto:</strong> {{ proposal.extras?.impact || 'Nessuno' }}</p>
-   
-         <p>
-          <strong>Scenari correlati:</strong>
-          <ng-container *ngIf="proposal.related_scenario_ids.length; else noScenarios">
-            <span *ngFor="let sId of proposal.related_scenario_ids; let last = last">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <p><strong>Descrizione:</strong> {{ proposal.description || 'Senza descrizione' }}</p>
+
+      </div>
+
+      <p><strong>Risorse:</strong> {{ proposal.extras?.resources?.length ? proposal.extras!.resources!.join(', ') : 'Nessuna' }}</p>
+      <p><strong>Contesto:</strong> {{ proposal.extras?.context || 'Nessuno' }}</p>
+      <p><strong>Impatto:</strong> {{ proposal.extras?.impact || 'Nessuno' }}</p>
+
+      <p>
+        <strong>Scenari correlati:</strong>
+        @if (proposal.related_scenario_ids.length) {
+          @for (sId of proposal.related_scenario_ids; track sId; let last = $last) {
+            <span>
               <span class="badge bg-info text-white me-2 mb-2">{{ getScenarioName(sId) }}</span>
             </span>
-          </ng-container>
-          <ng-template #noScenarios> Nessuno </ng-template>
-        </p>
-         <small class="text-muted">
-          Creato: {{ proposal.created | date:'short' }},
-          Aggiornato: {{ proposal.updated | date:'short' }}
-        </small>
-      </div>
+          }
+        } @else {
+          Nessuno
+        }
+      </p>
+      <small class="text-muted">
+        Creato: {{ proposal.created | date:'short' }},
+        Aggiornato: {{ proposal.updated | date:'short' }}
+      </small>
     </div>
-  </it-accordion>
-  <it-modal #deleteProposalModal>
-    <ng-container modalTitle>
-      Conferma eliminazione
-    </ng-container>
-  
-    <p>
-      Vuoi davvero eliminare la proposta
-      <strong>{{ proposalToDeleteId }}</strong>?
-    </p>
-  
-    <ng-container footer>
-      <button itButton="outline-primary" (click)="onCancelDeleteProposal()">
-        Annulla
-      </button>
-      <button itButton="danger" (click)="onConfirmDeleteProposal()">
-        Elimina
-      </button>
-    </ng-container>
-  </it-modal>
+  </div>
+</it-accordion>
+<it-modal #deleteProposalModal>
+  <ng-container modalTitle>
+    Conferma eliminazione
+  </ng-container>
+
+  <p>
+    Vuoi davvero eliminare la proposta
+    <strong>{{ proposalToDeleteId }}</strong>?
+  </p>
+
+  <ng-container footer>
+    <button itButton="outline-primary" (click)="onCancelDeleteProposal()">
+      Annulla
+    </button>
+    <button itButton="danger" (click)="onConfirmDeleteProposal()">
+      Elimina
+    </button>
+  </ng-container>
+</it-modal>

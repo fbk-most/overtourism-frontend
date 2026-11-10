@@ -21,11 +21,13 @@
           <div class="dropdown-menu w-100">
             <div class="link-list-wrapper">
               <ul class="link-list">
-                <li *ngFor="let s of scenari">
+                @for (s of scenari; track s) {
+                <li>
                   <a class="list-item" (click)="selectScenario(1, s.id)">
                     <span>{{ s.name }}</span>
                   </a>
                 </li>
+                }
               </ul>
             </div>
           </div>
@@ -49,11 +51,13 @@
           <div class="dropdown-menu w-100">
             <div class="link-list-wrapper">
               <ul class="link-list">
-                <li *ngFor="let s of scenari">
+                @for (s of scenari; track s) {
+                <li>
                   <a class="list-item" (click)="selectScenario(2, s.id)">
                     <span>{{ s.name }}</span>
                   </a>
                 </li>
+                }
               </ul>
             </div>
           </div>
@@ -62,33 +66,30 @@
     </div>
     <div class="col-md-2 d-flex align-items-center">
       <!-- <button itButton="secondary" (click)="openChatbot()">
-        Apri Chatbot
-      </button> -->
+      Apri Chatbot
+    </button> -->
       <app-report-export [context]="{ scenarios: reportScenarioIds }"></app-report-export>
     </div>
   </div>
   <div class="row mb-4">
     <div class="col-12">
-      <div *ngIf="!selectedScenario1Id && !selectedScenario2Id" class="text-muted text-center p-4">
+      @if (!selectedScenario1Id && !selectedScenario2Id) {
+      <div class="text-muted text-center p-4">
         <span class="material-icons" style="font-size: 48px; color: #ccc;">compare</span>
         <h4 class="mt-3">Confronto Scenari</h4>
         <p>Seleziona due scenari dai menu a tendina in alto per visualizzare il confronto dei KPI e i grafici.</p>
       </div>
-      <app-shared-histogram
-        *ngIf="selectedScenario1Id || selectedScenario2Id" 
-        [payload]="histogramPayload"
-        [loading]="isLoading"
-        [kpiMapper]="kpiMapper">
+      }
+      @if (selectedScenario1Id || selectedScenario2Id) {
+      <app-shared-histogram [payload]="histogramPayload" [loading]="isLoading" [kpiMapper]="kpiMapper">
       </app-shared-histogram>
+      }
     </div>
   </div>
   <div class="row">
     <!-- <app-kpi-comparison [kpisLeft]="kpisLeft ?? {}" [kpisRight]="kpisRight ?? {}"></app-kpi-comparison> -->
-    <app-shared-kpis 
-    [kpisMain]="kpisLeft" 
-    [kpisCompare]="kpisRight"
-    [kpiMapper]="kpiMapper">
-</app-shared-kpis>
+    <app-shared-kpis [kpisMain]="kpisLeft" [kpisCompare]="kpisRight" [kpiMapper]="kpiMapper">
+    </app-shared-kpis>
   </div>
   <div class="row">
     <h3 class="mb-3 p-3 h3">Grafici</h3>
@@ -102,12 +103,14 @@
             </span> {{('plot.visualizza' | translate) }}
           </button>
         </div>
-        <app-plot-controls class="exclude-from-pdf" *ngIf="showControls" [monoDimensionale]="monoDimensionale"
-          [sottosistemi]="sottosistemi" [sottosistemaSelezionato]="sottosistemaSelezionato"
+        @if (showControls) {
+        <app-plot-controls class="exclude-from-pdf" [monoDimensionale]="monoDimensionale" [sottosistemi]="sottosistemi"
+          [sottosistemaSelezionato]="sottosistemaSelezionato"
           (monoDimensionaleChange)="onMonoDimensionaleChange($event)"
           (sottosistemaSelezionatoChange)="onSottosistemaSelezionatoChange($event)"
           (funzioneChange)="onFunzioneChange()">
         </app-plot-controls>
+        }
       </div>
     </div>
 
@@ -119,10 +122,12 @@
         </h4>
       </div>
       <div class="position-relative" style="max-width: 600px; height: 600px;">
-        <div *ngIf="isLoading || isRenderingCharts" class="chart-loading-overlay d-flex flex-column align-items-center justify-content-center">
+        @if (isLoading || isRenderingCharts) {
+        <div class="chart-loading-overlay d-flex flex-column align-items-center justify-content-center">
           <div class="spinner-border text-primary" role="status"></div>
           <span class="mt-2 small fw-semibold text-muted">Aggiornamento grafico...</span>
         </div>
+        }
         <div #chartLeft style="width: 100%; height: 100%;"></div>
       </div>
     </div>
@@ -135,10 +140,12 @@
         </h4>
       </div>
       <div class="position-relative" style="max-width: 600px; height: 600px;">
-        <div *ngIf="isLoading || isRenderingCharts" class="chart-loading-overlay d-flex flex-column align-items-center justify-content-center">
+        @if (isLoading || isRenderingCharts) {
+        <div class="chart-loading-overlay d-flex flex-column align-items-center justify-content-center">
           <div class="spinner-border text-secondary" role="status"></div>
           <span class="mt-2 small fw-semibold text-muted">Aggiornamento grafico...</span>
         </div>
+        }
         <div #chartRight style="width: 100%; height: 100%;"></div>
       </div>
     </div>
@@ -157,14 +164,16 @@
       <div class="mt-2">
         <div class="callout callout-highlight note">
           <ul class="list-unstyled small mb-0">
-            <li *ngFor="let diff of getWidgetDiffs(widgetsLeft, widgetsRight)">
+            @for (diff of diffsLeftToRight; track diff.index_id) {
+            <li>
               <span class="fw-bold">{{ diff.index_name }}</span>:
               <span class="text-danger">{{ diff.value }}</span>
             </li>
+            }
           </ul>
-          <span *ngIf="getWidgetDiffs(widgetsLeft, widgetsRight).length === 0" class="text-muted">
-            Nessuna differenza
-          </span>
+          @if (diffsLeftToRight.length === 0) {
+          <span class="text-muted">Nessuna differenza</span>
+          }
         </div>
       </div>
     </div>
@@ -178,56 +187,77 @@
       </div>
       <div class="mt-2">
         <div class="callout callout-highlight note">
-          <ul class="list-unstyled small mb-0">
-            <li *ngFor="let diff of getWidgetDiffs(widgetsRight, widgetsLeft)">
+                    <ul class="list-unstyled small mb-0">
+            @for (diff of diffsRightToLeft; track diff.index_id) {
+            <li>
               <span class="fw-bold">{{ diff.index_name }}</span>:
               <span class="text-danger">{{ diff.value }}</span>
             </li>
+            }
           </ul>
-          <span *ngIf="getWidgetDiffs(widgetsRight, widgetsLeft).length === 0" class="text-muted">
+          @if (diffsRightToLeft.length === 0) {
+          <span class="text-muted">Nessuna differenza</span>
+          }
+          <!-- <ul class="list-unstyled small mb-0">
+            @for (diff of getWidgetDiffs(widgetsRight, widgetsLeft); track diff) {
+            <li>
+              <span class="fw-bold">{{ diff.index_name }}</span>:
+              <span class="text-danger">{{ diff.value }}</span>
+            </li>
+            }
+          </ul>
+          @if (getWidgetDiffs(widgetsRight, widgetsLeft).length === 0) {
+          <span class="text-muted">
             Nessuna differenza
           </span>
+          } -->
         </div>
       </div>
     </div>
-  
-      <!-- ── Sommario AI ─────────────────────────────────────────────────── -->
-  <div class="row mt-4" *ngIf="selectedScenario1Id && selectedScenario2Id">
-    <div class="col-12">
-      <h3 class="mb-3 p-3 h3 d-flex align-items-center gap-2">
-        <span class="material-icons text-primary">auto_awesome</span>
-        Analisi comparativa AI
-      </h3>
 
-      <!-- Pulsante di generazione manuale -->
-      <div class="mx-3 mb-3" *ngIf="!aiSummary && !aiSummaryLoading">
-        <button class="btn btn-outline-primary d-flex align-items-center gap-2" (click)="generateAiSummary()">
-          <span class="material-icons">auto_awesome</span>
-          <span>Genera analisi comparativa</span>
-        </button>
-      </div>
-
-      <!-- Loading -->
-      <div class="d-flex align-items-center gap-2 text-muted small p-3" *ngIf="aiSummaryLoading">
-        <div class="spinner-border spinner-border-sm" role="status"></div>
-        <span>Generazione analisi comparativa in corso...</span>
-      </div>
-
-      <!-- Errore -->
-      <div class="alert alert-warning mx-3 d-flex justify-content-between align-items-center" *ngIf="aiSummaryError">
-        <div>
-          <span class="material-icons align-middle me-1" style="font-size:16px;">warning</span>
-          Al momento è impossibile generare l'analisi automatica.
+    <!-- ── Sommario AI ─────────────────────────────────────────────────── -->
+    @if (selectedScenario1Id && selectedScenario2Id) {
+    <div class="row mt-4">
+      <div class="col-12">
+        <h3 class="mb-3 p-3 h3 d-flex align-items-center gap-2">
+          <span class="material-icons text-primary">auto_awesome</span>
+          Analisi comparativa AI
+        </h3>
+        <!-- Pulsante di generazione manuale -->
+        @if (!aiSummary && !aiSummaryLoading) {
+        <div class="mx-3 mb-3">
+          <button class="btn btn-outline-primary d-flex align-items-center gap-2" (click)="generateAiSummary()">
+            <span class="material-icons">auto_awesome</span>
+            <span>Genera analisi comparativa</span>
+          </button>
         </div>
-        <button class="btn btn-sm btn-outline-secondary" (click)="generateAiSummary()">Riprova</button>
-      </div>
-
-      <!-- Risultato -->
-      <div class="callout callout-highlight note mx-3" *ngIf="aiSummary && !aiSummaryLoading">
-        <div class="small text-dark ai-summary-content" [innerHTML]="aiSummary"></div>
+        }
+        <!-- Loading -->
+        @if (aiSummaryLoading) {
+        <div class="d-flex align-items-center gap-2 text-muted small p-3">
+          <div class="spinner-border spinner-border-sm" role="status"></div>
+          <span>Generazione analisi comparativa in corso...</span>
+        </div>
+        }
+        <!-- Errore -->
+        @if (aiSummaryError) {
+        <div class="alert alert-warning mx-3 d-flex justify-content-between align-items-center">
+          <div>
+            <span class="material-icons align-middle me-1" style="font-size:16px;">warning</span>
+            Al momento è impossibile generare l'analisi automatica.
+          </div>
+          <button class="btn btn-sm btn-outline-secondary" (click)="generateAiSummary()">Riprova</button>
+        </div>
+        }
+        <!-- Risultato -->
+        @if (aiSummary && !aiSummaryLoading) {
+        <div class="callout callout-highlight note mx-3">
+          <div class="small text-dark ai-summary-content" [innerHTML]="aiSummary"></div>
+        </div>
+        }
       </div>
     </div>
-  </div>
+    }
   </div>
 
   <app-back-button class="exclude-from-pdf"></app-back-button>
