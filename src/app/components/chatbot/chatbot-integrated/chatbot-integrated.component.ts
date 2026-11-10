@@ -22,6 +22,7 @@ import {
 } from '../../../services/chatbot/chatbot-link-navigation';
 import { AgentResponse, ChatFeedback, ChatMessage } from '../../../models/chat.model';
 import { ChatFeedbackBarComponent } from '../chatbot-standalone/chat-feedback-bar/chat-feedback-bar.component';
+import { AuthenticationService } from '../../../services/authentication.service';
 
 @Component({
   selector: 'app-chatbot-integrated',
@@ -36,6 +37,7 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked {
   private mockService = inject(ChatMockService);
   private contextService = inject(ChatbotContextService);
   private router = inject(Router);
+  private authService = inject(AuthenticationService);
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
   isOpen = false;
@@ -130,10 +132,13 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked {
   }
 
   handleAssistantLinkClick(event: MouseEvent): void {
-    navigateInternalChatLink(event, this.router);
+    navigateInternalChatLink(event, this.router, this.authService);
   }
 
   private handleAgentResponse(data: AgentResponse): void {
+    if (data.territory) {
+      this.authService.setActiveTerritory(data.territory, false, false);
+    }
     this.pushBot(data.response ?? 'Nessuna risposta.');
     if (data.assistant_action_data?.length) {
       const actions = data.assistant_action_data

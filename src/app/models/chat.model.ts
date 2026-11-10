@@ -38,6 +38,7 @@ export interface AgentResponse {
   active_context?: string;
   chart_data?: SharedChartPayload | null;
   assistant_action_data?: DomainEvent[]; 
+  territory?: string;
 }
 
 // ─── Messaggio in chat ─────────────────────────────────────────────────────

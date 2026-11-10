@@ -56,4 +56,30 @@ describe('navigateInternalChatLink', () => {
       anchor.remove();
     }
   });
+
+  it('updates active territory when link targets a specific territory', () => {
+    const navigate = spyOn(router, 'navigateByUrl').and.resolveTo(true);
+    const authServiceMock = {
+      availableTerritories: ['fazzon', 'molveno'],
+      setActiveTerritory: jasmine.createSpy('setActiveTerritory')
+    } as any;
+
+    const anchor = document.createElement('a');
+    anchor.href = '/problems/molveno_base_problem/proposals/molveno_base_proposal/scenari/molveno_base_scenario';
+    document.body.appendChild(anchor);
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+
+    try {
+      anchor.dispatchEvent(event);
+      navigateInternalChatLink(event, router, authServiceMock);
+
+      expect(event.defaultPrevented).toBeTrue();
+      expect(authServiceMock.setActiveTerritory).toHaveBeenCalledWith('molveno', false, false);
+      expect(navigate).toHaveBeenCalledWith(
+        '/problems/molveno_base_problem/proposals/molveno_base_proposal/scenari/molveno_base_scenario'
+      );
+    } finally {
+      anchor.remove();
+    }
+  });
 });

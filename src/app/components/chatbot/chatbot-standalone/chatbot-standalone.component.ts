@@ -174,6 +174,10 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
 
     /** Gestisce risposta: traduce DomainEvents in UIActions inline */
   private async handleAgentResponse(currentMessages: ChatMessage[], data: AgentResponse): Promise<void> {
+    if (data.territory) {
+      this.authService.setActiveTerritory(data.territory, false, false);
+    }
+
     const rawEvents = data.assistant_action_data || [];
     const translatedArrays = rawEvents.length
       ? await Promise.all(rawEvents.map(e => this.translator.translateForStandalone(e)))

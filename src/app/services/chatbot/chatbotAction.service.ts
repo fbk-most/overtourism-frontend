@@ -16,10 +16,7 @@ export class ChatbotActionService {
         if (targetTerritory && typeof targetTerritory === 'string') {
           const trimmed = targetTerritory.trim();
           if (trimmed) {
-            const matched = this.authService.availableTerritories?.find(
-              t => t.toLowerCase() === trimmed.toLowerCase()
-            ) || trimmed;
-            this.authService.setActiveTerritory(matched, false);
+            this.authService.setActiveTerritory(trimmed, false, false);
           }
         }
         if (navPayload['queryParams']) {

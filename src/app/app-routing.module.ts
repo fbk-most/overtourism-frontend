@@ -1,5 +1,15 @@
 import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { RouterModule, Routes, RouteReuseStrategy, ActivatedRouteSnapshot, DetachedRouteHandle } from '@angular/router';
+
+export class CustomRouteReuseStrategy implements RouteReuseStrategy {
+  shouldDetach(_route: ActivatedRouteSnapshot): boolean { return false; }
+  store(_route: ActivatedRouteSnapshot, _handle: DetachedRouteHandle | null): void {}
+  shouldAttach(_route: ActivatedRouteSnapshot): boolean { return false; }
+  retrieve(_route: ActivatedRouteSnapshot): DetachedRouteHandle | null { return null; }
+  shouldReuseRoute(future: ActivatedRouteSnapshot, curr: ActivatedRouteSnapshot): boolean {
+    return future.routeConfig === curr.routeConfig && JSON.stringify(future.params) === JSON.stringify(curr.params);
+  }
+}
 
 import { FaqsComponent } from './pages/faqs/faqs.component';
 import { PreferitiComponent } from './pages/problems/preferiti/preferiti.component';
@@ -137,6 +147,9 @@ const routes: Routes = [
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
+  providers: [
+    { provide: RouteReuseStrategy, useClass: CustomRouteReuseStrategy }
+  ]
 })
 export class AppRoutingModule { }

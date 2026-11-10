@@ -208,17 +208,28 @@ export class AuthenticationService {
     return territory;
   }
 
-  setActiveTerritory(territory: string, reload: boolean = true) {
-    const current = localStorage.getItem(this.TERRITORY_KEY);
-    if (!territory || territory === current) {
+  setActiveTerritory(territory: string, reload: boolean = true, clearChatSession: boolean = true) {
+    if (!territory) {
       return;
     }
 
-    localStorage.setItem(this.TERRITORY_KEY, territory);
-    this.activeTerritorySubject.next(territory);
+    const trimmed = territory.trim();
+    const matched = this._availableTerritories.find(
+      t => t.toLowerCase() === trimmed.toLowerCase()
+    ) || trimmed;
+
+    const current = localStorage.getItem(this.TERRITORY_KEY);
+    if (matched === current) {
+      return;
+    }
+
+    localStorage.setItem(this.TERRITORY_KEY, matched);
+    this.activeTerritorySubject.next(matched);
 
     // reset variabili legate  al vecchio territorio
-    this.chatbotService.clearSession();
+    if (clearChatSession) {
+      this.chatbotService.clearSession();
+    }
     sessionStorage.removeItem('overtourism_session_id');
     sessionStorage.removeItem('overtourism_temp_scenario_id');
     sessionStorage.removeItem('overtourism_changed_widgets');

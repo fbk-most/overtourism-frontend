@@ -16,7 +16,11 @@ export class ChatbotActionTranslatorService {
    */
   translateForIntegrated(event: DomainEvent): UIAction[] {
     const payload = event.payload || {};
-    const rawTerritory = payload['territory'] 
+    const rawTerritory =
+      payload['territory'] ??
+      payload['territorio'] ??
+      payload['activeTerritory'] ??
+      payload['targetTerritory'];
     const territory = typeof rawTerritory === 'string' && rawTerritory.trim() ? rawTerritory.trim() : undefined;
 
     switch (event.type) {
