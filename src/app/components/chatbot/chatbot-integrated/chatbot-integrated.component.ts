@@ -20,14 +20,16 @@ import {
   containsInternalChatMarkdownLink,
   navigateInternalChatLink
 } from '../../../services/chatbot/chatbot-link-navigation';
-import { AgentResponse, ChatFeedback, ChatMessage } from '../../../models/chat.model';
+import { AgentResponse, AgentType, ChatFeedback, ChatMessage } from '../../../models/chat.model';
 import { ChatFeedbackBarComponent } from '../chatbot-standalone/chat-feedback-bar/chat-feedback-bar.component';
 import { AuthenticationService } from '../../../services/authentication.service';
+import { AGENT_TYPE_MAP, type AgentTypeMeta } from '../chatbot-standalone/chat-message/chat-message.component';
+import { ItIconComponent } from 'design-angular-kit';
 
 @Component({
   selector: 'app-chatbot-integrated',
   standalone: true,
-  imports: [CommonModule, FormsModule, ChatFeedbackBarComponent],
+  imports: [CommonModule, FormsModule, ChatFeedbackBarComponent, ItIconComponent],
   templateUrl: './chatbot-integrated.component.html',
   styleUrls: ['./chatbot-integrated.component.scss']
 })
@@ -57,7 +59,7 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked {
   constructor(private agentSvc: AgentService) {}
 
   ngOnInit(): void {
-    this.pushBot('Ciao! Come posso aiutarti?');
+    this.pushBot('Ciao! Come posso aiutarti?', 'operative');
     this.isTyping = true;
     void this.agentSvc.resumeIfRunning(this.agentOptions(), message => {
       this.statusMessage = message;
@@ -94,15 +96,20 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked {
     this.shouldScrollToBottom = true;
   }
 
-  private pushBot(text: string): void {
+  private pushBot(text: string, agentType?: AgentType): void {
     const index = this.messages.length - 1;
     this.messages.push({
       role: 'assistant',
       content: text,
+      agentType,
       html: this.parseMarkdown(text),
       index
     });
     this.triggerScroll();
+  }
+
+  getAgentMeta(agentType?: AgentType): AgentTypeMeta | null {
+    return agentType ? AGENT_TYPE_MAP[agentType] ?? null : null;
   }
 
   private parseMarkdown(text: string): string {
@@ -139,7 +146,7 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked {
     if (data.territory) {
       this.authService.setActiveTerritory(data.territory, false, false);
     }
-    this.pushBot(data.response ?? 'Nessuna risposta.');
+    this.pushBot(data.response ?? 'Nessuna risposta.', data.agent_type);
     if (data.assistant_action_data?.length) {
       const actions = data.assistant_action_data
         .flatMap(event => this.translator.translateForIntegrated(event))

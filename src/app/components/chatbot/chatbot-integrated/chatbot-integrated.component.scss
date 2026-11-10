@@ -2,8 +2,8 @@ $primary-color: var(--bs-primary);
 
 .chatbot-button {
   position: fixed;
-  bottom: 36px;
-  right: 36px;
+  bottom: 10px;
+  right: 24px;
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -14,39 +14,42 @@ $primary-color: var(--bs-primary);
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 9999; 
+  z-index: 9999;
 }
 
 .chatbot-window {
   position: fixed;
-  bottom: 96px;
-  right: 24px;
-  width: 450px;
-  height: 600px;
+  bottom: 70px;
+  right: 12px;
+  width: min(450px, calc(100vw - 24px));
+  height: min(600px, max(260px, calc(100dvh - 90px)));
   background: white;
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
-  z-index: 9999; 
+  z-index: 9999;
 }
 
 .chatbot-header {
-  padding: 8px 12px;
+  flex: 0 0 auto;
+  padding: 10px 12px;
   background: $primary-color;
   color: white;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-weight: bold;
 }
 
 .chatbot-messages {
   flex: 1;
+  min-height: 0;
   padding: 8px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
   font-size: 16px;
 }
 
@@ -54,6 +57,7 @@ $primary-color: var(--bs-primary);
 .chatbot-messages .bot {
   display: flex;
   flex-direction: column;  // stack message + status vertically
+  width: 100%;
 }
 
 .chatbot-messages .user {
@@ -64,6 +68,39 @@ $primary-color: var(--bs-primary);
   align-items: flex-start;
 }
 
+.assistant-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.assistant-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.agent-icon {
+  flex: 0 0 auto;
+  margin-top: 7px;
+  color: #555;
+  cursor: help;
+  transition: transform 0.15s ease;
+
+  ::ng-deep svg {
+    fill: currentColor;
+  }
+
+  &:hover {
+    transform: scale(1.15);
+  }
+
+  &.agent-executor { color: #117a65; }
+  &.agent-operative { color: #1565c0; }
+  &.agent-methodological { color: #7d3c98; }
+  &.agent-exploitative { color: #d35400; }
+}
+
 .message-text {
   max-width: 75%;
   word-wrap: break-word;
@@ -72,6 +109,7 @@ $primary-color: var(--bs-primary);
   padding: 6px 10px;
   border-radius: 8px;
   line-height: 1.4;
+  box-sizing: border-box;
 }
 
 .chatbot-messages .user .message-text {
@@ -91,35 +129,48 @@ $primary-color: var(--bs-primary);
 .markdown-body {
   font-size: 16px;
   line-height: 1.4;
+  white-space: normal;
 
-  // Use ::ng-deep to reach elements inside [innerHTML]
   ::ng-deep {
     p, ul, ol, dl {
-      font-size: 16px !important;    // !important ensures we beat the global media query
+      font-size: 16px !important;
       line-height: 1.4 !important;
-      margin: 0 0 0.5rem 0;
+      margin: 0 0 0.4rem;
     }
 
-    li { 
-      margin-bottom: 0.2rem; 
+    ul, ol {
+      margin: 0.25rem 0 0.4rem;
+      padding-left: 1.25rem;
     }
 
-    // Apply it to headers as well if they are being overridden
+    li {
+      margin: 0 0 0.25rem;
+    }
+
+    li:last-child {
+      margin-bottom: 0;
+    }
+
+    li p {
+      margin: 0 !important;
+    }
+
     h1, h2, h3, h4 {
-      margin: 0.5rem 0 0.25rem;
+      margin: 0.4rem 0 0.2rem;
       font-weight: 600;
       line-height: 1.3;
     }
     
     pre code {
-       display: block;
-       padding: 0.75rem;
-       overflow-x: auto;
+      display: block;
+      padding: 0.75rem;
+      overflow-x: auto;
     }
   }
 }
 
 .chatbot-input {
+  flex: 0 0 auto;
   display: flex;
   gap: 8px;
   padding: 12px;
@@ -131,6 +182,7 @@ $primary-color: var(--bs-primary);
 
 .chatbot-input textarea {
   flex: 1;
+  min-width: 0;
   padding: 8px;
   border-radius: 6px;
   border: 1px solid #ccc;
@@ -178,6 +230,21 @@ $primary-color: var(--bs-primary);
   margin-top: 4px;
   padding-left: 2px;
   font-style: italic;
+}
+
+@media (max-width: 480px) {
+  .chatbot-window {
+    right: 8px;
+    width: calc(100vw - 16px);
+  }
+
+  .chatbot-button {
+    right: 16px;
+  }
+
+  .message-text {
+    max-width: 90%;
+  }
 }
 
 @keyframes bounce {
