@@ -48,10 +48,21 @@ export class SharedKpisComponent implements OnChanges {
 
     if (cc && typeof cc === 'object' && cc.name) {
       const ccName = String(cc.name).toLowerCase().trim();
-      this.criticalConstraintKey = uniqueKeys.find(k => {
+
+      // Trova il KPI corrispondente
+      const candidateKey = uniqueKeys.find(k => {
         const norm = normalizeKpiKey(k);
         return norm === `constraint level ${ccName}` || norm === ccName;
-      }) || null;
+      });
+
+      // Assegna il vincolo critico solo se il valore è <= 90
+      if (candidateKey) {
+        const candidateValue = this.getLevel(cleanKpis[candidateKey]);
+
+        if (candidateValue !== null && candidateValue <= 90) {
+          this.criticalConstraintKey = candidateKey;
+        }
+      }
     }
 
     // Ordina le chiavi
