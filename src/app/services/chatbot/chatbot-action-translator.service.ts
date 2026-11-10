@@ -16,26 +16,38 @@ export class ChatbotActionTranslatorService {
    */
   translateForIntegrated(event: DomainEvent): UIAction[] {
     const payload = event.payload || {};
+    const rawTerritory = payload['territory'] 
+    const territory = typeof rawTerritory === 'string' && rawTerritory.trim() ? rawTerritory.trim() : undefined;
 
     switch (event.type) {
       case 'NAVIGATE': {
         const target = payload['target']; // es. "PROBLEMS", "PROPOSALS", "Index"
 
         if (target === 'PROBLEMS') {
-          return [{ type: 'NAVIGATE', payload: { path: ['/problems'] } }];
+          return [{ type: 'NAVIGATE', payload: { path: ['/problems'], ...(territory ? { territory } : {}) } }];
         }
         if (target === 'PROPOSALS') {
-          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals'] } }];
+          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals'], ...(territory ? { territory } : {}) } }];
         }
         if (target === 'SCENARIOS') {
-          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals', payload['idProposal'], 'scenari'] } }];
+          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals', payload['idProposal'], 'scenari'], ...(territory ? { territory } : {}) } }];
         }
         if (target === 'SCENARIO') {
-          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals', payload['idProposal'], 'scenari', payload['idScenario']] } }];
+          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals', payload['idProposal'], 'scenari', payload['idScenario']], ...(territory ? { territory } : {}) } }];
         }
         if (target === 'Index') {
           // Naviga agli indici passando i filtri come query parameters
-          return [{ type: 'NAVIGATE', payload: { path: ['/indici'], queryParams: payload['param'] } }];
+          return [{ type: 'NAVIGATE', payload: { path: ['/indici'], queryParams: payload['param'], ...(territory ? { territory } : {}) } }];
+        }
+        if (Array.isArray(payload['path'])) {
+          return [{
+            type: 'NAVIGATE',
+            payload: {
+              path: payload['path'],
+              ...(payload['queryParams'] ? { queryParams: payload['queryParams'] } : {}),
+              ...(territory ? { territory } : {})
+            }
+          }];
         }
         break;
       }
@@ -43,7 +55,8 @@ export class ChatbotActionTranslatorService {
       case 'COMPARE_SCENARIO':
         return [{
           type: 'NAVIGATE', payload: {
-            path: ['/problems', payload['idProblem'], 'proposals', payload['idProposal'], 'scenari', 'confronta', payload['idScenario1'], payload['idScenario2']]
+            path: ['/problems', payload['idProblem'], 'proposals', payload['idProposal'], 'scenari', 'confronta', payload['idScenario1'], payload['idScenario2']],
+            ...(territory ? { territory } : {})
           }
         }];
 
@@ -51,13 +64,13 @@ export class ChatbotActionTranslatorService {
         // Se elimini, torni alla lista padre
         const target = payload['target'];
         if (target === 'SCENARIO') {
-          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals', payload['idProposal'], 'scenari'] } }];
+          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals', payload['idProposal'], 'scenari'], ...(territory ? { territory } : {}) } }];
         }
         if (target === 'PROPOSTA') {
-          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals'] } }];
+          return [{ type: 'NAVIGATE', payload: { path: ['/problems', payload['idProblem'], 'proposals'], ...(territory ? { territory } : {}) } }];
         }
         if (target === 'PROBLEMA') {
-          return [{ type: 'NAVIGATE', payload: { path: ['/problems'] } }];
+          return [{ type: 'NAVIGATE', payload: { path: ['/problems'], ...(territory ? { territory } : {}) } }];
         }
         break;
       }
