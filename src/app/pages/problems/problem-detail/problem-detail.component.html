@@ -1,4 +1,4 @@
-<it-card background="true" class="p-4 position-relative">
+<it-card class="position-relative" border="false" shadow="normal">
   <!-- Pulsanti in alto a destra -->
   @if (authService.canEdit()) {
     <div class="position-absolute top-0 end-0 m-3 d-flex gap-2">
@@ -22,7 +22,8 @@
     </div>
   }
 
-  <h3 class="mb-4">{{ problem?.name }}</h3>
+  <div class="it-card-body p-4">
+  <h3 class="it-card-title mb-4">{{ problem?.name }}</h3>
 
   <!-- tabella info -->
   <table class="table table-borderless mb-4">
@@ -155,6 +156,7 @@
 
 
 <app-back-button (click)="back()"></app-back-button>
+  </div>
 </it-card>
 <it-modal #deleteProblemModal>
   <ng-container modalTitle>

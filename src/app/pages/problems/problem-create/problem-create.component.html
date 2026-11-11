@@ -1,6 +1,6 @@
-<it-card background="true" class="p-4">
-
-  <form (ngSubmit)="onSubmit()" #form="ngForm">
+<it-card border="false" shadow="normal">
+  <div class="it-card-body p-4">
+    <form (ngSubmit)="onSubmit()" #form="ngForm">
     <div class="table-responsive mb-4">
       <table class="table table-borderless">
         <tbody>
@@ -98,5 +98,6 @@
       </button>
 
     </div>
-  </form>
+    </form>
+  </div>
 </it-card>

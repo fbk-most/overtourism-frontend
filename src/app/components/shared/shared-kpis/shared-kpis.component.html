@@ -1,7 +1,8 @@
 @if (kpisMain) {
   <div class="card-wrapper">
-    <it-card background="true">
-      <h3 class="mb-3 h3">{{ isComparison ? 'Comparazione indici' : ('kpi.title' | translate) }}</h3>
+    <it-card border="false" shadow="normal">
+      <h3 class="it-card-title h3">{{ isComparison ? 'Comparazione indici' : ('kpi.title' | translate) }}</h3>
+      <div class="it-card-body">
       <!-- MODALITÀ SINGOLA -->
       @if (!isComparison) {
         @for (key of kpiKeys; track key) {
@@ -71,6 +72,7 @@
           </div>
         </div>
       }
+      </div>
     </it-card>
   </div>
 }

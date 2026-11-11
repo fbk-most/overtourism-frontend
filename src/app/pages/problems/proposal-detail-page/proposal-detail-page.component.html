@@ -1,4 +1,4 @@
-<it-card background="true" class="p-4 mb-4">
+<it-card class="mb-4" border="false" shadow="normal">
   <div class="position-absolute top-0 end-0 m-3 d-flex gap-2">
     <it-modal #editProposalModal size="lg">
       <ng-container modalTitle>
@@ -26,7 +26,8 @@
       </button>
     }
   </div>
-  <h3 class="mb-4">{{ proposal?.name }}</h3>
+  <div class="it-card-body p-4">
+  <h3 class="it-card-title mb-4">{{ proposal?.name }}</h3>
 
   <!-- Tabella info proposta -->
   <table class="table table-borderless mb-4">
@@ -73,6 +74,7 @@
   </tbody>
 </table>
 <app-report-export [context]="{ proposals: [proposalId] }"></app-report-export>
+  </div>
 </it-card>
 
 <!-- Sezione Scenari -->
