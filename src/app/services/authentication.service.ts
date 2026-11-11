@@ -60,6 +60,10 @@ export class AuthenticationService {
       window.history.replaceState({}, window.document.title, window.location.pathname);
     }
 
+    // Returning from the identity provider after a fresh login (authorization code in the URL):
+    // conversations cached by a previous session must not survive it.
+    const isFreshLogin = window.location.search.includes('code=');
+
     try {
       const authError = localStorage.getItem('auth_error');
       if (authError) {
@@ -70,6 +74,9 @@ export class AuthenticationService {
       await this.oauthService.loadDiscoveryDocumentAndTryLogin();
 
       if (this.isLoggedIn) {
+        if (isFreshLogin) {
+          this.chatbotService.clearSession();
+        }
         const profile = await this.loadUserProfile();
         if (!profile) {
           this.handleUnauthorized();

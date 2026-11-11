@@ -11,7 +11,8 @@ import { FormsModule } from '@angular/forms';
 import { marked } from 'marked';
 import { firstValueFrom } from 'rxjs';
 import { Router } from '@angular/router';
-import { AgentChatContext, AgentService } from '../../../services/agent.service';
+import { AgentChatContext, AgentService, AgentSessionUnavailableError } from '../../../services/agent.service';
+import { ChatbotService, CHAT_SESSION_UNAVAILABLE_MESSAGE } from '../../../services/chatbot/chatbot.service';
 import { ChatbotContextService } from '../../../services/chatbot/chatbotContext.service';
 import { ChatbotActionTranslatorService } from '../../../services/chatbot/chatbot-action-translator.service';
 import { ChatbotActionService } from '../../../services/chatbot/chatbotAction.service';
@@ -56,16 +57,28 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked {
   modalDraft = '';
   language = 'Italian';
 
-  constructor(private agentSvc: AgentService) {}
+  constructor(private agentSvc: AgentService, private chatbotSvc: ChatbotService) {}
 
   ngOnInit(): void {
-    this.pushBot('Ciao! Come posso aiutarti?', 'operative');
+    const cached = this.chatbotSvc.loadMessages('integrated');
+    if (cached.length > 0 && this.agentSvc.hasSession('integrated')) {
+      this.messages = cached;
+      this.triggerScroll();
+    } else {
+      // No cache, or cached messages without a backend session: start from a clean conversation.
+      this.chatbotSvc.clearMessages('integrated');
+      this.pushBot('Ciao! Come posso aiutarti?', 'operative');
+    }
     this.isTyping = true;
     void this.agentSvc.resumeIfRunning(this.agentOptions(), message => {
       this.statusMessage = message;
     }).then(response => {
       if (response) this.handleAgentResponse(response);
     }).catch(error => {
+      if (error instanceof AgentSessionUnavailableError) {
+        this.discardUnrecoverableConversation();
+        return;
+      }
       console.error('Errore durante il ripristino della chat integrata:', error);
       this.pushBot('Impossibile ripristinare la risposta in corso. Riprova.');
     }).finally(() => {
@@ -104,6 +117,28 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked {
       agentType,
       html: this.parseMarkdown(text),
       index
+    });
+    this.triggerScroll();
+    this.persist();
+  }
+
+  private persist(): void {
+    this.chatbotSvc.saveMessages(this.messages, 'integrated');
+  }
+
+  /**
+   * The conversation no longer exists in the backend: drop the cached copy and tell the user.
+   * The notice is shown but not persisted.
+   */
+  private discardUnrecoverableConversation(): void {
+    this.chatbotSvc.clearMessages('integrated');
+    this.feedbacks = {};
+    this.messages = [];
+    this.messages.push({
+      role: 'assistant',
+      content: CHAT_SESSION_UNAVAILABLE_MESSAGE,
+      html: this.parseMarkdown(CHAT_SESSION_UNAVAILABLE_MESSAGE),
+      index: -1
     });
     this.triggerScroll();
   }
@@ -160,6 +195,7 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked {
     if (!text || this.isTyping) return;
 
     this.messages.push({ role: 'user', content: text });
+    this.persist();
     this.inputText = '';
     this.isTyping = true;
     this.statusMessage = '';
@@ -183,6 +219,10 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked {
       );
       this.handleAgentResponse(response);
     } catch (error) {
+      if (error instanceof AgentSessionUnavailableError) {
+        this.discardUnrecoverableConversation();
+        return;
+      }
       console.error('Errore durante l’invio del messaggio integrato:', error);
       this.pushBot('Si è verificato un problema. Riprova a inviare il messaggio.');
     } finally {

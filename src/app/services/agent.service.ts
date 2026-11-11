@@ -146,7 +146,7 @@ class FetchAgentStreamTransport implements AgentStreamTransport {
 
 export class AgentSessionUnavailableError extends Error {
   constructor() {
-    super('The chat session is no longer available. Start a new message to continue.');
+    super('La conversazione non può essere recuperata. Per favore inizia una nuova conversazione');
     this.name = 'AgentSessionUnavailableError';
   }
 }
@@ -255,7 +255,21 @@ export class AgentService {
       }
     }
 
-    return this.followTurn(turnId, onProgress);
+    try {
+      return await this.followTurn(turnId, onProgress);
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 404) {
+        // The turn/session disappeared from the backend while we were waiting for the reply.
+        this.clearSession(mode);
+        throw new AgentSessionUnavailableError();
+      }
+      throw error;
+    }
+  }
+
+  /** True when a session id is cached for the given mode. */
+  hasSession(mode: AgentChatMode): boolean {
+    return !!this.loadSessionId(mode);
   }
 
   /**
@@ -304,15 +318,24 @@ export class AgentService {
       );
     } catch (error) {
       if (error instanceof HttpErrorResponse && error.status === 404) {
+        // The cached session no longer exists in the backend: drop it and let the caller
+        // discard the cached conversation and inform the user.
         this.clearSession(mode);
-        return null;
+        throw new AgentSessionUnavailableError();
       }
       throw error;
     }
 
-    return session.active_turn_id
-      ? this.followTurn(session.active_turn_id, onProgress)
-      : null;
+    if (!session.active_turn_id) return null;
+    try {
+      return await this.followTurn(session.active_turn_id, onProgress);
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 404) {
+        this.clearSession(mode);
+        throw new AgentSessionUnavailableError();
+      }
+      throw error;
+    }
   }
 
   async reset(options: AgentChatOptions = {}): Promise<AgentInitResponse> {

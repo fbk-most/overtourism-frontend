@@ -246,6 +246,22 @@ describe('AgentService turn protocol', () => {
     expect(response?.response).toBe('Resumed reply.');
   }));
 
+  it('clears the stored session and reports it as unavailable when resume gets a 404', fakeAsync(() => {
+    localStorage.setItem('chatbot_session_id', 'gone-session');
+    let failure: unknown;
+    void service.resumeIfRunning().catch(error => { failure = error; });
+    flushMicrotasks();
+
+    http.expectOne(`${environment.agentApiUrl}/session/gone-session`).flush(
+      { detail: 'Session not found' },
+      { status: 404, statusText: 'Not Found' }
+    );
+    flushMicrotasks();
+
+    expect(localStorage.getItem('chatbot_session_id')).toBeNull();
+    expect(failure).toEqual(jasmine.any(AgentSessionUnavailableError));
+  }));
+
   it('initializes a replacement session after a 404 and asks the user to resend', fakeAsync(() => {
     localStorage.setItem('chatbot_session_id', 'missing-session');
     let failure: unknown;

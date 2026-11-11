@@ -7,7 +7,7 @@ import { AgentService, AgentSessionUnavailableError } from '../../../services/ag
 import { ChatbotActionTranslatorService } from '../../../services/chatbot/chatbot-action-translator.service';
 import { ChatMockService } from '../../../services/chatbot/chat-mock.service';
 import { AgentRole, AgentResponse, ChatFeedback,ChatMessage, UIAction } from '../../../models/chat.model';
-import { ChatbotService } from '../../../services/chatbot/chatbot.service';
+import { ChatbotService, CHAT_SESSION_UNAVAILABLE_MESSAGE } from '../../../services/chatbot/chatbot.service';
 import { AuthenticationService } from '../../../services/authentication.service';
 import { AGENT_TYPE_MAP } from './chat-message/chat-message.component';
 import { IconName } from 'design-angular-kit';
@@ -101,7 +101,7 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
     this.modeMenuOpen = false;
     try {
       await this.agentSvc.reset({ language: 'Italiano' });
-      this.chatbotSvc.clearMessages();
+      this.chatbotSvc.clearMessages('standalone');
       this.messages = [];
       this.feedbacks = {};
       this.input = '';
@@ -121,7 +121,11 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
     }
   }
   ngOnInit(): void {
-    this.messages = this.chatbotSvc.loadMessages();
+    this.messages = this.chatbotSvc.loadMessages('standalone');
+    // Cached messages without a backend session id cannot belong to a live conversation.
+    if (this.messages.length > 0 && !this.agentSvc.hasSession('standalone')) {
+      this.discardUnrecoverableConversation();
+    }
     if (this.messages.length === 0) this.normalizeViewerMode();
     if (this.messages.length > 0) this.shouldScroll = true;
     this.loading = true;
@@ -136,6 +140,10 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
         await this.handleAgentResponse(this.messages, response);
       }
     }).catch(error => {
+      if (error instanceof AgentSessionUnavailableError) {
+        this.discardUnrecoverableConversation();
+        return;
+      }
       console.error('Errore durante il ripristino della chat:', error);
       this.messages = [
         ...this.messages,
@@ -170,7 +178,19 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
 
     /** Salva i messaggi nel localStorage ogni volta che cambiano */
     private saveMessages(msgs: ChatMessage[]): void {
-      this.chatbotSvc.saveMessages(msgs);    }
+      this.chatbotSvc.saveMessages(msgs, 'standalone');
+    }
+
+    /**
+     * The conversation no longer exists in the backend: drop the cached copy and tell the user.
+     * The notice is shown but not persisted, so it does not reappear as part of a later conversation.
+     */
+    private discardUnrecoverableConversation(): void {
+      this.chatbotSvc.clearMessages('standalone');
+      this.feedbacks = {};
+      this.messages = [{ role: 'assistant', content: CHAT_SESSION_UNAVAILABLE_MESSAGE }];
+      this.shouldScroll = true;
+    }
 
     /** Gestisce risposta: traduce DomainEvents in UIActions inline */
   private async handleAgentResponse(currentMessages: ChatMessage[], data: AgentResponse): Promise<void> {
@@ -233,11 +253,13 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
       await this.handleAgentResponse(newMessages, response);
     } catch (error) {
       console.error('Errore durante l’invio del messaggio:', error);
-      const content = error instanceof AgentSessionUnavailableError
-        ? 'La sessione non è più disponibile. Invia di nuovo il messaggio per continuare.'
-        : '⚠️ Impossibile contattare il server. Verifica la connessione e riprova.';
+      if (error instanceof AgentSessionUnavailableError) {
+        this.discardUnrecoverableConversation();
+        return;
+      }
+      const content = '⚠️ Impossibile contattare il server. Verifica la connessione e riprova.';
       this.messages = [...newMessages, { role: 'assistant', content }];
-      this.chatbotSvc.saveMessages(this.messages);
+      this.saveMessages(this.messages);
     } finally {
       this.loading = false;
       this.statusMessage = null;
