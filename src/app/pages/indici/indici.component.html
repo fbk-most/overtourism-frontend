@@ -1,8 +1,8 @@
 <div class="container-fluid my-2"
-  [attr.data-assistant-index-id]="filterState?.indicator || null"
-  [attr.data-assistant-start-date]="filterState?.startDate || null"
-  [attr.data-assistant-end-date]="filterState?.endDate || null"
-  [attr.data-assistant-granularity]="filterState?.granularity || null"
+  [attr.data-assistant-index-id]="assistantState?.indicator || null"
+  [attr.data-assistant-start-date]="assistantState?.startDate || null"
+  [attr.data-assistant-end-date]="assistantState?.endDate || null"
+  [attr.data-assistant-granularity]="assistantState?.granularity || null"
   [attr.data-assistant-selected-territories]="selectedTerritoriesJson">
 
   <!-- BARRA FILTRI ESTRATTA -->
@@ -28,11 +28,11 @@
           @if (geoEnvelope) {
             <app-indici-map
               data-assistant-chart
-              [attr.data-assistant-chart-index-id]="filterState?.indicator || null"
-              [attr.data-assistant-chart-label]="currentMapTitle || null"
-              [attr.data-assistant-chart-start-date]="filterState?.startDate || null"
-              [attr.data-assistant-chart-end-date]="filterState?.endDate || null"
-              [attr.data-assistant-chart-granularity]="filterState?.granularity || null"
+              [attr.data-assistant-chart-index-id]="assistantMapState?.indicator || null"
+              [attr.data-assistant-chart-label]="assistantMapTitle || null"
+              [attr.data-assistant-chart-start-date]="assistantMapState?.startDate || null"
+              [attr.data-assistant-chart-end-date]="assistantMapState?.endDate || null"
+              [attr.data-assistant-chart-granularity]="assistantMapState?.granularity || null"
               [geojsonStr]="geoEnvelope.data"
               [minValue]="geoEnvelope.min_value"
               [maxValue]="geoEnvelope.max_value"
@@ -57,11 +57,11 @@
         [disabled]="isChartDisabled">
         <app-indici-chart
           [attr.data-assistant-chart]="chartSeries.length ? '' : null"
-          [attr.data-assistant-chart-index-id]="filterState?.indicator || null"
-          [attr.data-assistant-chart-label]="currentMeta?.label || null"
-          [attr.data-assistant-chart-start-date]="filterState?.startDate || null"
-          [attr.data-assistant-chart-end-date]="filterState?.endDate || null"
-          [attr.data-assistant-chart-granularity]="filterState?.granularity || null"
+          [attr.data-assistant-chart-index-id]="assistantChartState?.indicator || null"
+          [attr.data-assistant-chart-label]="assistantChartLabel || null"
+          [attr.data-assistant-chart-start-date]="assistantChartState?.startDate || null"
+          [attr.data-assistant-chart-end-date]="assistantChartState?.endDate || null"
+          [attr.data-assistant-chart-granularity]="assistantChartState?.granularity || null"
           [chartLabels]="chartLabels"
           [chartSeries]="chartSeries"
           [allComuni]="allComuni"

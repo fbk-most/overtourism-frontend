@@ -4,11 +4,34 @@
 @if (isOpen) {
   <div class="chatbot-window" (focusin)="$event.stopPropagation()" (mousedown)="$event.stopPropagation()">
     <div class="chatbot-header">
-      Chatbot
-      <span class="close" (click)="toggle()">✕</span>
+      <span class="header-title">Chatbot</span>
+      <div class="header-actions">
+        <button type="button"
+          class="header-btn new-chat-btn"
+          data-tooltip="Nuova chat"
+          aria-label="Nuova chat"
+          [disabled]="isTyping"
+          (click)="startNewChat()">
+          <!-- square with a pencil: the usual "compose / new chat" glyph -->
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+          </svg>
+        </button>
+        <button type="button"
+          class="header-btn close"
+          data-tooltip="Chiudi"
+          aria-label="Chiudi chat"
+          (click)="toggle()">✕</button>
+      </div>
     </div>
     <div class="chatbot-messages" #scrollContainer>
       @for (msg of messages; track msg; let i = $index) {
+        @if (msg.role === 'event') {
+          <!-- Local annotation (page change...): drawn like the status line, never sent to the backend -->
+          <div class="page-event" role="status"><span>{{ msg.content }}</span></div>
+        } @else {
         <div
           [ngClass]="{ 'user': msg.role === 'user', 'bot': msg.role === 'assistant' }">
           @if (msg.role === 'user') {
@@ -43,6 +66,7 @@
             </div>
           }
         </div>
+        }
       }
       <!-- Typing indicator -->
       @if (isTyping) {

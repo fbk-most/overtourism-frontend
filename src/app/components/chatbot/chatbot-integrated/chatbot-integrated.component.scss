@@ -40,6 +40,99 @@ $primary-color: var(--bs-primary);
   justify-content: space-between;
   align-items: center;
   font-weight: bold;
+  border-radius: 8px 8px 0 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.header-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    background: rgba(255, 255, 255, 0.22);
+    outline: none;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.92);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  // Tooltip shown on hover/keyboard focus, below the button (the window is small: no native delay).
+  &::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(33, 37, 41, 0.92);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-2px);
+    transition: opacity 0.15s ease 0.2s, transform 0.15s ease 0.2s;
+    z-index: 1;
+  }
+
+  &:hover:not(:disabled)::after,
+  &:focus-visible::after {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Local annotation in the history (e.g. "Cambiamento pagina rilevato"): same look as .status-text.
+.page-event {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  font-size: 12px;
+  font-style: italic;
+  color: #888;
+  line-height: 1.3;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1 1 12px;
+    height: 1px;
+    background: #e3e6ea;
+  }
+
+  span {
+    flex: 0 1 auto;
+    min-width: 0;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
 }
 
 .chatbot-messages {

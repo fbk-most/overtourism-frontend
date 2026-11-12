@@ -27,7 +27,11 @@ export class IndiciComponent implements OnInit {
   selectedAreas: string[] = [];
 
   showOption: ShowOption = 'map';
+  /** What the filter bar currently shows (may include changes not applied yet). */
   filterState: IndiciFilterState | null = null;
+  /** Filters actually behind the data on screen, per tab (set when "Applica filtri" is pressed). */
+  appliedMapState: IndiciFilterState | null = null;
+  appliedChartState: IndiciFilterState | null = null;
   loading = false;
   error = '';
 
@@ -82,13 +86,46 @@ export class IndiciComponent implements OnInit {
   }
 
   get currentMapTitle(): string {
-    if (!this.filterState) return '';
-    if (this.filterState.enableVariation) {
+    return this.mapTitleFor(this.filterState);
+  }
+
+  private mapTitleFor(state: IndiciFilterState | null): string {
+    if (!state) return '';
+    const label = this.allIndicators.find(i => i.value === state.indicator)?.label;
+    if (state.enableVariation) {
       const meta = this.additionalLabels.find(l => l.value === 'tasso-variazione');
       const prefix = meta?.label || 'Tasso di variazione';
-      return this.currentMeta?.label ? `${prefix}: ${this.currentMeta.label}` : prefix;
+      return label ? `${prefix}: ${label}` : prefix;
     }
-    return this.currentMeta?.label || '';
+    return label || '';
+  }
+
+  // ── What the assistant is told about the page ──────────────────────────────────────────────
+  // The assistant must describe what the user is LOOKING AT, i.e. the filters behind the data on
+  // screen, not a selection that has not been applied yet (the picker itself is reported separately
+  // as a form control, so both are known). Before anything is applied we fall back to the selection.
+
+  /** Filters behind the visible tab's data. */
+  get assistantState(): IndiciFilterState | null {
+    const applied = this.showOption === 'chart' ? this.appliedChartState : this.appliedMapState;
+    return applied ?? this.filterState;
+  }
+
+  get assistantMapState(): IndiciFilterState | null {
+    return this.appliedMapState ?? this.filterState;
+  }
+
+  get assistantChartState(): IndiciFilterState | null {
+    return this.appliedChartState ?? this.filterState;
+  }
+
+  get assistantMapTitle(): string {
+    return this.mapTitleFor(this.assistantMapState);
+  }
+
+  get assistantChartLabel(): string {
+    const indicator = this.assistantChartState?.indicator;
+    return this.allIndicators.find(i => i.value === indicator)?.label || '';
   }
 
   get selectedTerritories(): string[] {
@@ -121,6 +158,8 @@ export class IndiciComponent implements OnInit {
 
   onApplyFilters(filters: IndiciFilterState): void {
     this.filterState = filters;
+    if (filters.showOption === 'chart') this.appliedChartState = filters;
+    else this.appliedMapState = filters;
     this.loading = true;
     this.error = '';
     this.flowData = null;

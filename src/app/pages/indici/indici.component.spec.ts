@@ -59,4 +59,30 @@ describe('IndiciComponent page context', () => {
     expect(chart.getAttribute('data-assistant-chart-end-date')).toBe('2023-12-31');
     expect(chart.getAttribute('data-assistant-chart-granularity')).toBe('annuale');
   });
+  it('describes the applied filters, not a selection that has not been applied yet', () => {
+    component.allIndicators = [
+      { value: 'old-index', label: 'Vecchio indice' } as any,
+      { value: 'new-index', label: 'Nuovo indice' } as any
+    ];
+    component.appliedMapState = {
+      indicator: 'old-index',
+      spatialGranularity: 'comune',
+      startDate: '2023-01-01',
+      endDate: '2023-12-31',
+      granularity: 'annuale',
+      enableVariation: false,
+      showOption: 'map'
+    };
+    component.geoEnvelope = { data: '{}', min_value: 0, max_value: 1, legend: [] } as any;
+    // The user picked another index in the filter bar but did not press "Applica filtri".
+    component.filterState = { ...component.appliedMapState, indicator: 'new-index', startDate: '2022-01-01' };
+    fixture.detectChanges();
+
+    const page = fixture.nativeElement.querySelector('[data-assistant-index-id]') as HTMLElement;
+    const map = fixture.nativeElement.querySelector('app-indici-map') as HTMLElement;
+    expect(page.getAttribute('data-assistant-index-id')).toBe('old-index');
+    expect(page.getAttribute('data-assistant-start-date')).toBe('2023-01-01');
+    expect(map.getAttribute('data-assistant-chart-index-id')).toBe('old-index');
+    expect(map.getAttribute('data-assistant-chart-label')).toBe('Vecchio indice');
+  });
 });

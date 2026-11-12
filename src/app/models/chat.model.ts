@@ -43,7 +43,11 @@ export interface AgentResponse {
 
 // ─── Messaggio in chat ─────────────────────────────────────────────────────
 export interface ChatMessage {
-  role: 'user' | 'assistant';
+  /**
+   * 'event' is a local-only annotation (e.g. "page change detected") drawn in the integrated chat so the
+   * conversation can be read back later. It is never sent to the backend.
+   */
+  role: 'user' | 'assistant' | 'event';
   content: string;                          // testo raw
   agentType?: AgentType;
   html?: string;                            // testo pre-renderizzato markdown (opzionale)

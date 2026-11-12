@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatMessageComponent } from './chat-message/chat-message.component';
@@ -31,6 +31,7 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
   readonly widgetRegistry = CHAT_WIDGET_REGISTRY;
   private translator = inject(ChatbotActionTranslatorService);
   private mockService = inject(ChatMockService);
+  private host = inject(ElementRef<HTMLElement>);
   messages: ChatMessage[] = [];
   input = '';
   loading = false;
@@ -86,12 +87,26 @@ export class ChatbotStandaloneComponent implements OnInit, AfterViewChecked {
   }
 
   selectMode(role: AgentRole): void {
-    if (!this.canChangeMode || (this.isViewer && (role === 'methodological' || role === 'exploitative'))) {
-      return;
-    }
+    if (this.isViewer && (role === 'methodological' || role === 'exploitative')) return;
+    // Whatever happens next, picking an entry always dismisses the menu.
+    this.modeMenuOpen = false;
+    if (!this.canChangeMode) return;
 
     this.selectedRole = role;
     localStorage.setItem('chatbot_force_role', role);
+  }
+
+  /** Click anywhere outside the mode selector closes its menu. */
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.modeMenuOpen) return;
+    const target = event.target as Node | null;
+    if (target && this.host.nativeElement.querySelector('.mode-selector')?.contains(target)) return;
+    this.modeMenuOpen = false;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
     this.modeMenuOpen = false;
   }
 

@@ -273,16 +273,17 @@ export class AgentService {
   }
 
   /**
-   * Sends the current page snapshot to the active integrated session (called on route navigation).
+   * Sends the current page snapshot to the active integrated session (called when the page changes and
+   * right before a message is sent). Pass `prebuilt` to reuse a snapshot the caller already captured.
    * Best effort and silent: it creates no turn and a failure only means the assistant keeps the
    * previous snapshot. It never creates a session and never touches the business context.
    */
-  async updatePageContext(): Promise<void> {
+  async updatePageContext(prebuilt?: PageContextPayload | null): Promise<void> {
     const sessionId = this.loadSessionId('integrated');
     if (!sessionId || !this.authService.isLoggedIn) return;
     if (!isIntegratedChatbotPath(this.pageContext.currentRoute())) return;
 
-    const snapshot = this.capturePageContext();
+    const snapshot = prebuilt ?? this.capturePageContext();
     if (!snapshot) return;
 
     const formData = new FormData();
