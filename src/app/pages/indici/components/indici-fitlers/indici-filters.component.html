@@ -17,7 +17,7 @@
             (keydown.escape)="closeIndicatorMenu()">
             <label class="visually-hidden" for="indicator-search">Cerca un indicatore</label>
             <input id="indicator-search" class="form-control form-control-sm mb-2" type="search"
-              placeholder="Cerca indicatore..." [ngModel]="indicatorSearch" (ngModelChange)="onIndicatorSearchChange($event)">
+              placeholder="Cerca indice..." [ngModel]="indicatorSearch" (ngModelChange)="onIndicatorSearchChange($event)">
             <div class="indicator-picker-options" role="listbox" aria-labelledby="lbl-indici">
               @for (group of indicatorGroups; track trackByCategory($index, group)) {
                 <div class="indicator-picker-category">{{ group.category }}</div>
