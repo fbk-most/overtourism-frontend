@@ -17,6 +17,7 @@ export class UsersComponent implements OnInit {
   roles: AuthRole[] = [];
   territories: string[] = [];
   loading = false;
+  saving = false;
 
   showModal = false;
   isEditMode = false;
@@ -75,7 +76,10 @@ export class UsersComponent implements OnInit {
 
     this.userService.getUsers().subscribe({
       next: (u) => {
-        this.users = u;
+        this.users = u.map(user => ({
+          ...user,
+          territories: [...new Set(user.territories || [])]
+        }));
         this.loading = false;
       },
       error: (err) => {
@@ -106,7 +110,7 @@ export class UsersComponent implements OnInit {
       identifierType: 'email',
       identifier: user.identifier,
       role: user.role,
-      territories: user.territories || [],
+      territories: [...new Set(user.territories || [])],
       is_active: user.is_active
     });
     this.userForm.get('identifier')?.disable();
@@ -131,7 +135,7 @@ export class UsersComponent implements OnInit {
   }
 
   toggleTerritory(terr: string): void {
-    const current: string[] = this.userForm.get('territories')?.value || [];
+    const current = [...new Set<string>((this.userForm.get('territories')?.value || []) as string[])];
     const idx = current.indexOf(terr);
     
     if (idx > -1) {
@@ -147,6 +151,10 @@ export class UsersComponent implements OnInit {
   }
 
    onSubmit(): void {
+    if (this.saving) {
+      return;
+    }
+
     if (this.userForm.invalid) {
       this.userForm.markAllAsTouched();
       return;
@@ -161,20 +169,29 @@ export class UsersComponent implements OnInit {
       return;
     }
 
+    this.saving = true;
+
     if (this.isEditMode && this.selectedUserId) {
+      const userId = this.selectedUserId;
       const payload: UpdateAuthUserDto = {
         role: formVal.role,
-        territories: isGlobal ? [] : formVal.territories,
+        territories: isGlobal ? [] : [...new Set<string>((formVal.territories || []) as string[])],
         is_active: formVal.is_active
       };
 
-      this.userService.updateUser(this.selectedUserId, payload).subscribe({
+      this.userService.updateUser(userId, payload).subscribe({
         next: () => {
+          this.users = this.users.map(user => user.user_id === userId
+            ? { ...user, ...payload, territories: payload.territories || [] }
+            : user);
+          this.saving = false;
           this.notificationService.showSuccess('Utente aggiornato con successo');
           this.closeModal();
-          this.loadData();
         },
-        error: (err) => console.error("Errore aggiornamento utente:", err)
+        error: (err) => {
+          this.saving = false;
+          console.error("Errore aggiornamento utente:", err);
+        }
       });
     } else {
       const payload: CreateAuthUserDto = {
@@ -182,16 +199,23 @@ export class UsersComponent implements OnInit {
           ? formVal.identifier.trim().toUpperCase()
           : formVal.identifier.trim(),
         role: formVal.role,
-        territories: isGlobal ? [] : formVal.territories
+        territories: isGlobal ? [] : [...new Set<string>((formVal.territories || []) as string[])]
       };
 
       this.userService.createUser(payload).subscribe({
-        next: () => {
+        next: (createdUser) => {
+          this.users = [...this.users, {
+            ...createdUser,
+            territories: [...new Set(createdUser.territories || [])]
+          }];
+          this.saving = false;
           this.notificationService.showSuccess('Utente creato con successo');
           this.closeModal();
-          this.loadData();
         },
-        error: (err) => console.error("Errore creazione utente:", err)
+        error: (err) => {
+          this.saving = false;
+          console.error("Errore creazione utente:", err);
+        }
       });
     }
   }
@@ -200,8 +224,8 @@ export class UsersComponent implements OnInit {
     if (confirm(`Sei sicuro di voler disattivare l'utente ${user.identifier}?`)) {
       this.userService.deactivateUser(user.user_id).subscribe({
         next: () => {
+          this.users = this.users.filter(item => item.user_id !== user.user_id);
           this.notificationService.showSuccess('Utente disattivato');
-          this.loadData();
         },
         error: (err) => console.error('Errore disattivazione:', err)
       });
