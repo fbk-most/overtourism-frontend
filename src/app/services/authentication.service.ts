@@ -44,9 +44,6 @@ export class AuthenticationService {
     this.oauthService.setupAutomaticSilentRefresh();
     this.oauthService.events.subscribe((event: OAuthEvent) => {
       switch (event.type) {
-        case 'token_received':
-          this.loadUserProfile();
-          break;
         case 'token_refresh_error':
         case 'token_error':
         case 'session_terminated':
