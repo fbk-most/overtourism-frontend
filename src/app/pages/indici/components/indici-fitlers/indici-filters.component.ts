@@ -224,6 +224,12 @@ export class IndiciFiltersComponent implements OnInit, OnDestroy {
     return name.startsWith(`${category} - `) ? name.slice(category.length + 3) : name;
   }
 
+  /** Testo mostrato nel bottone a indice selezionato: "Categoria - Nome indicatore". */
+  indicatorSelectionLabel(indicator: IndicatorMeta): string {
+    if (indicator.label.indexOf(' - ') === -1) return indicator.label;
+    return `${this.indicatorCategory(indicator)} - ${this.indicatorDisplayName(indicator)}`;
+  }
+
   // Helper per verificare se una data YYYY-MM-DD esiste realmente nel calendario
   private isValidCalendarDate(dStr: string): boolean {
     if (!dStr || typeof dStr !== 'string') return false;

@@ -8,8 +8,8 @@
         <button class="btn btn-outline-primary indicator-picker-button d-flex align-items-center w-100" type="button"
           aria-labelledby="lbl-indici" aria-haspopup="listbox" [attr.aria-expanded]="indicatorMenuOpen"
           aria-controls="indicator-options" (click)="toggleIndicatorMenu()">
-          <span class="text-truncate text-start me-2">{{ currentMeta ? indicatorDisplayName(currentMeta) : 'Seleziona indice' }}</span>
-          <span class="indicator-category-label me-2">{{ currentMeta ? indicatorCategory(currentMeta) : '' }}</span>
+          <span class="text-truncate text-start me-2"
+            [attr.title]="currentMeta ? indicatorSelectionLabel(currentMeta) : null">{{ currentMeta ? indicatorSelectionLabel(currentMeta) : 'Seleziona indice' }}</span>
           <span class="material-icons ms-auto" style="font-size: 18px;" aria-hidden="true">expand_more</span>
         </button>
         @if (indicatorMenuOpen) {
@@ -48,7 +48,7 @@
           <span class="text-start me-2">
             {{ spatialGranularity === 'comune'
             ? 'Comunale'
-            : (spatialGranularity === 'provincia' ? 'Provinciale' : 'Macro area (APT)') }}
+            : (spatialGranularity === 'provincia' ? 'Provinciale' : 'Macro area') }}
           </span>
           <span class="material-icons ms-auto" style="font-size: 18px;" aria-hidden="true">expand_more</span>
         </button>
@@ -56,7 +56,7 @@
           <div class="link-list-wrapper">
             <ul class="link-list">
               <li><a class="list-item" (click)="spatialGranularity = 'comune'; markDirty()" style="cursor:pointer"><span>Comunale</span></a></li>
-              <li><a class="list-item" (click)="spatialGranularity = 'macro_area'; markDirty()" style="cursor:pointer"><span>Macro area (APT)</span></a></li>
+              <li><a class="list-item" (click)="spatialGranularity = 'macro_area'; markDirty()" style="cursor:pointer"><span>Macro area</span></a></li>
               <li><a class="list-item" (click)="spatialGranularity = 'provincia'; markDirty()" style="cursor:pointer"><span>Provincia</span></a></li>
             </ul>
           </div>
