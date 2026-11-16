@@ -14,7 +14,7 @@ import { firstValueFrom, Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { AgentChatContext, AgentService, AgentSessionUnavailableError } from '../../../services/agent.service';
 import { ChatbotService } from '../../../services/chatbot/chatbot.service';
-import { PageContextSyncService } from '../../../services/chatbot/page-context-sync.service';
+import { PAGE_CHANGE_TEXT, PageContextSyncService } from '../../../services/chatbot/page-context-sync.service';
 import { ChatbotContextService } from '../../../services/chatbot/chatbotContext.service';
 import { ChatbotActionTranslatorService } from '../../../services/chatbot/chatbot-action-translator.service';
 import { ChatbotActionService } from '../../../services/chatbot/chatbotAction.service';
@@ -60,6 +60,8 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked, OnD
   inputText = '';
   statusMessage = '';
   private shouldScrollToBottom = false;
+  /** A page-change notice has already been drawn since the user's last message. */
+  private pageChangeNotified = false;
 
   messages: ChatMessage[] = [];
   feedbacks: Record<number, ChatFeedback> = {};
@@ -80,6 +82,7 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked, OnD
       // History without a live backend session (e.g. the session id was dropped): keep showing it,
       // say once that the assistant has lost the thread, and let the next message open a new session.
       if (!this.agentSvc.hasSession('integrated') && this.hasUserMessages()) this.pushSessionLostNotice();
+      this.pageChangeNotified = this.hasPageNoticeSinceLastUserMessage();
       this.triggerScroll();
     } else {
       this.pushBot(GREETING, 'operative');
@@ -158,8 +161,25 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked, OnD
     this.persist();
   }
 
+  /**
+   * Draws a page-change notice, but only while the chat is open and only once between one user
+   * message and the next. Changes made while the chat is closed are dropped (the backend still gets
+   * the current page right before the next message, see `send()`).
+   */
   private pushPageEvent(text: string): void {
+    if (!this.isOpen || this.pageChangeNotified) return;
+    this.pageChangeNotified = true;
     this.pushEvent(text);
+  }
+
+  /** After a refresh: was a page-change notice already drawn after the last user message? */
+  private hasPageNoticeSinceLastUserMessage(): boolean {
+    for (let i = this.messages.length - 1; i >= 0; i--) {
+      const message = this.messages[i];
+      if (message.role === 'user') return false;
+      if (message.role === 'event' && message.content === PAGE_CHANGE_TEXT) return true;
+    }
+    return false;
   }
 
   private hasUserMessages(): boolean {
@@ -207,6 +227,7 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked, OnD
       this.chatbotSvc.clearMessages('integrated');
       this.feedbacks = {};
       this.messages = [];
+      this.pageChangeNotified = false;
       this.inputText = '';
       this.pushBot(GREETING, 'operative');
     } catch (error) {
@@ -275,6 +296,7 @@ export class ChatbotIntegratedComponent implements OnInit, AfterViewChecked, OnD
     const pageSynced = this.pageSync.flush().catch(() => undefined);
 
     this.messages.push({ role: 'user', content: text });
+    this.pageChangeNotified = false; // the next page change gets its own notice
     this.persist();
     this.inputText = '';
     this.isTyping = true;

@@ -1,162 +1,214 @@
-import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
-import { AuthenticationService } from '../authentication.service';
+import { DOCUMENT } from '@angular/core';
+import { fakeAsync, flushMicrotasks, TestBed } from '@angular/core/testing';
+import { NavigationEnd, NavigationStart, Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { PageContextPayload, PageElement } from '../../models/page-context.model';
+import { AgentService } from '../agent.service';
+import {
+  PAGE_CHANGE_TEXT,
+  PageChange,
+  PageContextSyncService
+} from './page-context-sync.service';
 import { PageContextService } from './page-context.service';
 
-describe('PageContextService', () => {
-  let service: PageContextService;
-  let router: { url: string };
-  let authService: { activeTerritory: string };
-  let main: HTMLElement;
+describe('PageContextSyncService', () => {
+  let events: Subject<unknown>;
+  let settles: Array<() => void>;
+  let pushed: PageContextPayload[];
+  let sync: PageContextSyncService;
+  let whenSettledCalls: number;
+  let route: string;
+  let elements: PageElement[];
+  let fakeDocument: Document;
+  let changes: PageChange[];
+
+  const navigate = (url: string) => {
+    route = url.split(/[?#]/, 1)[0];
+    events.next(new NavigationEnd(1, url, url));
+  };
+  const settleOldest = () => settles.shift()?.();
+  const settleAll = () => {
+    const pending = settles.splice(0);
+    pending.forEach(resolve => resolve());
+  };
 
   beforeEach(() => {
-    router = { url: '/proposals/edit/123' };
-    authService = { activeTerritory: 'fazzon' };
+    events = new Subject();
+    settles = [];
+    pushed = [];
+    changes = [];
+    whenSettledCalls = 0;
+    route = '/';
+    elements = [{ id: 'idx', type: 'dropdown', label: 'Indice', selected: 'A' }];
+    fakeDocument = document.implementation.createHTMLDocument('fake');
+
     TestBed.configureTestingModule({
       providers: [
-        PageContextService,
-        { provide: Router, useValue: router },
-        { provide: AuthenticationService, useValue: authService }
+        PageContextSyncService,
+        { provide: Router, useValue: { events } },
+        { provide: DOCUMENT, useValue: fakeDocument },
+        {
+          provide: PageContextService,
+          useValue: {
+            currentRoute: () => route,
+            capture: (): PageContextPayload => ({
+              schema_version: '1.0',
+              captured_at: new Date().toISOString(),
+              route,
+              revision: pushed.length + 1,
+              elements: elements.map(element => ({ ...element }))
+            }),
+            whenSettled: () => {
+              whenSettledCalls++;
+              return new Promise<void>(resolve => settles.push(resolve));
+            }
+          }
+        },
+        {
+          provide: AgentService,
+          useValue: {
+            updatePageContext: (snapshot: PageContextPayload) => {
+              pushed.push(snapshot);
+              return Promise.resolve();
+            }
+          }
+        }
       ]
     });
-    service = TestBed.inject(PageContextService);
-    main = document.createElement('main');
-    document.body.appendChild(main);
+    sync = TestBed.inject(PageContextSyncService);
+    sync.changes$.subscribe(change => changes.push(change));
+    sync.start();
   });
-  afterEach(() => {
-    main.remove();
-    document.querySelectorAll('[data-test-dialog]').forEach(node => node.remove());
-  });
+  afterEach(() => sync.stop());
 
-  it('uses the router path without query string or fragment', () => {
-    router.url = '/problems/7?token=secret&x=1#section';
+  it('sends the context once the page has settled after a navigation', fakeAsync(() => {
+    navigate('/proposals/edit/123');
+    flushMicrotasks();
+    expect(pushed.length).toBe(0); // not before the page has rendered
 
-    expect(service.currentRoute()).toBe('/problems/7');
-  });
+    settleOldest();
+    flushMicrotasks();
+    expect(pushed.length).toBe(1);
+  }));
 
-  it('issues strictly increasing revisions, even within the same millisecond', () => {
-    spyOn(Date, 'now').and.returnValue(1_800_000_000_000);
+  it('only sends for the latest of several close navigations', fakeAsync(() => {
+    navigate('/a');
+    navigate('/b');
+    navigate('/c');
+    flushMicrotasks();
+    expect(whenSettledCalls).toBe(3);
 
-    const revisions = [service.nextRevision(), service.nextRevision(), service.nextRevision()];
+    settleAll(); // all three pages "settle", in arrival order
+    flushMicrotasks();
 
-    expect(revisions).toEqual([1_800_000_000_000, 1_800_000_000_001, 1_800_000_000_002]);
-  });
+    expect(pushed.length).toBe(1);
+  }));
 
-  it('captures the backend contract shape from the rendered page', () => {
-    main.innerHTML = `<h1>Edit proposal</h1><label for="n">Proposal name</label><input id="n" value="New infrastructure plan"><button disabled>Save</button>`;
+  it('does not capture on pages where the assistant is hidden, and cancels a pending capture', fakeAsync(() => {
+    navigate('/users');
+    navigate('/agent/stats');
+    flushMicrotasks();
+    expect(whenSettledCalls).toBe(0);
 
-    const snapshot = service.capture();
+    navigate('/problems/1');
+    navigate('/users/42?tab=roles'); // leaves before the first page settled
+    settleOldest();
+    flushMicrotasks();
+    expect(pushed.length).toBe(0);
+  }));
 
-    expect(snapshot.schema_version).toBe('1.0');
-    expect(new Date(snapshot.captured_at).toISOString()).toBe(snapshot.captured_at);
-    expect(snapshot.route).toBe('/proposals/edit/123');
-    expect(snapshot.page_title).toBe('Edit proposal');
-    expect(Number.isInteger(snapshot.revision)).toBe(true);
-    expect(snapshot.elements).toEqual([
-      { id: 'heading-1', type: 'heading', label: 'Edit proposal' },
-      { id: 'n', type: 'textbox', label: 'Proposal name', value: 'New infrastructure plan' },
-      { id: 'button-2', type: 'button', label: 'Save', enabled: false }
-    ]);
-  });
+  it('ignores router events other than NavigationEnd', fakeAsync(() => {
+    events.next(new NavigationStart(1, '/a'));
+    flushMicrotasks();
 
-  it('captures route-backed scenario IDs, active tab, and parameter names', () => {
-    router.url = '/problems/problem-3/proposals/proposal-5/scenari/scenario-7';
-    main.innerHTML = `
-      <section data-assistant-problem-id="problem-3"
-        data-assistant-proposal-id="proposal-5"
-        data-assistant-scenario-id="scenario-7">
-        <div data-assistant-active-tab="Parcheggi">
-          <label for="p">Posti auto</label>
-          <input id="p" type="number" data-assistant-param-name="parking_capacity" value="2.5">
-        </div>
-      </section>`;
+    expect(whenSettledCalls).toBe(0);
+  }));
 
-    const snapshot = service.capture();
+  it('start() is idempotent and stop() unsubscribes', fakeAsync(() => {
+    sync.start();
+    sync.start();
+    navigate('/a');
+    flushMicrotasks();
+    expect(whenSettledCalls).toBe(1); // not 3
 
-    expect(snapshot.route).toBe('/problems/problem-3/proposals/proposal-5/scenari/scenario-7');
-    expect(snapshot.entities).toEqual({
-      territory: 'fazzon',
-      problem_id: 'problem-3',
-      proposal_id: 'proposal-5',
-      scenario_id: 'scenario-7',
-      active_tab: 'Parcheggi'
-    });
+    sync.stop();
+    navigate('/b');
+    flushMicrotasks();
+    expect(whenSettledCalls).toBe(1);
+  }));
 
-    it('captures active territory on routes without a territory-specific component attribute', () => {
-      router.url = '/problems/fazzon_base_problem';
-      main.innerHTML = '<h1>Problems</h1>';
+  describe('page change events', () => {
+    const firstPage = () => {
+      navigate('/indici');
+      settleAll();
+      flushMicrotasks();
+    };
 
-      expect(service.capture().entities?.territory).toBe('fazzon');
-    });
-    expect(snapshot.elements).toContain(jasmine.objectContaining({
-      label: 'Posti auto',
-      param_name: 'parking_capacity',
-      value: 2.5
+    it('stays silent for the first page (e.g. right after a refresh)', fakeAsync(() => {
+      firstPage();
+      expect(changes).toEqual([]);
     }));
-  });
 
-  it('falls back to the document title when the page has no <h1>', () => {
-    document.title = 'Territorial indexes';
-    main.innerHTML = `<button>Go</button>`;
+    it('reports a navigation to another page, with the fixed text', fakeAsync(() => {
+      firstPage();
+      navigate('/problems');
+      settleAll();
+      flushMicrotasks();
 
-    expect(service.capture().page_title).toBe('Territorial indexes');
-  });
+      expect(changes.length).toBe(1);
+      expect(changes[0].text).toBe(PAGE_CHANGE_TEXT);
+      expect(pushed.length).toBe(2);
+    }));
 
-  it('includes an open dialog rendered outside <main>, but not closed ones', () => {
-    const open = document.createElement('div');
-    open.setAttribute('data-test-dialog', '');
-    open.setAttribute('role', 'dialog');
-    open.setAttribute('aria-modal', 'true');
-    open.innerHTML = `<input id="in-dialog" aria-label="Dialog field" value="x">`;
-    const closed = document.createElement('div');
-    closed.setAttribute('data-test-dialog', '');
-    closed.innerHTML = `<input id="in-closed" aria-label="Closed" value="y">`;
-    document.body.append(open, closed);
+    it('reports a filter change on the same route after the page settled, and pushes it', fakeAsync(() => {
+      firstPage();
+      elements = [{ id: 'idx', type: 'dropdown', label: 'Indice', selected: 'B' }];
+      fakeDocument.dispatchEvent(new Event('change'));
+      flushMicrotasks();
+      expect(changes.length).toBe(0); // waits for the page to settle
 
-    const ids = service.capture().elements.map(e => e.id);
+      settleAll();
+      flushMicrotasks();
+      expect(changes.map(c => c.text)).toEqual([PAGE_CHANGE_TEXT]); // never says what changed
+      expect(pushed.length).toBe(2);
+      expect(pushed[1].elements[0].selected).toBe('B');
+    }));
 
-    expect(ids).toContain('in-dialog');
-    expect(ids).not.toContain('in-closed');
-  });
+    it('does not report (nor push) an interaction that changed nothing', fakeAsync(() => {
+      firstPage();
+      fakeDocument.dispatchEvent(new Event('click'));
+      settleAll();
+      flushMicrotasks();
 
-  it('never includes content outside <main> (header, chatbot widget)', () => {
-    const outside = document.createElement('div');
-    outside.setAttribute('data-test-dialog', '');
-    outside.innerHTML = `<textarea id="chat-input" aria-label="Chat">private question</textarea>`;
-    document.body.appendChild(outside);
-    main.innerHTML = `<input id="page" aria-label="Page" value="p">`;
+      expect(changes).toEqual([]);
+      expect(pushed.length).toBe(1);
+    }));
 
-    expect(service.capture().elements.map(e => e.id)).toEqual(['page']);
-  });
+    it('ignores interactions inside the assistant itself', fakeAsync(() => {
+      firstPage();
+      const widget = fakeDocument.createElement('app-chatbot-integrated');
+      const button = fakeDocument.createElement('button');
+      widget.appendChild(button);
+      fakeDocument.body.appendChild(widget);
+      const before = whenSettledCalls;
 
-  describe('whenSettled', () => {
-    it('resolves after the page has been quiet', async () => {
-      const started = Date.now();
-      await service.whenSettled(40, 1000);
+      button.dispatchEvent(new Event('click', { bubbles: true }));
+      expect(whenSettledCalls).toBe(before);
+    }));
 
-      expect(Date.now() - started).toBeGreaterThanOrEqual(35);
-      expect(Date.now() - started).toBeLessThan(500);
-    });
+    it('flush() reports a pending change synchronously and always sends the current page', fakeAsync(() => {
+      firstPage();
+      elements = [{ id: 'idx', type: 'dropdown', label: 'Indice', selected: 'C' }];
 
-    it('waits while the page keeps changing, then resolves once it is quiet', async () => {
-      const started = Date.now();
-      const settled = service.whenSettled(60, 2000);
-      for (let i = 0; i < 4; i++) {
-        await new Promise(resolve => setTimeout(resolve, 30));
-        main.appendChild(document.createElement('span')); // data arriving
-      }
-      await settled;
+      void sync.flush();
+      expect(changes.length).toBe(1); // drawn before the caller adds the user's message
+      flushMicrotasks();
+      expect(pushed.length).toBe(2);
 
-      expect(Date.now() - started).toBeGreaterThanOrEqual(120 + 55);
-    });
-
-    it('gives up after maxMs on a page that never stops changing', async () => {
-      const timer = setInterval(() => main.appendChild(document.createElement('i')), 10);
-      const started = Date.now();
-      await service.whenSettled(200, 150);
-      clearInterval(timer);
-
-      expect(Date.now() - started).toBeLessThan(400);
-    });
+      void sync.flush(); // nothing changed: no new event, but the backend still gets the page
+      flushMicrotasks();
+      expect(changes.length).toBe(1);
+      expect(pushed.length).toBe(3);
+    }));
   });
 });

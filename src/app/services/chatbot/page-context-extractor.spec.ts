@@ -161,13 +161,13 @@ describe('extractPage', () => {
           <span>Comunale</span><span class="material-icons" aria-hidden="true">expand_more</span>
         </button>
         <div class="dropdown-menu" style="display:none"><ul>
-          <li><a>Comunale</a></li><li><a>Macro area</a></li><li><a>Provincia</a></li>
+          <li><a>Comunale</a></li><li><a>Macro area (APT)</a></li><li><a>Provincia</a></li>
         </ul></div>
       </div>`);
 
     expect(byId(page, 'gran')).toEqual({
       id: 'gran', type: 'dropdown', label: 'Granularità territoriale', selected: 'Comunale',
-      options: ['Comunale', 'Macro area', 'Provincia']
+      options: ['Comunale', 'Macro area (APT)', 'Provincia']
     });
     // its menu items are options, not buttons
     expect(page.elements.filter(e => e.type === 'button').length).toBe(0);

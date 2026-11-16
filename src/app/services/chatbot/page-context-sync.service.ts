@@ -9,12 +9,16 @@ import {
 import { AgentService } from '../agent.service';
 import { PageContextService } from './page-context.service';
 
-/** Text drawn in the integrated chat when the page the user is looking at changes. */
-export const PAGE_CHANGE_TEXT = 'Cambiamento pagina rilevato';
+/**
+ * Text drawn in the integrated chat when the page changes. It is deliberately always the same and
+ * says nothing about what changed: it only warns that the conversation context may now differ,
+ * without giving the impression that the user's actions are being tracked.
+ */
+export const PAGE_CHANGE_TEXT = 'Il contesto della conversazione potrebbe essere cambiato';
 
 /** Emitted when the visible page changed (navigation, filter, tab, form value, new data...). */
 export interface PageChange {
-  /** Ready-to-draw text: PAGE_CHANGE_TEXT, plus a short hint of what changed when it can be told. */
+  /** Ready-to-draw text: always PAGE_CHANGE_TEXT. */
   text: string;
 }
 
@@ -26,9 +30,6 @@ interface PageState {
   elements: PageElement[];
 }
 
-const MAX_DETAIL_ITEMS = 3;
-const MAX_DETAIL_CHARS = 160;
-
 function stateOf(snapshot: PageContextPayload): PageState {
   return {
     route: snapshot.route,
@@ -36,57 +37,6 @@ function stateOf(snapshot: PageContextPayload): PageState {
     entities: snapshot.entities,
     elements: snapshot.elements
   };
-}
-
-function shown(element: PageElement): string {
-  const value = element.selected ?? element.value;
-  if (Array.isArray(value)) return value.join(', ') || '—';
-  if (typeof value === 'boolean') return value ? 'attivo' : 'non attivo';
-  return value === undefined || value === null || value === '' ? '—' : String(value);
-}
-
-function trim(text: string, limit: number): string {
-  return text.length > limit ? text.slice(0, limit - 1) + '…' : text;
-}
-
-/**
- * Short, human-readable hint of what changed between two states of the page. Best effort: it only
- * has to help the user reconstruct the conversation, so unknown differences yield no hint.
- */
-export function describePageChange(previous: PageState, next: PageState): string {
-  if (previous.route !== next.route) {
-    return trim(next.title || next.route, MAX_DETAIL_CHARS);
-  }
-
-  const before = new Map(previous.elements.map(element => [element.id, element]));
-  const items: string[] = [];
-  for (const element of next.elements) {
-    const old = before.get(element.id);
-    if (!old || JSON.stringify(old) === JSON.stringify(element)) continue;
-    const name = element.label || element.id;
-
-    switch (element.type) {
-      case 'tab':
-        if (element.value === true && old.value !== true) items.push(`Scheda: ${name}`);
-        break;
-      case 'chart':
-        items.push(`Grafico aggiornato: ${name}`);
-        break;
-      case 'table':
-        items.push(`Tabella aggiornata: ${name}`);
-        break;
-      case 'heading':
-      case 'text':
-        break;
-      default:
-        if (shown(old) !== shown(element)) items.push(`${name}: ${shown(old)} → ${shown(element)}`);
-    }
-  }
-
-  if (items.length === 0) return '';
-  const extra = items.length - MAX_DETAIL_ITEMS;
-  const detail = items.slice(0, MAX_DETAIL_ITEMS).join('; ') + (extra > 0 ? ` (+${extra})` : '');
-  return trim(detail, MAX_DETAIL_CHARS);
 }
 
 /** Clicks/typing inside these are never page changes (it is the assistant's own UI). */
@@ -193,11 +143,8 @@ export class PageContextSyncService {
     this.baseline = next;
     this.baselineKey = key;
 
-    if (changed && previous) {
-      const detail = describePageChange(previous, next);
-      this.zone.run(() =>
-        this.changesSubject.next({ text: detail ? `${PAGE_CHANGE_TEXT} · ${detail}` : PAGE_CHANGE_TEXT })
-      );
+    if (changed) {
+      this.zone.run(() => this.changesSubject.next({ text: PAGE_CHANGE_TEXT }));
     }
     return changed || forcePush ? this.agent.updatePageContext(snapshot) : Promise.resolve();
   }
