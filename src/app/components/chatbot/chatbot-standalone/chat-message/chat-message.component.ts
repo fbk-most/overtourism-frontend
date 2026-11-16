@@ -13,7 +13,7 @@ export interface AgentTypeMeta {
 
 export const AGENT_TYPE_MAP: Record<AgentType, AgentTypeMeta> = {
   executor: {
-    label: 'Executor',
+    label: 'Esecutore',
     icon: 'settings',
     cssClass: 'agent-executor'
   },
