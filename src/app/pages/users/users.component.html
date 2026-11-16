@@ -99,11 +99,41 @@
         <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
           <div class="modal-body">
             <div class="mb-3">
-              <label class="form-label fw-semibold">Email / Identificativo *</label>
-              <input type="email" class="form-control" formControlName="identifier" placeholder="utente@dominio.it" />
+              @if (!isEditMode) {
+                <fieldset class="mb-2 p-0 border-0">
+                  <legend class="form-label fw-semibold d-block mb-2 p-0">Tipo di identificativo *</legend>
+                  <div class="d-flex align-items-center gap-4">
+                    <label class="d-inline-flex align-items-center gap-2 mb-0">
+                      <input class="form-check-input m-0" type="radio" id="identifierEmail" value="email"
+                        formControlName="identifierType" (change)="onIdentifierTypeChange()" />
+                      <span class="fw-semibold">Email</span>
+                    </label>
+                    <label class="d-inline-flex align-items-center gap-2 mb-0">
+                      <input class="form-check-input m-0" type="radio" id="identifierFiscalCode" value="fiscalCode"
+                        formControlName="identifierType" (change)="onIdentifierTypeChange()" />
+                      <span class="fw-semibold">Codice fiscale</span>
+                    </label>
+                  </div>
+                </fieldset>
+              }
+              <label class="form-label fw-semibold" for="userIdentifier">
+                {{ isEditMode ? 'Identificativo' : (userForm.get('identifierType')?.value === 'email' ? 'Email' : 'Codice fiscale') }} *
+              </label>
+              <input id="userIdentifier" [type]="userForm.get('identifierType')?.value === 'email' ? 'email' : 'text'"
+                class="form-control" formControlName="identifier"
+                [placeholder]="userForm.get('identifierType')?.value === 'email' ? 'utente@dominio.it' : 'RSSMRA80A01H501U'"
+                [attr.maxlength]="userForm.get('identifierType')?.value === 'fiscalCode' ? 16 : null" />
               @if (userForm.get('identifier')?.touched && userForm.get('identifier')?.invalid) {
                 <div class="text-danger small mt-1">
-                  Inserire un'email valida.
+                  @if (userForm.get('identifier')?.hasError('required')) {
+                    <span>Inserire l'identificativo.</span>
+                  }
+                  @if (userForm.get('identifier')?.hasError('email')) {
+                    <span>Inserire un'email valida.</span>
+                  }
+                  @if (userForm.get('identifier')?.hasError('pattern')) {
+                    <span>Inserire un codice fiscale valido di 16 caratteri.</span>
+                  }
                 </div>
               }
             </div>

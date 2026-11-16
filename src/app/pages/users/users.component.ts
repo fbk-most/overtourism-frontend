@@ -39,11 +39,26 @@ export class UsersComponent implements OnInit {
 
   private initForm(): void {
     this.userForm = this.fb.group({
+      identifierType: ['email'],
       identifier: ['', [Validators.required, Validators.email]],
       role: ['viewer', Validators.required],
       territories: [[]],
       is_active: [true]
     });
+  }
+
+  onIdentifierTypeChange(): void {
+    const identifier = this.userForm.get('identifier');
+    const validators = [Validators.required];
+
+    if (this.userForm.get('identifierType')?.value === 'fiscalCode') {
+      validators.push(Validators.pattern(/^[A-Z]{6}[0-9LMNPQRSTUV]{2}[A-EHLMPR-T][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]$/i));
+    } else {
+      validators.push(Validators.email);
+    }
+
+    identifier?.setValidators(validators);
+    identifier?.updateValueAndValidity();
   }
 
   loadData(): void {
@@ -74,6 +89,7 @@ export class UsersComponent implements OnInit {
     this.isEditMode = false;
     this.selectedUserId = null;
     this.userForm.reset({
+      identifierType: 'email',
       identifier: '',
       role: 'viewer',
       territories: [],
@@ -87,6 +103,7 @@ export class UsersComponent implements OnInit {
     this.isEditMode = true;
     this.selectedUserId = user.user_id;
     this.userForm.reset({
+      identifierType: 'email',
       identifier: user.identifier,
       role: user.role,
       territories: user.territories || [],
@@ -161,7 +178,9 @@ export class UsersComponent implements OnInit {
       });
     } else {
       const payload: CreateAuthUserDto = {
-        identifier: formVal.identifier,
+        identifier: formVal.identifierType === 'fiscalCode'
+          ? formVal.identifier.trim().toUpperCase()
+          : formVal.identifier.trim(),
         role: formVal.role,
         territories: isGlobal ? [] : formVal.territories
       };
