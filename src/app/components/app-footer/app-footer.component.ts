@@ -12,4 +12,15 @@ export class AppFooterComponent {
     version: 'dev',
     releaseUrl: 'https://github.com/tn-aixpa/overtourism-frontend'
   };
+
+  openPrivacyPolicy(event: MouseEvent, dialog: HTMLDialogElement): void {
+    event.preventDefault();
+    dialog.showModal();
+  }
+
+  closePrivacyPolicyOnBackdrop(event: MouseEvent, dialog: HTMLDialogElement): void {
+    if (event.target === dialog) {
+      dialog.close();
+    }
+  }
 }

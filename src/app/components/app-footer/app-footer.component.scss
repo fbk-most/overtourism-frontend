@@ -2,6 +2,43 @@
   display: none;
 }
 
+.privacy-dialog {
+  width: min(900px, calc(100vw - 2rem));
+  max-width: none;
+  max-height: 90vh;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 4px;
+  color: #212529;
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.3);
+
+  &::backdrop {
+    background: rgba(15, 23, 42, 0.62);
+    backdrop-filter: blur(3px);
+  }
+}
+
+.privacy-dialog-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #dee2e6;
+  background: #fff;
+}
+
+.privacy-dialog-content {
+  max-height: calc(90vh - 4rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 1.5rem;
+}
+
 .footer-version-item {
     margin-left: 1rem;
   

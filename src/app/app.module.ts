@@ -34,7 +34,6 @@ import { ProblemsComponent } from './pages/problems/problems/problems.component'
 import { ScenariComponent } from './pages/problems/scenari/scenari.component';
 import { PreferitiComponent } from './pages/problems/preferiti/preferiti.component';
 import { FaqsComponent } from './pages/faqs/faqs.component';
-import { TermsComponent } from './pages/terms/terms.component';
 import { SettingsComponent } from './pages/settings/settings.component';
 import { ScenarioDetailComponent } from './pages/problems/scenario-detail/scenario-detail.component';
 import { PlotComponent } from './components/plot/plot.component';
@@ -98,7 +97,7 @@ export function initializeAuth(authService: AuthenticationService) {
 @NgModule({
   declarations: [
     AppComponent, HomeComponent, ProblemsComponent, ScenariComponent, PreferitiComponent,
-    FaqsComponent, TermsComponent, SettingsComponent, ScenarioDetailComponent, PlotComponent,
+    FaqsComponent, SettingsComponent, ScenarioDetailComponent, PlotComponent,
     KpiBoxComponent, PlotControlsComponent, AppPlotEditorWidgetComponent, BreadcrumbsComponent,
     ConfrontoScenariComponent, BackButtonComponent, KpiComparisonComponent, ProblemCreateComponent,
     ReadingComponent, ProposalCreateComponent, ProblemDetailComponent,

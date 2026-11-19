@@ -2,7 +2,9 @@
   <ng-container small-links>
     <li class="list-inline-item"><a href="#">Media policy</a></li>
     <li class="list-inline-item"><a href="#">Note legali</a></li>
-    <li class="list-inline-item"><a href="#">Privacy policy</a></li>
+    <li class="list-inline-item">
+      <a href="#privacy-policy" (click)="openPrivacyPolicy($event, privacyDialog)" aria-haspopup="dialog">Privacy policy</a>
+    </li>
     <li class="list-inline-item"><a href="#">Mappa del sito</a></li>
     <li class="list-inline-item">
       <a href="https://form.agid.gov.it/view/xyz">
@@ -16,3 +18,23 @@
     </li>
   </ng-container>
 </it-footer>
+
+<dialog
+  #privacyDialog
+  id="privacy-policy"
+  class="privacy-dialog"
+  aria-labelledby="privacy-dialog-title"
+  (click)="closePrivacyPolicyOnBackdrop($event, privacyDialog)">
+  <header class="privacy-dialog-header">
+    <h2 id="privacy-dialog-title" class="h5 mb-0">Informativa privacy e cookie</h2>
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Chiudi informativa"
+      (click)="privacyDialog.close()">
+    </button>
+  </header>
+  <div class="privacy-dialog-content">
+    <app-terms></app-terms>
+  </div>
+</dialog>
