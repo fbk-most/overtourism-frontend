@@ -38,6 +38,7 @@
   "report": {
     "button": "Generate PDF report",
     "generating": "Generating report...",
+    "generatingMessage": "Generating PDF...",
     "baseScenario": "Base scenario",
     "baseScenarioNote": "Base scenario, associated with all proposals.",
     "unassignedScenarios": "Scenarios not associated with a proposal",

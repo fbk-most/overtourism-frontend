@@ -13,6 +13,13 @@
   }
 </button>
 
+@if (isGenerating) {
+  <div class="report-generation-overlay" role="status" aria-live="polite" aria-atomic="true">
+    <span class="spinner-border text-primary" aria-hidden="true"></span>
+    <span>{{ 'report.generatingMessage' | translate }}</span>
+  </div>
+}
+
 @if (report) {
   <article class="report-print-root">
     <header class="report-header">
