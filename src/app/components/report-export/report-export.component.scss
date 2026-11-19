@@ -1,3 +1,24 @@
+.report-generation-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(5px);
+  cursor: wait;
+  color: #212529;
+  font-weight: 600;
+}
+
+.report-generation-overlay .spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
 .report-print-root {
   position: fixed;
   top: 0;

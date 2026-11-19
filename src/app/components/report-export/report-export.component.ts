@@ -37,7 +37,9 @@ export class ReportExportComponent {
   async generateReport(): Promise<void> {
     if (this.isGenerating) return;
 
+    const previousBodyOverflow = document.body.style.overflow;
     this.isGenerating = true;
+    document.body.style.overflow = 'hidden';
     this.report = null;
     const context = Object.fromEntries(
       Object.entries(this.context).filter(([, ids]) => ids.length > 0)
@@ -62,6 +64,7 @@ export class ReportExportComponent {
       this.notifications.showError(this.getErrorMessage(error));
     } finally {
       this.isGenerating = false;
+      document.body.style.overflow = previousBodyOverflow;
     }
   }
 
