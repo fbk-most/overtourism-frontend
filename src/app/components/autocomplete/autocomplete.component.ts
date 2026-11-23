@@ -97,15 +97,16 @@ export class AutocompleteComponent implements OnInit, OnDestroy {
   }
 
   // === Apertura dinamica del pannello ===
+  // Definisci il riferimento unico come proprietà della classe
+  private boundPositionPanel = () => this.positionPanel();
+
   openPanel(): void {
     if (this.panelOpen) return;
     this.panelOpen = true;
 
-    // Crea la vista dal template
     this.viewRef = this.vcr.createEmbeddedView(this.panelTemplate);
     this.cdr.detectChanges();
 
-    // Aggiungila al body
     setTimeout(() => {
       this.panelEl = this.viewRef?.rootNodes[0] as HTMLElement;
       if (!this.panelEl) return;
@@ -113,9 +114,8 @@ export class AutocompleteComponent implements OnInit, OnDestroy {
       document.body.appendChild(this.panelEl);
       this.positionPanel();
 
-      // Listener per reposition
-      window.addEventListener('scroll', this.positionPanel.bind(this), true);
-      window.addEventListener('resize', this.positionPanel.bind(this));
+      window.addEventListener('scroll', this.boundPositionPanel, true);
+      window.addEventListener('resize', this.boundPositionPanel);
     });
   }
 
@@ -123,22 +123,22 @@ export class AutocompleteComponent implements OnInit, OnDestroy {
     if (!this.panelEl) return;
     const rect = this.inputEl.nativeElement.getBoundingClientRect();
     Object.assign(this.panelEl.style, {
-      position: 'absolute',
-      top: rect.bottom + window.scrollY + 'px',
-      left: rect.left + window.scrollX + 'px',
-      width: rect.width + 'px',
+      position: 'fixed',
+      top: `${rect.bottom}px`,
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+      margin: '0',
       zIndex: '3000'
     });
   }
 
-  // === Chiusura pannello ===
   closePanel(force = false): void {
     if (!this.panelOpen && !force) return;
     this.panelOpen = false;
     this.highlighted = -1;
 
-    window.removeEventListener('scroll', this.positionPanel.bind(this), true);
-    window.removeEventListener('resize', this.positionPanel.bind(this));
+    window.removeEventListener('scroll', this.boundPositionPanel, true);
+    window.removeEventListener('resize', this.boundPositionPanel);
 
     if (this.panelEl && document.body.contains(this.panelEl)) {
       document.body.removeChild(this.panelEl);

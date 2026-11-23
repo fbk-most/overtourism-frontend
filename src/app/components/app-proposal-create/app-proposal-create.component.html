@@ -2,7 +2,7 @@
   <div class="it-card-body p-4">
     <form (ngSubmit)="onSubmit()" #form="ngForm" (submit)="onSubmitForm($event)">
 
-    <div class="table-responsive mb-4">
+    <div class="mb-4">
       <table class="table table-borderless mb-5">
         <tbody>
           <!-- Titolo -->
@@ -94,19 +94,21 @@
 
           <!-- Scenari collegati -->
           <tr>
-            <td class="fw-bold w-25">
-              <label for="scenario-autocomplete">{{ 'problems.proposals.fields.scenarios' | translate }}</label>
-            </td>
-            <td>
-              <app-autocomplete
-                id="scenario-autocomplete"
-                #scenarioAuto
-                [source]="scenarioNames"
-                [minLength]="0"
-                label="Scenari"
-                (selected)="addScenario($event)">
-              </app-autocomplete>
-              <div class="chips d-flex flex-wrap gap-2 mt-2">
+        <td class="fw-bold w-25 align-top">
+          <label for="scenario-autocomplete">{{ 'problems.proposals.fields.scenarios' | translate }}</label>
+        </td>
+        <td class="align-top">
+          <app-autocomplete
+            class="d-block position-relative"
+            id="scenario-autocomplete"
+            #scenarioAuto
+            [source]="scenarioNames"
+            [minLength]="0"
+            label="Scenari"
+            (selected)="addScenario($event)">
+          </app-autocomplete>
+
+          <div class="chips d-flex flex-wrap gap-2 mt-2">
                 @for (scenario of model.related_scenarios; track scenario) {
                   <div
                     class="chip d-inline-flex align-items-center px-2 py-1 rounded-pill">
