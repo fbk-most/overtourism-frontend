@@ -33,7 +33,7 @@ import { ItIconComponent } from 'design-angular-kit';
 const SESSION_LOST_NOTICE =
   'Conversazione precedente non più disponibile sul server: l’assistente riparte da zero, senza memoria dei messaggi sopra. Se serve, reinvia l’ultima domanda.';
 
-const GREETING = 'Ciao! Come posso aiutarti?';
+const GREETING = 'Ciao! Sono un Assistente AI. Come posso esserti utile?';
 const OPEN_STATE_KEY = 'integrated_chatbot_open';
 
 @Component({
