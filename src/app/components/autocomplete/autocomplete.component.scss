@@ -4,11 +4,18 @@
 }
 
 .autocomplete-panel {
-  position: absolute;
+  margin: 0 !important;
+  padding: 0 !important;
   background-color: white;
   border: 1px solid #ccc;
+  border-top: none; // si fonde con il bordo inferiore dell'input
+  border-radius: 0 0 4px 4px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   z-index: 3000 !important;
+}
+
+.ac-item {
+  cursor: pointer;
 }
 
 .ac-item.active {
